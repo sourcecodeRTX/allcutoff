@@ -1,0 +1,82 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const title = "Official Disclaimer & Transparency Policy";
+const description = "Educational disclosure regarding cutoff calculations, admission counselling, government authorities, and student guidance on All Cut Off.";
+const keywords = "All Cut Off disclaimer, admission cutoff disclaimer, informational only, verify with official authority";
+const lastUpdated = new Date().toISOString().slice(0, 10);
+
+const extraSchema = [
+  {
+    '@type': 'WebPage',
+    name: 'Official Disclaimer & Transparency Policy',
+    url: `${new URL('/disclaimer', 'https://allcutoff.com').href}`,
+    description,
+    inLanguage: 'en-IN',
+    isPartOf: { '@id': 'https://allcutoff.com/#website' }
+  }
+];
+---
+
+<Layout title={title} description={description} keywords={keywords} extraSchema={extraSchema}>
+  <section class="border-b border-slate-200 bg-white py-12 sm:py-16">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6">
+      <nav aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2 text-sm text-slate-500">
+          <li><a href="/" class="transition-colors hover:text-blue-600">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="font-medium text-slate-900">Disclaimer</li>
+        </ol>
+      </nav>
+      <span class="mt-6 block font-mono text-xs uppercase tracking-widest text-blue-600">LEGAL &amp; ADMISSIONS</span>
+      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+        Official Disclaimer
+      </h1>
+      <p class="mt-3 text-sm text-slate-600 sm:text-base">
+        Last updated: <time datetime={lastUpdated}>{lastUpdated}</time> &middot; Applies to Academic Year 2025&ndash;2026 admissions
+      </p>
+    </div>
+  </section>
+
+  <section class="py-12 sm:py-16" aria-labelledby="disclaimer-content-heading">
+    <div class="mx-auto max-w-4xl space-y-6 px-4 sm:px-6">
+      <h2 id="disclaimer-content-heading" class="sr-only">Full disclaimer</h2>
+      <div class="hairline-card space-y-4 p-6 text-sm leading-relaxed text-slate-700 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900">1. Educational &amp; Informational Nature</h3>
+        <p>
+          All Cut Off (allcutoff.com) is an independent educational platform created solely for student convenience and preliminary self-assessment. We are not affiliated with, endorsed by, sponsored by, or representing any government department, ministry, examining body, or university admissions committee. Nothing on this site constitutes an official notification.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">2. All Calculations Run Client-Side</h3>
+        <p>
+          Every cutoff, merit, or index score on this site is computed entirely inside your web browser using JavaScript. The marks, scores, and eligibility values you enter are never transmitted to our servers and are never written to any database, log file, or analytics property. We cannot see, recover, or share your answers because we never receive them.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">3. Official Authorities Have Sole Mandate</h3>
+        <p>
+          Official merit rank lists, qualifying cutoffs, quota categorisations, and seat allotments are published exclusively by the respective statutory authorities (such as the Directorate of Technical Education Tamil Nadu, Karnataka Examinations Authority, APSCHE, TGCHE, National Testing Agency, and the Medical Counselling Committee).
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">4. No Guarantee of Admission</h3>
+        <p>
+          Calculating a cutoff score on All Cut Off does not constitute a guarantee of admission, eligibility confirmation, or seat allocation in any college or institution. Cutoffs vary each year depending on candidate volume, exam difficulty, the reservation seat matrix, and counselling rounds.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">5. Always Verify With the Conducting Authority</h3>
+        <p>
+          While we diligently verify our mathematical models against officially published brochures and state admission orders, students and parents are strongly advised to cross-verify every score and eligibility rule on the official website of the conducting authority before making academic or financial commitments. If our output differs from the official record, the official record is always correct.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">6. Advertising &amp; Third Parties</h3>
+        <p>
+          This site may display advertising, including Google AdSense. We do not run third-party ad trackers that store personal data beyond Google's certified ad partner policies. See the <a href="/privacy" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Privacy Policy</a> for the full detail.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">7. Reporting an Error</h3>
+        <p>
+          If you find an error in any formula or displayed value, please tell us. Our <a href="/about#how-formulas-are-verified" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">verification process</a> and the <a href="/contact" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">contact page</a> describe how each rule is checked and how to report a correction.
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>

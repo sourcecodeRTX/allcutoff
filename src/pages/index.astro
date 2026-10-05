@@ -1,0 +1,877 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CalculatorCard from '../components/CalculatorCard.astro';
+import HeroCalculator from '../components/HeroCalculator.astro';
+import { CALCULATORS, CATEGORIES, STATES } from '../data/calculators';
+
+const SITE_URL = 'https://allcutoff.com';
+
+const pageTitle = 'Cutoff Calculator for TNEA, KCET, NEET UG & More';
+const pageDesc =
+  'Free live cutoff calculators for TNEA, KCET, NEET UG, AP/TS EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET. Enter your marks, get the official weighted merit score instantly.';
+const pageKeywords =
+  'cutoff calculator, TNEA cutoff calculator, KCET cutoff calculator, NEET UG score calculator, AP TS EAPCET cutoff calculator, TNAU agriculture cutoff calculator, KEAM index calculator, GUJCET ACPC merit calculator, MHT CET score calculator, DU CUET merit calculator, TN paramedical cutoff, TANUVAS veterinary cutoff, TNGASA arts and science cutoff, entrance exam cutoff 2025-26, admission merit score calculator';
+
+/* -------------------------------------------------------------------------
+ * Homepage FAQ — single source of truth for the visible accordion and the
+ * FAQPage JSON-LD node, so schema and on-page copy can never drift apart.
+ * ---------------------------------------------------------------------- */
+const HOME_FAQS = [
+  {
+    question: 'Are these cutoff calculators updated for the 2025-26 admission season?',
+    answer:
+      'Yes. Every formula on All Cut Off is transcribed from the admission brochure, information bulletin or official notification of the conducting body for the current cycle — DoTE Tamil Nadu, KEA Karnataka, APSCHE and TGCHE, ACPC Gujarat, CEE Kerala, the Maharashtra CET Cell, TNAU, TANUVAS, DCE Tamil Nadu, the NTA and the University of Delhi. When a body amends its merit rule, the calculator is updated rather than silently kept.'
+  },
+  {
+    question: 'Do I need to sign up, log in, or enter my phone number?',
+    answer:
+      'No. All Cut Off has no accounts and no paywall. There is no registration, no OTP, and no email capture. Every calculation runs entirely inside your browser, so the marks you type are never transmitted to our servers or stored anywhere.'
+  },
+  {
+    question: 'What exactly is a cutoff score, and how is it different from my admission rank?',
+    answer:
+      'A cutoff score is the raw or composite mark that your counselling authority computes from your board and entrance results, such as 184 out of 200 in TNEA or 82.5 out of 100 in KCET. A rank is your position in the merit list after every candidate with a similar score has been separated by the published tie-breaking rules and after category reservation is applied. A cutoff score tells you what to expect; only the published merit list tells you where you actually landed.'
+  },
+  {
+    question: 'Can CBSE or ICSE students use the state board cutoff calculators?',
+    answer:
+      'Yes, with one rule in mind: these calculators expect each subject mark out of 100, which is what both CBSE and ICSE print for most subjects. If your board evaluates a subject out of 50 or 200, convert it to a percentage out of 100 first. Board-level normalisation used by states such as Kerala is a statistical process that only the conducting authority can apply, so enter your published standardised PCM percentage there rather than a raw total.'
+  },
+  {
+    question: 'Why does the same calculator give a different number from my college website?',
+    answer:
+      'Usually one of three things. First, the college may be quoting the previous year closing mark, not the live calculated merit score — those are different numbers. Second, some portals add a bonus or a normalisation step we cannot reproduce without the full normalised marks. Third, a genuine formula change in a new brochure. Send the brochure reference and the marks you used to our contact page and we will check and correct the calculator.'
+  },
+  {
+    question: 'Is the result guaranteed admission?',
+    answer:
+      'No, and we will not pretend otherwise. A calculator reproduces the published arithmetic, which is the part most students get wrong by hand. Seat availability, category reservation, choice freezing, tie-breakers on identical scores, and the order of rounds all sit above that arithmetic and are decided by the conducting authority. Always treat our number as your merit score and the official counselling portal as the decision.'
+  }
+];
+
+/* -------------------------------------------------------------------------
+ * Exam comparison table data (max score + the one weighting rule that matters).
+ * ---------------------------------------------------------------------- */
+const WEIGHTING_RULE: Record<string, string> = {
+  'tnea-engineering': 'Maths at 100%; Physics and Chemistry halved',
+  'tnau-agriculture': 'All four core subjects halved to 50 each',
+  'kcet-engineering': '50% 12th Board PCM + 50% KCET entrance',
+  'ap-ts-eapcet': '75% EAPCET (of 160) + 25% Intermediate group %',
+  'tn-paramedical': 'Biology at 100% + (Physics + Chemistry) / 2',
+  'tanuvas-veterinary': 'Biology at 100% + (Physics + Chemistry) / 2',
+  'keam-engineering': '50:50 index — entrance scaled to 300 + board PCM scaled to 300',
+  'gujcet-acpc': '50% Board PCM theory + 50% GUJCET (theory only)',
+  'neet-ug-medical': 'Straight total of the 720 raw marks; percentile decides merit',
+  'cuet-du-admission': 'Sum of mapped CUET subjects (800, or 600 for B.Sc)',
+  'mht-cet-engineering': 'Maths 100 + Physics 50 + Chemistry 50; HSC is an eligibility gate',
+  'tngasa-arts-science': 'Four core subjects summed to 400; language papers excluded'
+};
+
+const comparisonRows = [
+  ...CALCULATORS.map((c) => ({
+    id: c.id,
+    exam: c.shortName,
+    authority: c.conductingAuthority,
+    max: c.maxScore,
+    unit: c.scoreUnit,
+    rule: WEIGHTING_RULE[c.id] ?? 'See official brochure',
+    slug: c.slug
+  })),
+  {
+    id: 'custom-general',
+    exam: 'Custom / General % Mode',
+    authority: 'No authority — your own target',
+    max: 100,
+    unit: '%',
+    rule: 'No weighting; a straight comparison against a cutoff you type in',
+    slug: '#calculators'
+  }
+];
+
+/* -------------------------------------------------------------------------
+ * Hero search index (independent of the global Ctrl+K modal so the homepage
+ * dropdown stays instant and does not need a round trip through Layout).
+ * ---------------------------------------------------------------------- */
+const HERO_ALIASES: Record<string, string[]> = {
+  'tnea-engineering': ['tnea', 'anna university', 'b.tech', 'engineering'],
+  'kcet-engineering': ['kcet', 'kea', 'karnataka', 'puc'],
+  'neet-ug-medical': ['neet', 'mbbs', 'bds', 'medical', 'ayush'],
+  'ap-ts-eapcet': ['eapcet', 'apsche', 'tgche', 'andhra', 'telangana', 'b.pharm'],
+  'tnau-agriculture': ['tnau', 'agriculture', 'agri'],
+  'keam-engineering': ['keam', 'kerala'],
+  'gujcet-acpc': ['gujcet', 'acpc', 'gujarat', 'gseb'],
+  'mht-cet-engineering': ['mht cet', 'mhcet', 'maharashtra', 'cap'],
+  'cuet-du-admission': ['du', 'cuet', 'delhi university', 'bca', 'b.com'],
+  'tn-paramedical': ['paramedical', 'b.pharm', 'nursing', 'bpt'],
+  'tanuvas-veterinary': ['tanuvas', 'veterinary', 'bvsc'],
+  'tngasa-arts-science': ['tngasa', 'arts and science', 'bca', 'b.com']
+};
+
+const HERO_CUSTOM_ENTRY = {
+  id: 'custom-general',
+  slug: 'custom-general',
+  name: 'Custom / General % Mode',
+  shortName: 'Custom / General %',
+  category: 'Custom',
+  state: 'Universal',
+  targetCourse: 'Compare any score against any target cutoff'
+};
+
+const heroSearchIndex = [
+  ...CALCULATORS.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    meta: `${c.targetCourse} — ${c.state}`,
+    haystack: [
+      c.shortName,
+      c.exam,
+      c.category,
+      c.state,
+      c.targetCourse,
+      c.conductingAuthority,
+      ...(HERO_ALIASES[c.id] ?? [])
+    ]
+      .join(' ')
+      .toLowerCase()
+  })),
+  {
+    id: HERO_CUSTOM_ENTRY.id,
+    slug: HERO_CUSTOM_ENTRY.slug,
+    name: HERO_CUSTOM_ENTRY.name,
+    meta: HERO_CUSTOM_ENTRY.targetCourse,
+    haystack: 'custom general percentage target compare universal mode %'.toLowerCase()
+  }
+];
+
+/* -------------------------------------------------------------------------
+ * Structured data.
+ * ---------------------------------------------------------------------- */
+const faqSchema = {
+  '@type': 'FAQPage',
+  '@id': `${SITE_URL}/#faq`,
+  mainEntity: HOME_FAQS.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer }
+  }))
+};
+
+const websiteSchema = {
+  '@type': 'WebSite',
+  '@id': `${SITE_URL}/#website`,
+  url: `${SITE_URL}/`,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/#calculators?q={search_term_string}` },
+    'query-input': 'required name=search_term_string'
+  }
+};
+
+const itemListSchema = {
+  '@type': 'ItemList',
+  '@id': `${SITE_URL}/#calculator-directory`,
+  name: 'Admission cutoff calculators on All Cut Off',
+  numberOfItems: CALCULATORS.length,
+  itemListElement: CALCULATORS.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.name,
+    url: `${SITE_URL}/calculator/${c.slug}`
+  }))
+};
+
+const extraSchema = [faqSchema, websiteSchema, itemListSchema];
+---
+
+<Layout title={pageTitle} description={pageDesc} keywords={pageKeywords} extraSchema={extraSchema}>
+  <!-- ══════════════════════ HERO ══════════════════════ -->
+  <section class="relative overflow-hidden border-b border-slate-200 bg-slate-50 py-12 sm:py-16 lg:py-20">
+    <div class="pointer-events-none absolute inset-0 mesh-gradient-glow opacity-70" aria-hidden="true"></div>
+
+    <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
+      <!-- ── LEFT: value proposition ──────────────────────────────── -->
+      <div class="min-w-0">
+        <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
+          <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
+          <span class="font-mono text-xs font-medium uppercase tracking-wide text-slate-900">
+            Official admission formulas &middot; 2025&ndash;2026
+          </span>
+        </div>
+
+        <h1 class="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+          Cutoff Calculator for TNEA, KCET, NEET UG, EAPCET &amp; 9 More Entrance Exams
+        </h1>
+
+        <p class="mt-4 max-w-xl text-base leading-relaxed text-slate-700">
+          Enter your board and entrance marks. The widget on this page applies the exact weighting your
+          counselling authority publishes &mdash; Maths at 100% for TNEA, the 50:50 board-plus-exam composite
+          for KCET, the 75:25 split for AP and TS EAPCET, the 720-mark total for NEET UG &mdash; and shows
+          your merit score as you type.
+        </p>
+
+        <!-- Hero search bar with instant results -->
+        <div class="relative mt-7 max-w-xl">
+          <label for="hero-search-input" class="sr-only">Search calculators by exam, course or state</label>
+          <div class="flex items-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+            <span class="pl-2.5 text-slate-500" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+            </span>
+            <input
+              id="hero-search-input"
+              type="text"
+              role="combobox"
+              aria-expanded="false"
+              aria-controls="hero-search-dropdown"
+              aria-autocomplete="list"
+              aria-activedescendant=""
+              autocomplete="off"
+              placeholder="Search TNEA, KCET, NEET, B.Pharm, Tamil Nadu…"
+              class="min-h-11 w-full min-w-0 border-none bg-transparent px-3 py-2 text-sm text-slate-900 placeholder-slate-500 outline-none"
+            />
+            <a href="#calculators" class="btn-accent focus-ring min-h-11 shrink-0 px-4 py-2 text-xs sm:text-sm">
+              All Calculators
+            </a>
+          </div>
+
+          <div
+            id="hero-search-dropdown"
+            role="listbox"
+            aria-label="Calculator search results"
+            class="absolute left-0 right-0 top-full z-30 mt-2 hidden max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
+          ></div>
+
+          <p class="mt-2 text-xs text-slate-600">
+            Tip: press <kbd class="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono">Ctrl</kbd>
+            <span class="font-mono">+</span>
+            <kbd class="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono">K</kbd>
+            anywhere for the full calculator directory.
+          </p>
+        </div>
+
+        <!-- Trust badges -->
+        <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-600">
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Verified state &amp; university rules
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            100% free, no sign-up
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Runs in your browser
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Step-by-step tie-breakers
+          </span>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: the live calculator ──────────────────────────── -->
+      <div class="min-w-0">
+        <HeroCalculator />
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ STATE STRIP ══════════════════════ -->
+  <section class="border-b border-slate-200 bg-white py-4">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 text-xs sm:px-6">
+      <span class="mr-2 font-mono uppercase tracking-wider text-slate-500">Browse by state:</span>
+      {STATES.map((state) => (
+        <a
+          href={`/state/${state.slug}`}
+          class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-900"
+        >
+          {state.name} ({state.count})
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ══════════════════════ DIRECTORY ══════════════════════ -->
+  <section id="calculators" class="scroll-mt-20 py-14 sm:py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div class="min-w-0">
+          <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Calculator directory</span>
+          <h2 class="mt-1.5 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Every Entrance and Admission Cutoff Calculator
+          </h2>
+          <p class="mt-2 max-w-2xl text-sm text-slate-600">
+            Each calculator applies the normalisation and weighting rules published by that exam&rsquo;s
+            conducting authority &mdash; nothing generic, nothing invented.
+          </p>
+        </div>
+
+        <p class="text-xs text-slate-600">
+          Showing <span id="calc-count" class="font-semibold text-slate-900">{CALCULATORS.length}</span> verified
+          calculators
+        </p>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        <button type="button" class="category-filter-btn btn-category-pill focus-ring active" data-category="all">
+          All Calculators ({CALCULATORS.length})
+        </button>
+        {CATEGORIES.map((cat) => (
+          <button type="button" class="category-filter-btn btn-category-pill focus-ring" data-category={cat.slug}>
+            {cat.name} ({cat.count})
+          </button>
+        ))}
+      </div>
+
+      <div id="calculators-grid" class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {CALCULATORS.map((calc) => (
+          <div
+            class="calc-card-item"
+            data-calc-id={calc.id}
+            data-category={calc.categorySlug}
+            data-name={calc.name.toLowerCase()}
+            data-state={calc.state.toLowerCase()}
+            data-exam={calc.exam.toLowerCase()}
+            data-search={heroSearchIndex.find((entry) => entry.id === calc.id)?.haystack ?? ''}
+          >
+            <CalculatorCard calculator={calc} />
+          </div>
+        ))}
+      </div>
+
+      <div
+        id="no-results-msg"
+        class="mt-12 hidden rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center"
+      >
+        <p class="text-sm font-medium text-slate-900">No calculators matched your filter</p>
+        <p class="mt-1 text-sm text-slate-600">
+          Try switching to &ldquo;All Calculators&rdquo; or search by exam code such as TNEA, KCET or NEET.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ HOW IT WORKS ══════════════════════ -->
+  <section class="border-t border-slate-200 bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="text-center">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Streamlined process</span>
+        <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          How the Cutoff Engine Works
+        </h2>
+        <p class="mx-auto mt-3 max-w-2xl text-sm text-slate-600">
+          No forms, no waiting, no emailed reports. Six short steps and you have the same merit score the
+          counselling portal will compute.
+        </p>
+      </div>
+
+      <ol class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          { title: 'Pick your exam', body: 'Use the dropdown or the exam tabs. TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET, DU CUET, paramedical, TANUVAS and TNGASA are all in one place.' },
+          { title: 'Enter your marks', body: 'Type each subject mark or your entrance score. Sliders and plus/minus steppers let you sweep a range instead of guessing a number.' },
+          { title: 'Read the score', body: 'The weighted merit score appears instantly, shown against the official maximum for that exam, so 84 out of 100 never gets confused with 168 out of 200.' },
+          { title: 'Check the status band', body: 'Green means comfortably eligible, amber means borderline or a reserved-category route, red means you are under the published minimum.' },
+          { title: 'Read the rules', body: 'Open the full page for the formula steps, category-wise eligibility, the official tie-breaking order and a link to the authority’s own website.' }
+        ].map((step, i) => (
+          <li class="surface-card p-5">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 font-mono text-sm font-bold text-white">
+              {i + 1}
+            </span>
+            <h3 class="mt-4 text-base font-semibold text-slate-900">{step.title}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ COMPARISON TABLE ══════════════════════ -->
+  <section class="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Formula reference</span>
+      <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        Cutoff Calculator by Exam: What Each One Actually Measures
+      </h2>
+      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
+        This is the single most common source of confusion for Indian aspirants. A cutoff of &ldquo;85&rdquo;
+        means something completely different in KCET (a 100-point composite) and in TNEA (a 200-point raw
+        weighted score). Before you compare your score with a number quoted in a newspaper or on a college
+        website, check which scale it is on. The table below gives the maximum score and the single
+        weighting rule that defines each exam&rsquo;s merit number.
+      </p>
+
+      <div class="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <table class="w-full min-w-[46rem] text-left text-sm">
+          <caption class="sr-only">
+            Maximum score and primary weighting rule for each admission cutoff calculator
+          </caption>
+          <thead class="border-b border-slate-200 bg-slate-50 font-mono text-xs uppercase tracking-wider text-slate-600">
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">Exam</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Max</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Conducting authority</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Weighting rule that defines the merit score</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Open</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {comparisonRows.map((row) => (
+              <tr class="align-top">
+                <th scope="row" class="px-4 py-3 font-semibold text-slate-900">{row.exam}</th>
+                <td class="px-4 py-3 font-mono tabular-nums text-slate-700">
+                  {row.max}
+                  <span class="block text-xs font-sans text-slate-500">{row.unit}</span>
+                </td>
+                <td class="px-4 py-3 text-slate-600">{row.authority}</td>
+                <td class="px-4 py-3 leading-relaxed text-slate-700">{row.rule}</td>
+                <td class="px-4 py-3">
+                  <a
+                    href={row.slug.startsWith('#') ? row.slug : `/calculator/${row.slug}`}
+                    class="focus-ring rounded-md font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+                  >
+                    Calculate
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="mt-4 text-xs text-slate-600">
+        Custom / General % Mode is a comparison helper, not an admission formula. It exists because a growing
+        number of private colleges and coaching institutes now quote a plain percentage requirement; use it
+        once the official calculator is not applicable to that institution.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ WHY NO UNIVERSAL FORMULA ══════════════════════ -->
+  <section class="border-t border-slate-200 bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <div class="surface-card p-6 sm:p-10">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Accuracy assurance</span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Why There Is No &ldquo;Universal&rdquo; Cutoff Formula in India
+        </h2>
+
+        <div class="mt-4 space-y-4 leading-relaxed text-slate-700">
+          <p>
+            Admission arithmetic in India is decentralised. Each state examination board or university
+            publishes its own merit construction, and those documents rarely agree with each other. That is
+            not an inconsistency to be smoothed over with an average &mdash; it is a design decision, because
+            the rank has to compare candidates who sat different papers and studied in different systems.
+          </p>
+
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[
+              { k: 'Tamil Nadu — TNEA and TNAU', v: 'A raw 200-mark score. Mathematics counts in full, while Physics and Chemistry are each halved, so a maths-heavy candidate is not carried entirely by memorisation. TNAU applies the same halving but across four subjects instead of three.' },
+              { k: 'Karnataka — KCET', v: 'A 100-point composite in which 12th Board PCM and the KCET entrance carry equal 50% weight. A candidate cannot buy a rank with board marks alone, which was the point of the 2018 High Court ruling.' },
+              { k: 'Andhra Pradesh & Telangana — EAPCET', v: 'A 75:25 blend of the 160-mark entrance and Intermediate group marks, plus a hard qualifying floor of 40 out of 160 for OC and BC candidates. Telangana has, in recent sessions, waived the intermediate component.' },
+              { k: 'National — NEET UG', v: 'No weighting at all. Physics 180 plus Chemistry 180 plus Biology 360 gives a 720-mark total, and ranking happens through the percentile the NTA publishes rather than any composite.' }
+            ].map((item) => (
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <span class="font-semibold text-slate-900">{item.k}</span>
+                <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{item.v}</p>
+              </div>
+            ))}
+          </div>
+
+          <p>
+            <strong class="font-semibold text-slate-900">All Cut Off (allcutoff.com)</strong> does not invent
+            formulas. Every calculator here is a faithful transcription of a published government or
+            university rule, and every calculator links you to the authority&rsquo;s own website so you can
+            verify it yourself. If a college quotes a number that does not match what its own official rule
+            would produce, that is a question for the college &mdash; and a correction we will happily take
+            via our contact page.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ HOW TO USE YOUR SCORE ══════════════════════ -->
+  <section class="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Practical guidance</span>
+      <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        How to Use Your Cutoff Score Once You Have It
+      </h2>
+      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
+        A merit score is an input to counselling, not an outcome. These six habits turn a number into a
+        decision you can actually act on.
+      </p>
+
+      <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { t: 'Convert it to a percentage before comparing', b: 'Most published closing marks are quoted as a raw number on the exam scale. Divide by the maximum from the table above and multiply by 100. Only percentages travel safely between portals, states and years.' },
+          { t: 'Look at last year’s closing mark for your category', b: 'Closing marks differ sharply between General and reserved categories, and often by more than the students expect. A score that looks safe in General may be far off in a reserved category with a lower cut-off pool.' },
+          { t: 'Check tie-breakers before you build a plan', b: 'If your score is close to a cluster of identical scores, the published tie-breaking order decides your rank. On most exams the first tie-breaker is a single subject, which is worth reviewing even when the total is comfortable.' },
+          { t: 'Apply the board-normalisation rule if your state uses one', b: 'Kerala, and in some sessions Telangana, standardise board marks across regions before ranking. Use the published standardised percentage, never your raw total, or your index will be wrong from the start.' },
+          { t: 'Treat counselling rounds as real options', b: 'Vacancies rise in later rounds. If round one was ambitious, keep the subsequent rounds open instead of assuming your score has expired. Freeze only what you are genuinely willing to accept.' },
+          { t: 'Re-check when a new brochure drops', b: 'Merit rules do change. Re-run your score in the calculator the moment your state publishes its next information bulletin, and compare against the previous figure rather than assuming continuity.' }
+        ].map((item) => (
+          <div class="surface-card p-5">
+            <h3 class="text-base font-semibold leading-snug text-slate-900">{item.t}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">{item.b}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ FAQ ══════════════════════ -->
+  <section class="border-t border-slate-200 bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6">
+      <div class="text-center">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Student FAQ</span>
+        <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900">Frequently Asked Questions</h2>
+      </div>
+
+      <div class="mt-10 space-y-4">
+        {HOME_FAQS.map((item) => (
+          <details class="surface-card group p-4 sm:p-5">
+            <summary
+              class="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden"
+            >
+              <span>{item.question}</span>
+              <svg
+                class="shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600">{item.answer}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ TRUST / FOOTER CLUSTER ══════════════════════ -->
+  <section class="border-t border-slate-200 bg-slate-50 py-14 sm:py-16">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <span class="font-mono text-xs uppercase tracking-widest text-blue-600">How we verify</span>
+          <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Every Formula Here Was Read From a Published Rule
+          </h2>
+          <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-700">
+            For each exam we start from the primary source: the information brochure, admission prospectus
+            or official notification of the conducting body. We record the maximum score, the weighting of
+            every component, the category-wise qualifying minimum, and the tie-breaking order in that exact
+            order. Calculators are re-audited whenever a body revises its merit construction, and each page
+            links directly to the authority&rsquo;s own website so you can read the same clause yourself. We
+            never publish a &ldquo;predicted cutoff&rdquo; dressed up as a calculated one, and we never
+            publish a closing mark we could not source.
+          </p>
+        </div>
+
+        <div>
+          <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Pages</span>
+          <ul class="mt-3 space-y-2.5 text-sm">
+            {[
+              { href: '/about', label: 'About All Cut Off', note: 'What this project is and is not' },
+              { href: '/disclaimer', label: 'Official disclaimer', note: 'Not affiliated with any board or NTA' },
+              { href: '/privacy', label: 'Privacy policy', note: 'No accounts, no tracking of your marks' },
+              { href: '/contact', label: 'Contact & correction requests', note: 'Report a wrong formula, get it fixed' }
+            ].map((link) => (
+              <li>
+                <a href={link.href} class="focus-ring font-semibold text-blue-700 hover:text-blue-900 hover:underline">
+                  {link.label}
+                </a>
+                <span class="block text-xs text-slate-600">{link.note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <p class="mt-10 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
+        All Cut Off is an independent, student-run reference tool. It is not affiliated with, endorsed by, or
+        operated by the National Testing Agency, any state examination board, or any university listed on
+        this site. Calculated scores reproduce published arithmetic only and carry no guarantee of admission.
+        Always confirm your figures against the official counselling portal before you act on them.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<!-- ══════════════════════ DIRECTORY FILTERING ══════════════════════ -->
+<script>
+  function initDirectoryFilters() {
+    const categoryBtns = document.querySelectorAll('.category-filter-btn');
+    // The hero search box doubles as the directory filter box. It also has its
+    // own instant-results dropdown, which is why both listeners live here.
+    const searchInput =
+      document.getElementById('hero-search-input') || document.getElementById('home-search-input');
+    const cards = document.querySelectorAll('.calc-card-item');
+    const noResultsMsg = document.getElementById('no-results-msg');
+    const countDisplay = document.getElementById('calc-count');
+
+    let activeCategory = 'all';
+
+    function filterCards() {
+      const query = (searchInput?.value || '').toLowerCase().trim();
+      const tokens = query.split(/[^a-z0-9.%/+]+/i).filter((t) => t.length > 1);
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const cardCategory = card.getAttribute('data-category');
+        const haystack = (card.getAttribute('data-search') || card.getAttribute('data-name') || '').toLowerCase();
+
+        // Every token must appear somewhere, so "tamil nadu bca" narrows instead
+        // of widening. Empty query matches everything.
+        const matchesSearch =
+          tokens.length === 0 ||
+          tokens.every((token) => haystack.includes(token));
+
+        const matchesCategory = activeCategory === 'all' || cardCategory === activeCategory;
+
+        if (matchesCategory && matchesSearch) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      if (countDisplay) countDisplay.textContent = visibleCount.toString();
+      if (noResultsMsg) {
+        noResultsMsg.classList.toggle('hidden', visibleCount !== 0);
+      }
+    }
+
+    categoryBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory = btn.getAttribute('data-category') || 'all';
+        filterCards();
+      });
+    });
+
+    if (searchInput) searchInput.addEventListener('input', filterCards);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDirectoryFilters);
+  } else {
+    initDirectoryFilters();
+  }
+</script>
+
+<!-- ══════════════════════ HERO INSTANT SEARCH ══════════════════════ -->
+<script define:vars={{ heroSearchIndex, CUSTOM_HERO_ID: HERO_CUSTOM_ENTRY.id }}>
+  (function () {
+    'use strict';
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function initHeroSearch() {
+      var input = document.getElementById('hero-search-input');
+      var dropdown = document.getElementById('hero-search-dropdown');
+      if (!input || !dropdown) return;
+
+      var results = [];
+      var activeIndex = -1;
+
+      function score(entry, query, tokens) {
+        if (!tokens.length) return 1;
+        if (entry.name.toLowerCase() === query) return 1000;
+
+        var total = 0;
+        for (var i = 0; i < tokens.length; i += 1) {
+          var token = tokens[i];
+          var position = entry.haystack.indexOf(token);
+          if (position === -1) return 0;
+
+          // Word-start hits and shorter haystacks rank higher.
+          var bonus = position === 0 ? 120 : position < 40 ? 60 : 20;
+          bonus -= Math.min(40, entry.haystack.length / 40);
+          total += bonus;
+        }
+        return total / tokens.length;
+      }
+
+      function runSearch(query) {
+        var q = query.toLowerCase().trim();
+        var tokens = q.split(/[^a-z0-9.%/+]+/i).filter(function (t) {
+          return t.length > 1;
+        });
+
+        var scored = [];
+        heroSearchIndex.forEach(function (entry) {
+          var value = score(entry, q, tokens);
+          if (value > 0) scored.push({ entry: entry, value: value });
+        });
+
+        scored.sort(function (a, b) {
+          if (b.value !== a.value) return b.value - a.value;
+          return a.entry.name.localeCompare(b.entry.name);
+        });
+
+        return scored.map(function (row) {
+          // Custom mode has no page of its own, so it routes back to the directory.
+          var entry = row.entry;
+          return {
+            id: entry.id,
+            slug: entry.slug,
+            name: entry.name,
+            meta: entry.meta,
+            href: entry.id === CUSTOM_HERO_ID ? '/#calculators' : '/calculator/' + encodeURIComponent(entry.slug)
+          };
+        });
+      }
+
+      function optionNodes() {
+        return Array.prototype.slice.call(dropdown.querySelectorAll('[role="option"]'));
+      }
+
+      function clearActive() {
+        activeIndex = -1;
+        optionNodes().forEach(function (node) {
+          node.setAttribute('aria-selected', 'false');
+        });
+        input.setAttribute('aria-activedescendant', '');
+      }
+
+      function setActive(next) {
+        var nodes = optionNodes();
+        if (!nodes.length) return;
+        activeIndex = Math.max(0, Math.min(next, nodes.length - 1));
+        nodes.forEach(function (node, i) {
+          node.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
+        });
+        var current = nodes[activeIndex];
+        if (!current) return;
+        input.setAttribute('aria-activedescendant', current.id);
+        if (typeof current.scrollIntoView === 'function') current.scrollIntoView({ block: 'nearest' });
+      }
+
+      function hide() {
+        dropdown.classList.add('hidden');
+        input.setAttribute('aria-expanded', 'false');
+        clearActive();
+      }
+
+      function render(query) {
+        results = runSearch(query);
+
+        if (!results.length) {
+          dropdown.innerHTML =
+            '<p class="px-3 py-4 text-center text-sm text-slate-600">No calculators matched &ldquo;' +
+            escapeHtml(query) +
+            '&rdquo;. Try TNEA, KCET, NEET, B.Pharm or Tamil Nadu.</p>';
+          dropdown.classList.remove('hidden');
+          input.setAttribute('aria-expanded', 'true');
+          clearActive();
+          return;
+        }
+
+        dropdown.innerHTML = results
+          .slice(0, 6)
+          .map(function (entry, index) {
+            var href = entry.href;
+            return (
+              '<div id="hero-search-opt-' + index + '" role="option" aria-selected="false" data-hero-index="' + index +
+              '" data-calc-id="' + escapeHtml(entry.id) + '" data-calc-href="' + escapeHtml(href) + '"' +
+              ' class="rounded-lg border border-transparent px-2.5 py-2 hover:bg-slate-50 aria-selected:border-blue-300 aria-selected:bg-blue-50">' +
+              '<p class="text-sm font-semibold text-slate-900">' + escapeHtml(entry.name) + '</p>' +
+              '<p class="mt-0.5 text-xs text-slate-600">' + escapeHtml(entry.meta) + '</p>' +
+              '<div class="mt-2 flex flex-wrap gap-2">' +
+              '<a href="' + escapeHtml(href) + '" data-hero-open class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+              '<button type="button" data-hero-load="' + escapeHtml(entry.id) +
+              '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">Load in Hero Calculator</button>' +
+              '</div></div>'
+            );
+          })
+          .join('');
+
+        dropdown.classList.remove('hidden');
+        input.setAttribute('aria-expanded', 'true');
+        clearActive();
+      }
+
+      function loadIntoHero(id) {
+        if (!id) return;
+        hide();
+        input.value = '';
+        window.dispatchEvent(new CustomEvent('allcutoff:load-calculator', { detail: { id: id } }));
+      }
+
+      dropdown.addEventListener('click', function (event) {
+        var loadBtn = event.target.closest('[data-hero-load]');
+        if (loadBtn) {
+          event.preventDefault();
+          loadIntoHero(loadBtn.getAttribute('data-hero-load'));
+          return;
+        }
+
+        var openLink = event.target.closest('[data-hero-open]');
+        if (openLink) {
+          event.preventDefault();
+          window.location.href = openLink.getAttribute('href');
+          return;
+        }
+
+        var row = event.target.closest('[data-hero-index]');
+        if (row) window.location.href = row.getAttribute('data-calc-href');
+      });
+
+      input.addEventListener('input', function (event) {
+        var value = event.target.value;
+        if (!value.trim()) {
+          hide();
+          return;
+        }
+        render(value);
+      });
+
+      input.addEventListener('focus', function (event) {
+        if (event.target.value.trim()) render(event.target.value);
+      });
+
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setActive(activeIndex + 1);
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setActive(activeIndex <= 0 ? 0 : activeIndex - 1);
+        } else if (event.key === 'Escape') {
+          hide();
+        } else if (event.key === 'Enter') {
+          if (activeIndex >= 0 && results[activeIndex]) {
+            event.preventDefault();
+            window.location.href = results[activeIndex].href;
+          }
+        }
+      });
+
+      document.addEventListener('click', function (event) {
+        if (!dropdown.contains(event.target) && !input.contains(event.target)) hide();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHeroSearch);
+    } else {
+      initHeroSearch();
+    }
+  })();
+</script>

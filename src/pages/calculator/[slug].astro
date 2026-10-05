@@ -1,0 +1,752 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CalculatorWidget from '../../components/CalculatorWidget.astro';
+import CalculatorCard from '../../components/CalculatorCard.astro';
+import {
+  CALCULATORS,
+  CATEGORIES,
+  STATES,
+  getCalculatorsByCategory,
+  getCalculatorsByState
+} from '../../data/calculators';
+
+export function getStaticPaths() {
+  return CALCULATORS.map((calc) => ({
+    params: { slug: calc.slug },
+    props: { calculator: calc },
+  }));
+}
+
+const { calculator } = Astro.props as { calculator: (typeof CALCULATORS)[number] };
+
+const siteUrl = 'https://allcutoff.com';
+const websiteId = `${siteUrl}/#website`;
+const organizationId = `${siteUrl}/#organization`;
+
+const YEAR_LABEL = calculator.academicYear.replace(/\s*-\s*/g, '-');
+const canonical = `${siteUrl}/calculator/${calculator.slug}`;
+const pageId = `${canonical}#webpage`;
+const webappId = `${canonical}#webapp`;
+
+const categoryMeta = CATEGORIES.find((c) => c.slug === calculator.categorySlug);
+const stateMeta = STATES.find((s) => s.slug === calculator.stateSlug);
+const categoryBase = (categoryMeta?.name ?? calculator.category).replace(/\s+Cutoffs?$/i, '').trim();
+const categoryHeading = categoryMeta && categoryMeta.name.toLowerCase().endsWith('s')
+  ? categoryMeta.name
+  : `${categoryMeta?.name ?? calculator.category}s`;
+
+const relatedCalculators = CALCULATORS
+  .filter((c) => c.id !== calculator.id && (c.categorySlug === calculator.categorySlug || c.stateSlug === calculator.stateSlug))
+  .slice(0, 3);
+
+const comparisonCalculators = CALCULATORS
+  .filter((c) => c.id !== calculator.id && c.categorySlug !== calculator.categorySlug)
+  .slice(0, 6);
+
+const sameStateAlternatives = CALCULATORS
+  .filter((c) => c.id !== calculator.id && c.stateSlug === calculator.stateSlug)
+  .slice(0, 4);
+
+const authorityLabel = calculator.conductingAuthority.split(',')[0].trim();
+const authorityDomain = calculator.authorityUrl
+  ? calculator.authorityUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+  : null;
+
+/** Real exam acronyms, read off the exam + authority strings only (no invented terms). */
+const ACRO_STOP = new Set(['UG', 'PG', 'II', 'III', 'IT', 'NC', 'NT', 'THE']);
+const examAcronyms = Array.from(
+  new Set(
+    (`${calculator.exam} ${calculator.conductingAuthority}`.match(/\b[A-Z][A-Z0-9&.]{1,9}\b/g) ?? [])
+      .map((token) => token.replace(/\.$/, ''))
+      .filter((token) => token.length >= 2 && !ACRO_STOP.has(token))
+  )
+).slice(0, 5);
+
+/** First comma-free chunk of the target course, e.g. "B.Pharm" or "B.E." */
+const courseToken = calculator.targetCourse.split(',')[0].split(' in ')[0].split(' / ')[0].trim();
+
+/** "EAPCET Cutoff" must not become "EAPCET Cutoff cutoff calculator". */
+const calcNoun = /cutoff/i.test(calculator.shortName)
+  ? `${calculator.shortName} calculator`
+  : `${calculator.shortName} cutoff calculator`;
+
+const keywords = Array.from(new Set([
+  calcNoun,
+  `${categoryBase.toLowerCase()} cutoff calculator`,
+  calculator.state === 'All India' ? 'NEET cutoff calculator' : `${stateMeta?.name ?? calculator.state} admission cutoff ${YEAR_LABEL}`,
+  ...examAcronyms.map((token) => `${token} cutoff marks ${YEAR_LABEL}`),
+  `${courseToken} cutoff ${YEAR_LABEL}`,
+  'admission cutoff calculator'
+])).filter((kw) => !kw.includes(',')).slice(0, 8).join(', ');
+
+const clamp = (value: string, max = 158) => {
+  if (value.length <= max) return value;
+  const cut = value.slice(0, max);
+  const boundary = cut.lastIndexOf(' ');
+  return `${(boundary > 40 ? cut.slice(0, boundary) : cut).replace(/[\s,;:.\-]+$/, '')}...`;
+};
+
+const description = clamp(
+  `Free ${calcNoun} for ${calculator.targetCourse}. Get your official ${calculator.maxScore}-mark ${courseToken} admission score using ${authorityLabel} rules for ${YEAR_LABEL}.`
+);
+
+/**
+ * Title core from `shortName` (never the full `name`, which is often 60+ chars).
+ * Multi-state entries get their real state codes prefixed (AP & TS, not Andhra & Telangana).
+ */
+const stateCodePrefix = calculator.state.includes('&') && stateMeta?.code
+  ? `${stateMeta.code.replace(/\//g, ' & ')} `
+  : '';
+const coreName = `${stateCodePrefix}${calculator.shortName}`.trim();
+const title = `${/cutoff/i.test(coreName) ? coreName : `${coreName} Cutoff`} Calculator (${YEAR_LABEL})`;
+
+/* ---------------------------------------------------------------- schema -- */
+
+/**
+ * `Layout` renders the JSON-LD graph with `set:html`, which does NOT escape.
+ * Strip `<` from every string we hand it so a value can never close the
+ * `<script>` tag (the current dataset contains none, this is a hard guard).
+ */
+const jsonSafe = (value: unknown): unknown => {
+  if (typeof value === 'string') return value.replace(/</g, '');
+  if (Array.isArray(value)) return value.map(jsonSafe);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, jsonSafe(v)]));
+  }
+  return value;
+};
+
+const featureList = [
+  'Instant client-side cutoff calculation',
+  'Official formula transparency with step-by-step breakdown',
+  'No sign-up, no login, no data stored',
+  'Category-wise eligibility check',
+  'Shareable and printable score summary'
+];
+
+const breadcrumbSchema = {
+  '@type': 'BreadcrumbList',
+  '@id': `${canonical}#breadcrumb`,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/#website` },
+    { '@type': 'ListItem', position: 2, name: categoryHeading, item: `${siteUrl}/category/${calculator.categorySlug}` },
+    { '@type': 'ListItem', position: 3, name: calculator.name, item: pageId },
+    { '@type': 'ListItem', position: 4, name: 'Cutoff calculator tool', item: webappId }
+  ]
+};
+
+const webPageSchema = {
+  '@type': 'WebPage',
+  '@id': pageId,
+  url: canonical,
+  name: title,
+  description,
+  inLanguage: 'en-IN',
+  isPartOf: { '@id': websiteId },
+  about: { '@id': webappId },
+  breadcrumb: { '@id': `${canonical}#breadcrumb` }
+};
+
+const webAppSchema = {
+  '@type': 'SoftwareApplication',
+  '@id': webappId,
+  name: calculator.name,
+  alternateName: calculator.shortName,
+  url: canonical,
+  description: calculator.summary,
+  applicationCategory: 'EducationalApplication',
+  applicationSubCategory: 'Admission Cutoff Calculator',
+  operatingSystem: 'All',
+  browserRequirements: 'Requires JavaScript',
+  inLanguage: 'en-IN',
+  isAccessibleForFree: true,
+  featureList,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+  publisher: { '@id': organizationId },
+  provider: { '@id': organizationId }
+};
+
+const howToSchema = calculator.formulaSteps.length > 0 ? {
+  '@type': 'HowTo',
+  '@id': `${canonical}#howto`,
+  name: `How to calculate your ${calculator.shortName} cutoff score (${calculator.verifiedFormulaText})`,
+  description: `Step-by-step ${calculator.name.toLowerCase()} procedure published by ${authorityLabel} for ${YEAR_LABEL} admissions.`,
+  inLanguage: 'en-IN',
+  totalTime: 'P1M',
+  step: calculator.formulaSteps.map((step) => ({
+    '@type': 'HowToStep',
+    position: step.stepNumber,
+    name: step.title,
+    text: `${step.description} ${step.formula}. ${step.example}.`,
+    url: `${canonical}#step-${step.stepNumber}`
+  }))
+} : null;
+
+const faqSchema = calculator.faqs.length > 0 ? {
+  '@type': 'FAQPage',
+  '@id': `${canonical}#faq`,
+  isPartOf: { '@id': pageId },
+  mainEntity: calculator.faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: { '@type': 'Answer', text: faq.answer }
+  }))
+} : null;
+
+const relatedSchema = relatedCalculators.length > 0 ? {
+  '@type': 'ItemList',
+  '@id': `${canonical}#related`,
+  name: `Calculators related to ${calculator.shortName}`,
+  numberOfItems: relatedCalculators.length,
+  itemListElement: relatedCalculators.map((rel, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: rel.name,
+    url: `${siteUrl}/calculator/${rel.slug}`
+  }))
+} : null;
+
+const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, howToSchema, faqSchema, relatedSchema]
+  .filter(Boolean)
+  .map(jsonSafe);
+
+const cleanTieBreakers = calculator.tieBreakingRules.map((rule) => rule.replace(/^\d+\.\s*/, ''));
+const hasEligibility = Array.isArray(calculator.eligibilityCriteria) && calculator.eligibilityCriteria.length > 0;
+const relatedByState = sameStateAlternatives.filter(
+  (alt) => !relatedCalculators.some((r) => r.id === alt.id)
+);
+const broaderAlternatives = CALCULATORS.filter(
+  (c) =>
+    c.id !== calculator.id &&
+    c.stateSlug !== calculator.stateSlug &&
+    c.categorySlug !== calculator.categorySlug
+).slice(0, 4);
+
+const sameExamFamily = getCalculatorsByCategory(calculator.categorySlug).length;
+const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
+---
+
+<Layout
+  title={title}
+  description={description}
+  keywords={keywords}
+  currentCategory={calculator.categorySlug}
+  extraSchema={extraSchema}
+>
+  <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+        <li><a href="/" class="rounded transition-colors hover:text-blue-600">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href={`/category/${calculator.categorySlug}`} class="rounded transition-colors hover:text-blue-600">{categoryHeading}</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="max-w-[16rem] truncate font-semibold text-slate-900">{calculator.shortName}</li>
+      </ol>
+    </div>
+  </nav>
+
+  <article class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+    <!-- Page header -->
+    <header>
+      <div class="flex flex-wrap items-center gap-2">
+        <a href={`/category/${calculator.categorySlug}`} class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-blue-600">
+          {calculator.category}
+        </a>
+        {stateMeta && (
+          <a href={`/state/${calculator.stateSlug}`} class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+            {calculator.state}
+          </a>
+        )}
+        <span class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
+          Academic Year {YEAR_LABEL}
+        </span>
+        <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+          Max score {calculator.maxScore}
+        </span>
+      </div>
+
+      <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+        {calculator.name} &mdash; {YEAR_LABEL}
+      </h1>
+
+      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-700 sm:text-base">
+        {calculator.summary}
+      </p>
+
+      <p class="mt-4 max-w-3xl text-sm leading-relaxed text-slate-700">
+        This page is a free, instant <strong class="font-semibold text-slate-900">{calculator.name}</strong> for
+        <strong class="font-semibold text-slate-900">{calculator.targetCourse}</strong> in
+        <strong class="font-semibold text-slate-900">{calculator.state}</strong>. Everything runs inside your browser using the
+        published admission rule of <strong class="font-semibold text-slate-900">{calculator.conductingAuthority}</strong> &mdash;
+        no registration, no login, and your marks are never sent to a server.
+      </p>
+
+      <dl class="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 rounded-2xl border border-slate-200 bg-white p-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <dt class="font-mono text-xs uppercase tracking-wider text-slate-500">Conducting authority</dt>
+          <dd class="mt-1 font-semibold text-slate-900">{calculator.conductingAuthority}</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-xs uppercase tracking-wider text-slate-500">Applicable state</dt>
+          <dd class="mt-1 font-semibold text-slate-900">{calculator.state}</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-xs uppercase tracking-wider text-slate-500">Target course</dt>
+          <dd class="mt-1 font-semibold text-slate-900">{calculator.targetCourse}</dd>
+        </div>
+        <div>
+          <dt class="font-mono text-xs uppercase tracking-wider text-slate-500">Maximum score</dt>
+          <dd class="mt-1 font-semibold text-slate-900">{calculator.maxScore} marks ({calculator.scoreUnit})</dd>
+        </div>
+      </dl>
+    </header>
+
+    <!-- Interactive calculator -->
+    <section id="calculator" aria-labelledby="calculator-heading" class="mt-8 scroll-mt-24">
+      <h2 id="calculator-heading" class="sr-only">Interactive {calculator.shortName} cutoff calculator</h2>
+      <CalculatorWidget calculator={calculator} />
+    </section>
+
+    <!-- What this score means -->
+    <section id="what-it-means" aria-labelledby="what-it-means-heading" class="mt-12 scroll-mt-24">
+      <h2 id="what-it-means-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        What this cutoff score means
+      </h2>
+      <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        <p>
+          The number this calculator produces is your <strong class="font-semibold text-slate-900">merit or cutoff score</strong>,
+          measured {calculator.scoreUnit === '% / 100' ? 'out of 100 as a percentage-equivalent' : `out of ${calculator.maxScore}`}.
+          {authorityLabel} does not publish a rank directly from your marks; it converts your marks into this single
+          normalised score and then ranks every eligible candidate against it.
+        </p>
+        <p>
+          During counselling, your score is compared against the <strong class="font-semibold text-slate-900">closing cutoff of each course and college</strong>.
+          If your score is at or above the closing score for a course in your preferred college list, you become eligible to be
+          offered that seat in that round. Cutoffs move every year because candidate volume, exam difficulty and the reservation
+          seat matrix all change, so treat this number as an estimate of your position &mdash; not a guaranteed admission.
+        </p>
+        <p>
+          The score alone is not enough. Your <strong class="font-semibold text-slate-900">reservation category</strong>, your
+          <strong class="font-semibold text-slate-900">domicile</strong>, the <strong class="font-semibold text-slate-900">quota</strong>
+          you are eligible for (such as management, minority, or government quota), and the <strong class="font-semibold text-slate-900">number of seats</strong>
+          available in that course all feed into the final allotment. If two candidates land on the same score, the tie-breaking
+          order published by {authorityLabel} decides who is placed higher.
+        </p>
+        {calculator.inputs.length > 1 && (
+          <p>
+            Because this rule is not a single exam score, it combines {calculator.inputs.length} separate inputs. Enter each value
+            exactly as printed on your own marksheet &mdash; the official formula only works on the same scale the authority used.
+          </p>
+        )}
+      </div>
+    </section>
+
+    <!-- Inputs required -->
+    <section id="inputs" aria-labelledby="inputs-heading" class="mt-12 scroll-mt-24">
+      <h2 id="inputs-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        What you need to enter
+      </h2>
+      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        {authorityLabel} builds this cutoff from the following {calculator.inputs.length === 1 ? 'value' : 'values'}.
+        Take the numbers from your own Class 12 marksheet or entrance scorecard &mdash; do not round or estimate them.
+      </p>
+      <div class="mt-5 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table class="w-full min-w-[40rem] text-left text-sm">
+          <caption class="sr-only">Inputs required to calculate the {calculator.name} cutoff</caption>
+          <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">Input</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Range</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Unit</th>
+              <th scope="col" class="px-4 py-3 font-semibold">What it means</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {calculator.inputs.map((input) => (
+              <tr>
+                <th scope="row" class="px-4 py-3 align-top font-semibold text-slate-900">
+                  <span class="font-mono text-xs font-medium text-blue-600">{input.shortLabel}</span>
+                  <span class="mt-0.5 block font-sans font-semibold">{input.name}</span>
+                </th>
+                <td class="px-4 py-3 align-top font-mono text-xs text-slate-700">
+                  {input.min} to {input.max}{input.step && input.step < 1 ? ` (step ${input.step})` : ''}
+                </td>
+                <td class="px-4 py-3 align-top font-mono text-xs text-slate-700">{input.unit ?? 'marks'}</td>
+                <td class="px-4 py-3 align-top text-slate-600">{input.hint ?? `${input.name} exactly as printed on your marksheet.`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs leading-relaxed text-slate-500">
+        Practical marks and internal assessment are included when the authority includes them. Check the official
+        brochure on {authorityDomain ? <a href={calculator.authorityUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 underline underline-offset-2">{authorityDomain}</a> : 'the official website'} before entering values.
+      </p>
+    </section>
+
+    <!-- Formula & step-by-step -->
+    <section id="formula" aria-labelledby="formula-heading" class="mt-12 scroll-mt-24">
+      <h2 id="formula-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        Formula &amp; step-by-step breakdown
+      </h2>
+
+      <div class="mt-4 overflow-hidden rounded-xl border border-blue-200 bg-blue-50 p-5">
+        <h3 class="font-mono text-xs uppercase tracking-wider text-blue-700">Governing equation</h3>
+        <p class="mt-2 overflow-x-auto font-mono text-sm font-semibold text-slate-900 sm:text-base">
+          <code class="whitespace-pre">{calculator.verifiedFormulaText}</code>
+        </p>
+        <p class="mt-3 text-xs text-slate-600">
+          Final merit score: <strong class="font-semibold text-slate-900">{calculator.maxScore} marks</strong>
+          ({calculator.scoreUnit}). This is the exact rule published by {authorityLabel} for {YEAR_LABEL} admissions.
+        </p>
+      </div>
+
+      {calculator.formulaDisplay && (
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+          <h3 class="font-mono text-xs uppercase tracking-wider text-slate-500">Printed notation</h3>
+          <p class="mt-2 overflow-x-auto font-mono text-xs text-slate-700">
+            <code class="whitespace-pre">{calculator.formulaDisplay}</code>
+          </p>
+          <p class="mt-2 text-xs text-slate-500">
+            Exactly as written in the official admission brochure. Shown as plain text for clarity.
+          </p>
+        </div>
+      )}
+
+      <h3 id="steps-heading" class="mt-8 text-lg font-semibold text-slate-900">
+        Step-by-step calculation
+      </h3>
+      <p class="mt-2 text-sm leading-relaxed text-slate-700">
+        Work through these {calculator.formulaSteps.length} steps in order and you will arrive at the same score this page
+        calculates for you. Each step is the published rule, not an approximation.
+      </p>
+      <ol class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {calculator.formulaSteps.map((step) => (
+          <li id={`step-${step.stepNumber}`} class="scroll-mt-24 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex items-start gap-2.5">
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 font-mono text-xs font-semibold text-white">
+                {step.stepNumber}
+              </span>
+              <h4 class="text-sm font-semibold text-slate-900">{step.title}</h4>
+            </div>
+            <p class="mt-2.5 text-sm leading-relaxed text-slate-600">{step.description}</p>
+            <p class="mt-2.5 overflow-x-auto rounded-lg bg-slate-50 px-3 py-2 font-mono text-xs text-slate-900">
+              <code class="whitespace-pre">{step.formula}</code>
+            </p>
+            <p class="mt-2 text-xs text-slate-500">
+              Example: <span class="font-mono text-slate-700">{step.example}</span>
+            </p>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- Official rules & eligibility -->
+    <section id="rules" aria-labelledby="rules-heading" class="mt-12 scroll-mt-24">
+      <h2 id="rules-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        Official rules &amp; eligibility
+      </h2>
+      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        These are the conditions published by {authorityLabel}. A strong cutoff score does not help if you fail any of them.
+      </p>
+
+      <div class="mt-5 space-y-3">
+        {calculator.officialRules.map((rule) => (
+          <p class="flex items-start gap-2.5 text-sm leading-relaxed text-slate-700">
+            <svg class="mt-1 shrink-0 text-emerald-600" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>{rule}</span>
+          </p>
+        ))}
+      </div>
+
+      {hasEligibility && (
+        <div class="mt-6 border-t border-slate-200 pt-6">
+          <h3 class="text-base font-semibold text-slate-900">Category-wise qualifying marks</h3>
+          <ul class="mt-3 space-y-2.5">
+            {calculator.eligibilityCriteria!.map((crit) => (
+              <li class="flex items-start gap-2.5 text-sm leading-relaxed text-slate-700">
+                <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600"></span>
+                <span>{crit}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="mt-4 text-xs leading-relaxed text-slate-500">
+            Your category certificate must be issued by the competent authority in the state where you are applying. A
+            certificate for a different state or a community not notified in that state will not be accepted during counselling.
+          </p>
+        </div>
+      )}
+    </section>
+
+    <!-- Tie-breakers -->
+    <section id="tie-breakers" aria-labelledby="tie-breakers-heading" class="mt-12 scroll-mt-24">
+      <h2 id="tie-breakers-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        Tie-breaking order
+      </h2>
+      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        When two or more applicants land on exactly the same cutoff score, {authorityLabel} resolves the rank position
+        using the following hierarchy, in order:
+      </p>
+      <ol class="mt-5 space-y-2.5">
+        {cleanTieBreakers.map((rule, idx) => (
+          <li class="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
+            <span class="font-mono text-xs font-semibold text-slate-400">{idx + 1}.</span>
+            <span class="leading-relaxed">{rule}</span>
+          </li>
+        ))}
+      </ol>
+      <p class="mt-4 text-xs leading-relaxed text-slate-500">
+        Your final rank also depends on your reservation category, domicile and the seats available in the round. Two
+        candidates with identical scores and identical subject marks can still finish in different positions because a
+        reserved candidate is ranked within the reserved list for that course.
+      </p>
+    </section>
+
+    <!-- FAQs -->
+    {calculator.faqs.length > 0 && (
+      <section id="faqs" aria-labelledby="faqs-heading" class="mt-12 scroll-mt-24">
+        <h2 id="faqs-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          {calculator.shortName} questions answered
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+          The questions students ask most about this specific admission rule.
+        </p>
+        <div class="mt-5 space-y-3">
+          {calculator.faqs.map((faq) => (
+            <details class="group rounded-xl border border-slate-200 bg-white">
+              <summary class="flex min-h-[3rem] cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
+                <span class="leading-snug">{faq.question}</span>
+                <svg class="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div class="border-t border-slate-200 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                <p>{faq.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- How this compares -->
+    {comparisonCalculators.length > 0 && (
+      <section id="compare" aria-labelledby="compare-heading" class="mt-12 scroll-mt-24">
+        <h2 id="compare-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          How {calculator.shortName} compares to other entrance exams
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+          Cutoff scores are not comparable across exams because each authority normalises differently. What you can compare is
+          the structure of each rule: the maximum score, how many inputs it takes, and how the components are weighted.
+        </p>
+        <div class="mt-5 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table class="w-full min-w-[42rem] text-left text-sm">
+            <caption class="sr-only">Comparison of admission cutoff rules across entrance exams</caption>
+            <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-semibold">Calculator</th>
+                <th scope="col" class="px-4 py-3 font-semibold">State</th>
+                <th scope="col" class="px-4 py-3 font-semibold">Max score</th>
+                <th scope="col" class="px-4 py-3 font-semibold">Weighting rule</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr class="bg-blue-50/60">
+                <th scope="row" class="px-4 py-3 align-top font-semibold text-blue-900">
+                  {calculator.shortName}
+                  <span class="mt-0.5 block font-sans text-xs font-normal text-blue-800">This page</span>
+                </th>
+                <td class="px-4 py-3 align-top text-slate-700">{calculator.state}</td>
+                <td class="px-4 py-3 align-top font-mono text-xs text-slate-700">{calculator.maxScore} {calculator.scoreUnit}</td>
+                <td class="px-4 py-3 align-top font-mono text-xs text-slate-700">{calculator.verifiedFormulaText}</td>
+              </tr>
+              {comparisonCalculators.map((other) => (
+                <tr>
+                  <th scope="row" class="px-4 py-3 align-top font-semibold text-slate-900">
+                    <a href={`/calculator/${other.slug}`} class="underline decoration-slate-300 underline-offset-2 hover:text-blue-600 hover:decoration-blue-600">
+                      {other.shortName}
+                    </a>
+                  </th>
+                  <td class="px-4 py-3 align-top text-slate-700">{other.state}</td>
+                  <td class="px-4 py-3 align-top font-mono text-xs text-slate-700">{other.maxScore} {other.scoreUnit}</td>
+                  <td class="px-4 py-3 align-top font-mono text-xs text-slate-700">{other.verifiedFormulaText}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )}
+
+    <!-- What's next -->
+    <section id="next-steps" aria-labelledby="next-steps-heading" class="mt-12 scroll-mt-24">
+      <h2 id="next-steps-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        What to do after you get your cutoff
+      </h2>
+      <ol class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <li class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-900">1. Compare against last year's closing cutoff</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-600">
+            Find the closing score for each of your preferred colleges and branches for {YEAR_LABEL}, then check whether your
+            score clears it. Closing cutoffs, not opening cutoffs, are the realistic benchmark.
+          </p>
+        </li>
+        <li class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-900">2. Register for counselling on the official portal</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-600">
+            Only {authorityLabel} can allot you a seat. Complete the counselling registration on the official website, keep the
+            application number safe, and pay the counselling fee within the published deadline.
+          </p>
+        </li>
+        <li class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-900">3. Get your certificates ready early</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-600">
+            Community, nativity, income and disability certificates take weeks. Apply through your school or the
+            taluk office as soon as the certificate window opens, because you cannot choose a preferred college without them.
+          </p>
+        </li>
+        <li class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-900">4. Build a wide preference list</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-600">
+            {authorityLabel} usually allots in rounds. A long, realistic preference list of colleges and branches protects you if
+            your first choice is filled in an earlier round.
+          </p>
+        </li>
+        <li class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-900">5. Keep a second option in a nearby state</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-600">
+            {sameStateCount > 1
+              ? `We already publish ${sameStateCount} verified calculators for ${calculator.state}, so you can check a backup admission route in the same counselling system.`
+              : `Cutoff scores move every year, so keep a realistic backup course or college ready rather than betting on one target score.`}
+          </p>
+        </li>
+        <li class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-900">6. Save or print your result</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-600">
+            Use the print or copy button above to keep a record of the score and the inputs you used. It helps when filling the
+            counselling form and when checking with a mentor.
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Related calculators -->
+    {relatedCalculators.length > 0 && (
+      <section id="related" aria-labelledby="related-heading" class="mt-12 scroll-mt-24">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="related-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Related admission cutoff calculators
+            </h2>
+            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-700">
+              Other published rules from {calculator.state === 'All India' ? 'the same exam family' : `${calculator.state} or the same course family`}.
+              {sameExamFamily > 1 && ` There ${sameExamFamily === 2 ? 'is' : 'are'} ${sameExamFamily} verified calculators in the ${categoryBase.toLowerCase()} family, and ${sameStateCount} for ${calculator.state}.`}
+            </p>
+          </div>
+          <a href={`/category/${calculator.categorySlug}`} class="btn-ghost-soft text-sm">
+            All {categoryBase} calculators
+          </a>
+        </div>
+        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {relatedCalculators.map((related) => (
+            <CalculatorCard calculator={related} />
+          ))}
+        </div>
+
+        {relatedByState.length > 0 && (
+          <div class="mt-8">
+            <h3 class="text-base font-semibold text-slate-900">More rules for {calculator.state}</h3>
+            <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {relatedByState.map((alt) => (
+                <li>
+                  <a href={`/calculator/${alt.slug}`} class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm transition-colors hover:border-blue-200 hover:bg-blue-50">
+                    <span class="font-medium text-slate-900">{alt.name}</span>
+                    <span class="shrink-0 font-mono text-xs text-slate-500">{alt.scoreUnit}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+    )}
+
+    {broaderAlternatives.length > 0 && (
+      <section id="other-states" aria-labelledby="other-states-heading" class="mt-12 scroll-mt-24">
+        <h2 id="other-states-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Looking at a different state?
+        </h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-700">
+          If you are also applying outside {calculator.state}, these admission rules are governed by different authorities with
+          different weightage formulas, so their cutoff scores are not directly comparable with yours.
+        </p>
+        <ul class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {broaderAlternatives.map((alt) => (
+            <li>
+              <a href={`/calculator/${alt.slug}`} class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm transition-colors hover:border-blue-200 hover:bg-blue-50">
+                <span>
+                  <span class="block font-medium text-slate-900">{alt.shortName}</span>
+                  <span class="block text-xs text-slate-500">{alt.state} &middot; {alt.targetCourse}</span>
+                </span>
+                <span class="shrink-0 font-mono text-xs text-slate-500">{alt.maxScore}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-4 text-sm text-slate-700">
+          Browse by state:{' '}
+          {STATES.filter((s) => s.slug !== calculator.stateSlug)
+            .map((s, i, arr) => (
+              <>
+                <a href={`/state/${s.slug}`} class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">{s.name}</a>
+                {i < arr.length - 1 ? <span>, </span> : null}
+              </>
+            ))}
+        </p>
+      </section>
+    )}
+
+    <!-- Verify + trust -->
+    <section id="verify" aria-labelledby="verify-heading" class="mt-12 scroll-mt-24">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
+        <h2 id="verify-heading" class="text-lg font-bold text-slate-900">
+          Verify on the official website
+        </h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-700">
+          This calculator reproduces the published rule. It is not an official service and it cannot allot you a seat.
+          Before you pay any fee or submit a counselling application, confirm the rule and the current admission schedule
+          directly with {authorityLabel}.
+        </p>
+        {calculator.authorityUrl && (
+          <a
+            href={calculator.authorityUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-accent mt-4 w-full sm:w-auto"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" x2="21" y1="14" y2="3" />
+            </svg>
+            <span>Official site: {authorityDomain}</span>
+            <span class="sr-only">(opens {authorityLabel} in a new tab)</span>
+          </a>
+        )}
+        <p class="mt-3 text-xs leading-relaxed text-slate-600">
+          If the official brochure and this page ever disagree, the official brochure is correct. Tell us and we will fix it &mdash;
+          see <a href="/about#how-formulas-are-verified" class="font-medium text-blue-700 underline underline-offset-2">how formulas are verified</a>
+          or <a href="/contact" class="font-medium text-blue-700 underline underline-offset-2">report a correction</a>.
+        </p>
+        <ul class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-600">
+          <li><a href="/disclaimer" class="font-medium underline underline-offset-2">Official disclaimer</a></li>
+          <li><a href="/privacy" class="font-medium underline underline-offset-2">Privacy policy</a></li>
+          <li><a href="/about" class="font-medium underline underline-offset-2">About All Cut Off</a></li>
+          <li><a href="/contact" class="font-medium underline underline-offset-2">Contact</a></li>
+        </ul>
+      </div>
+    </section>
+  </article>
+</Layout>

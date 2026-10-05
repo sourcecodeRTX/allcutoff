@@ -1,0 +1,950 @@
+---
+import { CALCULATORS } from '../data/calculators';
+
+/* ------------------------------------------------------------------------- *
+ * Exam switcher labels — the spec wording students actually search for.
+ * ------------------------------------------------------------------------- */
+const EXAM_LABELS: Record<string, string> = {
+  'tnea-engineering': 'TNEA Engineering (Common PCM 200-Mark Cutoff)',
+  'kcet-engineering': 'KCET Engineering',
+  'neet-ug-medical': 'NEET UG Medical',
+  'ap-ts-eapcet': 'AP/TS EAPCET',
+  'tnau-agriculture': 'TNAU Agriculture',
+  'keam-engineering': 'KEAM Kerala',
+  'gujcet-acpc': 'GUJCET ACPC',
+  'mht-cet-engineering': 'MHT CET',
+  'cuet-du-admission': 'DU CUET',
+  'tn-paramedical': 'TN Paramedical',
+  'tanuvas-veterinary': 'TANUVAS Veterinary',
+  'tngasa-arts-science': 'TNGASA Arts & Science',
+};
+
+const DEFAULT_ID = 'tnea-engineering';
+
+/* ------------------------------------------------------------------------- *
+ * "Custom / General % Mode" — client-only synthetic calculator.
+ * Deliberately NOT added to src/data/calculators.ts: a registry entry there
+ * would generate a phantom /calculator/custom-general page and break the
+ * slug/count assertions in the test suite.
+ * ------------------------------------------------------------------------- */
+const CUSTOM_CONFIG = {
+  id: 'custom-general',
+  slug: 'custom-general',
+  name: 'Custom / General % Mode',
+  shortName: 'Custom / General %',
+  category: 'Custom',
+  categorySlug: 'custom',
+  exam: 'General percentage comparison mode',
+  state: 'Universal',
+  stateSlug: 'universal',
+  targetCourse: 'Any course or university',
+  academicYear: '2025 - 2026',
+  conductingAuthority: 'No conducting body — your own target',
+  maxScore: 100,
+  scoreUnit: '%',
+  summary:
+    'Compare your own score against any target cutoff on a simple 0-100 scale. Useful when an institute announces a plain percentage requirement instead of a weighted merit score.',
+  verifiedFormulaText: 'Delta = Your Score - Target Cutoff  |  Status = Your Score >= Target Cutoff',
+  inputs: [
+    {
+      id: 'percentage',
+      name: 'Your Percentage / Score',
+      shortLabel: 'Percentage',
+      min: 0,
+      max: 100,
+      step: 0.1,
+      defaultValue: 75,
+      unit: '%',
+      hint: 'Enter your score on whatever scale the institute quoted (0-100)'
+    },
+    {
+      id: 'target',
+      name: 'Target Cutoff You Want',
+      shortLabel: 'Target',
+      min: 0,
+      max: 100,
+      step: 0.1,
+      defaultValue: 80,
+      unit: '%',
+      hint: 'The cutoff published by the institute, college or course page'
+    }
+  ],
+  officialRules: [
+    'This mode applies no government weighting rule. It only subtracts your score from the target you type in.'
+  ],
+  tieBreakingRules: ['No tie-breaker applies — this is a straight numeric comparison.'],
+  calculate: (values: Record<string, number>) => {
+    const clamp = (v: unknown, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number(v) || 0));
+    const pct = clamp(values?.percentage, 0, 100);
+    const target = clamp(values?.target, 0, 100);
+    const gap = Number((pct - target).toFixed(2));
+    const ok = pct >= target;
+
+    return {
+      totalCutoff: Number(pct.toFixed(2)),
+      breakdown: [
+        { label: 'Your score', score: pct, max: 100, note: 'Entered value' },
+        { label: 'Target cutoff', score: target, max: 100, note: 'Comparison threshold' }
+      ],
+      remarks:
+        `Your score is ${pct.toFixed(2)}% against a target cutoff of ${target.toFixed(2)}% — ` +
+        `${ok ? 'a surplus of ' + gap.toFixed(2) : 'a shortfall of ' + Math.abs(gap).toFixed(2)} points.`,
+      qualifyingStatus: {
+        isQualified: ok,
+        label: ok ? 'Above Target Cutoff' : 'Below Target Cutoff',
+        details: ok
+          ? 'You clear the target you entered by ' + gap.toFixed(2) + ' points.'
+          : 'You fall short of the target you entered by ' + Math.abs(gap).toFixed(2) + ' points.'
+      }
+    };
+  }
+};
+
+const ORDERED_IDS = [
+  DEFAULT_ID,
+  'kcet-engineering',
+  'neet-ug-medical',
+  'ap-ts-eapcet',
+  'tnau-agriculture',
+  'keam-engineering',
+  'gujcet-acpc',
+  'mht-cet-engineering',
+  'cuet-du-admission',
+  'tn-paramedical',
+  'tanuvas-veterinary',
+  'tngasa-arts-science',
+  CUSTOM_CONFIG.id
+];
+
+/** Stable `<select>` ordering: grouped by category, TNEA first, Custom last. */
+const GROUP_ORDER = ['Engineering', 'State Entrance', 'Medical', 'Agriculture', 'College/University Admission', 'Custom'];
+const grouped = GROUP_ORDER.map((category) => ({
+  category,
+  items: [
+    ...CALCULATORS.filter((c) => c.category === category).sort(
+      (a, b) => ORDERED_IDS.indexOf(a.id) - ORDERED_IDS.indexOf(b.id)
+    ),
+    ...(category === 'Custom' ? [CUSTOM_CONFIG] : [])
+  ].map((c) => ({ id: c.id, label: EXAM_LABELS[c.id] ?? c.name }))
+})).filter((g) => g.items.length > 0);
+
+/* Slim payload: only the fields the hero UI reads, plus `fn` (source text). */
+const SLIM_FIELDS = [
+  'id',
+  'slug',
+  'name',
+  'shortName',
+  'category',
+  'categorySlug',
+  'exam',
+  'state',
+  'stateSlug',
+  'targetCourse',
+  'academicYear',
+  'conductingAuthority',
+  'authorityUrl',
+  'maxScore',
+  'scoreUnit',
+  'summary',
+  'inputs',
+  'verifiedFormulaText',
+  'officialRules',
+  'tieBreakingRules'
+] as const;
+
+function slim(c: (typeof CALCULATORS)[number]) {
+  const out: Record<string, unknown> = {};
+  for (const key of SLIM_FIELDS) out[key] = c[key];
+  out.fn = c.calculate.toString();
+  return out;
+}
+
+const registry: Record<string, Record<string, unknown>> = {
+  ...Object.fromEntries(CALCULATORS.map((c) => [c.id, slim(c)])),
+  [CUSTOM_CONFIG.id]: {
+    id: CUSTOM_CONFIG.id,
+    slug: CUSTOM_CONFIG.slug,
+    name: CUSTOM_CONFIG.name,
+    shortName: CUSTOM_CONFIG.shortName,
+    category: CUSTOM_CONFIG.category,
+    categorySlug: CUSTOM_CONFIG.categorySlug,
+    exam: CUSTOM_CONFIG.exam,
+    state: CUSTOM_CONFIG.state,
+    stateSlug: CUSTOM_CONFIG.stateSlug,
+    targetCourse: CUSTOM_CONFIG.targetCourse,
+    academicYear: CUSTOM_CONFIG.academicYear,
+    conductingAuthority: CUSTOM_CONFIG.conductingAuthority,
+    maxScore: CUSTOM_CONFIG.maxScore,
+    scoreUnit: CUSTOM_CONFIG.scoreUnit,
+    summary: CUSTOM_CONFIG.summary,
+    inputs: CUSTOM_CONFIG.inputs,
+    verifiedFormulaText: CUSTOM_CONFIG.verifiedFormulaText,
+    officialRules: CUSTOM_CONFIG.officialRules,
+    tieBreakingRules: CUSTOM_CONFIG.tieBreakingRules,
+    fn: CUSTOM_CONFIG.calculate.toString()
+  }
+};
+
+const tabs = ORDERED_IDS.map((id) => ({
+  id,
+  label: EXAM_LABELS[id] ?? (id === CUSTOM_CONFIG.id ? CUSTOM_CONFIG.name : id)
+}));
+
+const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[0];
+---
+
+<div id="hero-calculator" data-default-id={DEFAULT_ID} class="scroll-mt-24">
+  <form class="surface-card overflow-hidden p-4 sm:p-6" id="hero-calc-form" onsubmit="return false;">
+    <!-- ── Header ─────────────────────────────────────────────────────── -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
+        <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+        Live Calculator
+      </span>
+      <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs uppercase tracking-wider text-slate-600">
+        <span id="hero-calc-state">{defaultCalc.state}</span>
+      </span>
+      <span class="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600">
+        Max <span id="hero-calc-max-header">{defaultCalc.maxScore}</span>
+      </span>
+    </div>
+
+    <h2 class="mt-3 text-lg font-bold leading-snug text-slate-900 sm:text-xl" id="hero-calc-title">
+      {EXAM_LABELS[DEFAULT_ID]}
+    </h2>
+
+    <!-- ── Exam selector: native select (always) + pill tabs (sm+) ────── -->
+    <div class="mt-4">
+      <label for="hero-calc-select" class="block text-xs font-semibold text-slate-700">Choose your exam or admission</label>
+      <div class="relative mt-1.5">
+        <select
+          id="hero-calc-select"
+          class="calc-input focus-ring min-h-11 appearance-none pr-10 text-sm"
+        >
+          {grouped.map((group) => (
+            <optgroup label={group.category}>
+              {group.items.map((item) => (
+                <option value={item.id} selected={item.id === DEFAULT_ID}>{item.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <svg
+          class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </div>
+
+      <div
+        id="hero-calc-tabs"
+        class="mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex"
+        role="tablist"
+        aria-label="Pick an entrance exam to calculate"
+      >
+        {tabs.map((tab) => (
+          <button
+            type="button"
+            role="tab"
+            id={`hero-tab-${tab.id}`}
+            data-hero-tab={tab.id}
+            class="btn-category-pill focus-ring shrink-0"
+            aria-selected={tab.id === DEFAULT_ID ? 'true' : 'false'}
+            tabindex={tab.id === DEFAULT_ID ? 0 : -1}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- ── Inputs (rebuilt on exam switch) ───────────────────────────── -->
+    <div id="hero-calc-inputs" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
+
+    <!-- ── Result ─────────────────────────────────────────────────────── -->
+    <section class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-labelledby="hero-result-label">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div class="min-w-0">
+          <span id="hero-result-label" class="font-mono-eyebrow block text-xs text-slate-500">Calculated Cutoff Score</span>
+          <div class="mt-1 flex flex-wrap items-baseline gap-x-2">
+            <span id="hero-total" class="text-3xl font-extrabold tracking-tight tabular-nums text-slate-900 sm:text-4xl">—</span>
+            <span id="hero-unit" class="text-xs font-semibold text-slate-600">{defaultCalc.scoreUnit}</span>
+          </div>
+        </div>
+        <div class="text-left sm:text-right">
+          <span class="font-mono-eyebrow block text-xs text-slate-500">Percent of Max</span>
+          <span id="hero-percent" class="text-xl font-bold tabular-nums text-slate-900 sm:text-2xl">—</span>
+        </div>
+      </div>
+
+      <div
+        id="hero-gauge" class="score-gauge-track mt-4" role="progressbar"
+        aria-label="Cutoff score progress" aria-valuemin="0" aria-valuemax={defaultCalc.maxScore} aria-valuenow="0"
+      >
+        <div id="hero-gauge-fill" class="score-gauge-fill" data-band="green" style="width:0%"></div>
+      </div>
+
+      <p id="hero-delta" class="mt-2 hidden text-xs font-semibold"></p>
+
+      <p id="hero-remarks" class="mt-3 text-sm leading-relaxed text-slate-700"></p>
+
+      <div id="hero-status" class="status-pill-green mt-3" role="status" aria-live="polite">
+        <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true"></span>
+        <span class="min-w-0">
+          <span id="hero-status-label" class="block text-sm font-semibold">Calculating…</span>
+          <span id="hero-status-detail" class="mt-0.5 block text-xs opacity-90">Adjust any value to see the live result.</span>
+        </span>
+      </div>
+
+      <p id="hero-error" class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 p-3 text-sm leading-relaxed text-red-900">
+        We could not evaluate this formula. Check the values you entered, or reload the page and try again.
+      </p>
+    </section>
+
+    <!-- ── Breakdown ──────────────────────────────────────────────────── -->
+    <div class="mt-4">
+      <h3 class="font-mono-eyebrow text-xs text-slate-500">Score Breakdown</h3>
+      <ul id="hero-breakdown" class="mt-2 space-y-2"></ul>
+    </div>
+
+    <!-- ── Formula + authority ────────────────────────────────────────── -->
+    <p class="mt-4 rounded-lg border border-slate-200 bg-white px-3 py-2.5 break-words font-mono text-xs leading-relaxed text-slate-800">
+      <span class="font-mono-eyebrow block text-slate-500">Official formula</span>
+      <span id="hero-formula">{defaultCalc.verifiedFormulaText}</span>
+    </p>
+
+    <div class="mt-4 flex flex-col gap-2.5">
+      <a
+        id="hero-full-link"
+        href={`/calculator/${defaultCalc.slug}`}
+        class="btn-accent focus-ring w-full"
+      >
+        View Full Official Rules &amp; Tie-Breaker Page
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"></path>
+          <path d="m12 5 7 7-7 7"></path>
+        </svg>
+      </a>
+
+      <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
+        <span class="font-medium text-slate-700">Conducted by <span id="hero-authority">{defaultCalc.conductingAuthority}</span></span>
+        <a
+          id="hero-authority-link"
+          href={defaultCalc.authorityUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="focus-ring inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 font-semibold text-blue-700 hover:bg-slate-50"
+        >
+          Verify at official source
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h6v6"></path>
+            <path d="M10 14 21 3"></path>
+            <path d="M18 13v6a2 2 0 1 1-2 2H5a2 2 0 1 1-2-2V8a2 2 0 1 1 2-2h6"></path>
+          </svg>
+        </a>
+      </p>
+    </div>
+
+    <p class="mt-4 text-xs text-slate-500">
+      Calculated on <span class="font-semibold text-slate-700">All Cut Off</span> — allcutoff.com
+    </p>
+  </form>
+
+  <div id="hero-calc-flash" class="pointer-events-none -mt-2 rounded-xl border border-blue-300 bg-blue-50/70 px-3 py-2 text-center text-xs font-semibold text-blue-900 opacity-0 transition-opacity duration-300"></div>
+</div>
+
+<style>
+  #hero-calculator [id^='hero-tab-'][aria-selected='true'] {
+    background-color: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-canvas-elevated);
+  }
+
+  #hero-calculator [role='tab'] {
+    white-space: nowrap;
+  }
+</style>
+
+<script define:vars={{ registry, DEFAULT_ID, CUSTOM_ID: CUSTOM_CONFIG.id }}>
+  (function () {
+    'use strict';
+
+    var root = document.getElementById('hero-calculator');
+    if (!root) return;
+
+    /* ---------------- rebuild the real calculate() functions ----------- */
+    var calculators = {};
+    var buildFailed = false;
+
+    try {
+      calculators = Object.fromEntries(
+        Object.entries(registry).map(function (pair) {
+          var src = pair[1];
+          var entry = {};
+          Object.keys(src).forEach(function (key) {
+            if (key !== 'fn') entry[key] = src[key];
+          });
+          entry.calculate = new Function('values', 'return (' + src.fn + ')(values);');
+          return [pair[0], entry];
+        })
+      );
+    } catch (err) {
+      buildFailed = true;
+    }
+
+    /* ---------------- element lookups --------------------------------- */
+    var select = root.querySelector('#hero-calc-select');
+    var tabsWrap = root.querySelector('#hero-calc-tabs');
+    var inputsWrap = root.querySelector('#hero-calc-inputs');
+    var titleEl = root.querySelector('#hero-calc-title');
+    var stateEl = root.querySelector('#hero-calc-state');
+    var maxHeaderEl = root.querySelector('#hero-calc-max-header');
+    var totalEl = root.querySelector('#hero-total');
+    var unitEl = root.querySelector('#hero-unit');
+    var percentEl = root.querySelector('#hero-percent');
+    var gauge = root.querySelector('#hero-gauge');
+    var gaugeFill = root.querySelector('#hero-gauge-fill');
+    var deltaEl = root.querySelector('#hero-delta');
+    var remarksEl = root.querySelector('#hero-remarks');
+    var statusEl = root.querySelector('#hero-status');
+    var statusLabel = root.querySelector('#hero-status-label');
+    var statusDetail = root.querySelector('#hero-status-detail');
+    var errorEl = root.querySelector('#hero-error');
+    var breakdownEl = root.querySelector('#hero-breakdown');
+    var formulaEl = root.querySelector('#hero-formula');
+    var fullLink = root.querySelector('#hero-full-link');
+    var authorityEl = root.querySelector('#hero-authority');
+    var authorityLink = root.querySelector('#hero-authority-link');
+    var flashEl = root.querySelector('#hero-calc-flash');
+
+    if (!select || !inputsWrap || !totalEl) return;
+
+    var activeId = DEFAULT_ID;
+    var isCustom = function (id) {
+      return id === CUSTOM_ID;
+    };
+
+    /* ---------------- helpers ------------------------------------------ */
+    function num(value) {
+      var parsed = parseFloat(value);
+      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
+    }
+
+    function fmt(value) {
+      var rounded = Number(num(value).toFixed(3));
+      return String(rounded);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function decimalsOf(step) {
+      var parts = String(step == null ? 1 : step).split('.');
+      return parts[1] ? parts[1].length : 0;
+    }
+
+    function roundToStep(value, step) {
+      var places = decimalsOf(step);
+      var factor = Math.pow(10, places);
+      return Math.round(num(value) * factor) / factor;
+    }
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function safeInputs(calc) {
+      return Array.isArray(calc && calc.inputs) ? calc.inputs : [];
+    }
+
+    function numInput(id) {
+      return inputsWrap.querySelector('#hero-num-' + CSS.escape(id));
+    }
+
+    function rangeInput(id) {
+      return inputsWrap.querySelector('#hero-range-' + CSS.escape(id));
+    }
+
+    function syncSlider(slider) {
+      if (!slider) return;
+      var min = num(slider.min);
+      var max = num(slider.max);
+      var span = max - min;
+      var ratio = span > 0 ? (num(slider.value) - min) / span : 0;
+      slider.style.setProperty('--slider-progress', clamp(ratio * 100, 0, 100).toFixed(2) + '%');
+    }
+
+    /* ---------------- input row builder -------------------------------- */
+    function buildInputs(calc) {
+      var html = '';
+
+      safeInputs(calc).forEach(function (input) {
+        var step = input.step == null ? 1 : input.step;
+        var labelId = 'hero-label-' + input.id;
+        var hintId = 'hero-hint-' + input.id;
+        var decimals = decimalsOf(step);
+        var initial = clamp(num(input.defaultValue), num(input.min), num(input.max));
+        var stepper = step < 1 ? step : Math.max(1, Math.min(10, step));
+
+        html +=
+          '<div class="rounded-xl border border-slate-200 bg-white p-3.5 focus-within:border-blue-500">' +
+          '<div class="flex items-start justify-between gap-2">' +
+          '<label id="' + labelId + '" for="hero-num-' + esc(input.id) + '" class="text-sm font-semibold text-slate-900">' +
+          esc(input.name) +
+          '</label>' +
+          '<span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600">' +
+          esc(input.unit || 'Max ' + input.max) +
+          '</span></div>' +
+          '<div class="mt-2.5 flex items-center gap-2">' +
+          '<button type="button" class="stepper-btn focus-ring" data-hero-step="-' + esc(stepper) + '" data-hero-for="' +
+          esc(input.id) + '" aria-label="Decrease ' + esc(input.name) + '">&minus;</button>' +
+          '<input type="number" id="hero-num-' + esc(input.id) + '" name="' + esc(input.id) + '" min="' +
+          esc(input.min) + '" max="' + esc(input.max) + '" step="' + esc(step) + '" value="' +
+          esc(initial) + '" inputmode="' + (decimals > 0 ? 'decimal' : 'numeric') + '"' +
+          (input.hint ? ' aria-describedby="' + hintId + '"' : '') +
+          ' class="calc-input focus-ring text-center font-mono text-base font-semibold tabular-nums" />' +
+          '<button type="button" class="stepper-btn focus-ring" data-hero-step="' + esc(stepper) + '" data-hero-for="' +
+          esc(input.id) + '" aria-label="Increase ' + esc(input.name) + '">+</button>' +
+          '</div>' +
+          '<input type="range" id="hero-range-' + esc(input.id) + '" min="' + esc(input.min) + '" max="' +
+          esc(input.max) + '" step="' + esc(step) + '" value="' + esc(initial) + '" class="calc-slider focus-ring mt-1.5" aria-labelledby="' +
+          labelId + '" />' +
+          '<p class="mt-0.5 flex items-baseline justify-between gap-2 font-mono text-xs text-slate-500">' +
+          '<span>Min ' + esc(input.min) + '</span><span>Max ' + esc(input.max) + '</span></p>';
+
+        if (input.hint) {
+          html += '<p id="' + hintId + '" class="mt-1.5 text-xs leading-relaxed text-slate-600">' + esc(input.hint) + '</p>';
+        }
+
+        html += '</div>';
+      });
+
+      inputsWrap.innerHTML = html;
+    }
+
+    function refreshSteppers() {
+      Array.prototype.forEach.call(inputsWrap.querySelectorAll('[data-hero-step]'), function (btn) {
+        var el = numInput(btn.getAttribute('data-hero-for'));
+        if (!el) return;
+        var value = el.value === '' ? num(el.min) : num(el.value);
+        var delta = num(btn.getAttribute('data-hero-step'));
+        btn.disabled = delta < 0 ? value <= num(el.min) : value >= num(el.max);
+      });
+    }
+
+    function nudge(id, delta) {
+      var el = numInput(id);
+      if (!el) return;
+      var min = num(el.min);
+      var max = num(el.max);
+      var step = num(el.step) || 1;
+      var current = el.value === '' ? min : num(el.value);
+      var next = roundToStep(clamp(current + delta, min, max), step);
+
+      el.value = String(next);
+      var slider = rangeInput(id);
+      if (slider) {
+        slider.value = String(next);
+        syncSlider(slider);
+      }
+      refreshSteppers();
+      run();
+    }
+
+    function readValues(calc) {
+      var values = {};
+      safeInputs(calc).forEach(function (input) {
+        var el = numInput(input.id);
+        var step = input.step == null ? 1 : input.step;
+        var raw = el && el.value !== '' ? num(el.value) : num(input.defaultValue);
+        values[input.id] = roundToStep(clamp(raw, num(input.min), num(input.max)), step);
+      });
+      return values;
+    }
+
+    /* ---------------- banding + render --------------------------------- */
+    function resolveBand(result, ratio) {
+      var status = result && result.qualifyingStatus;
+      if (!status) return ratio >= 0.8 ? 'amber' : 'red';
+      if (status.isQualified === false) return 'red';
+      var text = ((status.label || '') + ' ' + (status.details || '')).toLowerCase();
+      if (/borderline|competitive|reserved|moderate/.test(text)) return 'amber';
+      return ratio >= 0.8 ? 'green' : 'amber';
+    }
+
+    function showError(err) {
+      if (errorEl) errorEl.classList.remove('hidden');
+      totalEl.textContent = '—';
+      if (percentEl) percentEl.textContent = '—';
+      if (gaugeFill) {
+        gaugeFill.style.width = '0%';
+        gaugeFill.setAttribute('data-band', 'red');
+      }
+      if (deltaEl) deltaEl.classList.add('hidden');
+      if (remarksEl) remarksEl.textContent = '';
+      if (breakdownEl) breakdownEl.innerHTML = '';
+      if (statusEl) statusEl.className = 'status-pill-red mt-3';
+      if (statusLabel) statusLabel.textContent = 'Calculation unavailable';
+      if (statusDetail) statusDetail.textContent = 'We could not evaluate the official formula for these values.';
+      if (window.console && err) window.console.error('[All Cut Off] hero calculation failed', err);
+    }
+
+    function renderDelta(calc) {
+      if (!deltaEl) return;
+      if (!isCustom(activeId)) {
+        deltaEl.classList.add('hidden');
+        deltaEl.textContent = '';
+        return;
+      }
+
+      var inputs = safeInputs(calc);
+      var pctEl = numInput('percentage');
+      var targetEl = numInput('target');
+      var pct = pctEl && pctEl.value !== '' ? num(pctEl.value) : num(inputs[0] && inputs[0].defaultValue);
+      var target = targetEl && targetEl.value !== '' ? num(targetEl.value) : num(inputs[1] && inputs[1].defaultValue);
+      var gap = pct - target;
+      var sign = gap >= 0 ? '+' : '−';
+
+      deltaEl.textContent =
+        sign + Math.abs(gap).toFixed(2) + ' vs target (' + fmt(target) + '% target, ' + fmt(pct) + '% yours)';
+      deltaEl.className =
+        'mt-2 status-pill-' + (gap > 0.0001 ? 'green' : gap < -0.0001 ? 'red' : 'amber');
+      deltaEl.classList.remove('hidden');
+    }
+
+    function render(calc, result) {
+      if (errorEl) errorEl.classList.add('hidden');
+
+      var breakdown = Array.isArray(result.breakdown) ? result.breakdown : [];
+      var total = num(result.totalCutoff);
+      var sumMax = breakdown.reduce(function (sum, row) {
+        return sum + num(row.max);
+      }, 0);
+      var declared = num(calc.maxScore) || sumMax || 1;
+      var denom = sumMax > 0 ? Math.min(sumMax, declared) : declared;
+      if (denom <= 0) denom = declared || 1;
+
+      var pct = clamp((total / denom) * 100, 0, 100);
+      var ratio = denom > 0 ? total / denom : 0;
+      var band = resolveBand(result, ratio);
+      var status = result.qualifyingStatus || null;
+
+      totalEl.textContent = fmt(total);
+      if (unitEl) unitEl.textContent = calc.scoreUnit || '';
+      if (percentEl) percentEl.textContent = pct.toFixed(1) + '%';
+
+      if (gaugeFill) {
+        gaugeFill.style.width = pct.toFixed(2) + '%';
+        gaugeFill.setAttribute('data-band', band);
+      }
+      if (gauge) {
+        gauge.setAttribute('aria-valuemax', fmt(denom));
+        gauge.setAttribute('aria-valuenow', fmt(total));
+        gauge.setAttribute('aria-valuetext', fmt(total) + ' out of ' + fmt(denom) + ' (' + pct.toFixed(1) + ' percent)');
+      }
+
+      if (statusEl) statusEl.className = 'status-pill-' + band + ' mt-3';
+      if (statusLabel) statusLabel.textContent = status ? status.label : 'Score computed';
+      if (statusDetail) {
+        statusDetail.textContent = status
+          ? status.details
+          : 'Your score is ' + fmt(total) + ' out of ' + fmt(denom) + '.';
+      }
+      if (remarksEl) remarksEl.textContent = result.remarks || '';
+
+      if (breakdownEl) {
+        breakdownEl.innerHTML = breakdown
+          .map(function (row) {
+            var score = num(row.score);
+            var max = num(row.max);
+            var share = max > 0 ? clamp((score / max) * 100, 0, 100) : 0;
+            return (
+              '<li class="flex items-center gap-3">' +
+              '<span class="w-28 shrink-0 text-xs font-medium text-slate-700 sm:w-36 sm:text-sm">' + esc(row.label) + '</span>' +
+              '<span class="score-gauge-track h-1.5 min-w-0 flex-1"><span class="score-gauge-fill" style="width:' +
+              share.toFixed(1) + '%"></span></span>' +
+              '<span class="shrink-0 font-mono text-xs tabular-nums text-slate-600">' + esc(fmt(score)) + ' / ' + esc(fmt(max)) + '</span>' +
+              '</li>'
+            );
+          })
+          .join('');
+      }
+
+      renderDelta(calc);
+    }
+
+    function run() {
+      var calc = calculators[activeId];
+
+      if (!calc) {
+        showError(null);
+        return;
+      }
+
+      var values = readValues(calc);
+
+      try {
+        var out = calc.calculate(values);
+        if (!out || typeof out.totalCutoff !== 'number' || !isFinite(out.totalCutoff)) {
+          throw new Error('Unexpected calculator result');
+        }
+        render(calc, out);
+      } catch (err) {
+        showError(err);
+      }
+    }
+
+    /* ---------------- header / links / tabs ---------------------------- */
+    function syncTabs(id) {
+      if (!tabsWrap) return;
+      Array.prototype.forEach.call(tabsWrap.querySelectorAll('[data-hero-tab]'), function (btn) {
+        var active = btn.getAttribute('data-hero-tab') === id;
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        btn.setAttribute('tabindex', active ? '0' : '-1');
+      });
+    }
+
+    function updateChrome(calc) {
+      if (titleEl) titleEl.textContent = calc.name || 'Cutoff Calculator';
+      if (stateEl) stateEl.textContent = calc.state || '';
+      if (maxHeaderEl) maxHeaderEl.textContent = fmt(calc.maxScore);
+      if (unitEl) unitEl.textContent = calc.scoreUnit || '';
+      if (formulaEl) formulaEl.textContent = calc.verifiedFormulaText || '';
+      if (authorityEl) authorityEl.textContent = calc.conductingAuthority || '';
+      if (fullLink) {
+        if (isCustom(activeId)) {
+          fullLink.href = '/#calculators';
+          fullLink.textContent = 'Browse all official calculators';
+          fullLink.insertAdjacentHTML(
+            'beforeend',
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>'
+          );
+        } else {
+          fullLink.href = '/calculator/' + calc.slug;
+          fullLink.textContent = 'View Full Official Rules & Tie-Breaker Page';
+          fullLink.insertAdjacentHTML(
+            'beforeend',
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>'
+          );
+        }
+      }
+      if (authorityLink) {
+        if (calc.authorityUrl) {
+          authorityLink.href = calc.authorityUrl;
+          authorityLink.classList.remove('hidden');
+        } else {
+          authorityLink.classList.add('hidden');
+        }
+      }
+    }
+
+    /* ---------------- exam switch (the single code path) ---------------- */
+    function selectExam(id, options) {
+      var calc = calculators[id];
+      if (!calc) return false;
+
+      activeId = id;
+      var opts = options || {};
+
+      if (select && select.value !== id) select.value = id;
+      syncTabs(id);
+      updateChrome(calc);
+      buildInputs(calc);
+      refreshSteppers();
+      syncAllSliders();
+      run();
+
+      if (opts.flash && flashEl) {
+        flashEl.textContent = 'Loaded: ' + (calc.name || '');
+        flashEl.classList.remove('opacity-0');
+        window.setTimeout(function () {
+          flashEl.classList.add('opacity-0');
+        }, 1800);
+      }
+
+      if (opts.focusResult) {
+        var region = root.querySelector('section[aria-labelledby="hero-result-label"]');
+        if (region && typeof region.scrollIntoView === 'function') {
+          region.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+
+      return true;
+    }
+
+    function syncAllSliders() {
+      Array.prototype.forEach.call(inputsWrap.querySelectorAll('input[type="range"]'), function (slider) {
+        var numEl = numInput(slider.id.replace(/^hero-range-/, ''));
+        if (numEl) slider.value = numEl.value;
+        syncSlider(slider);
+      });
+    }
+
+    /* ---------------- wiring ------------------------------------------- */
+    function choose(id) {
+      if (selectExam(id, { flash: false })) rememberInUrl(id);
+    }
+
+    if (select) {
+      select.addEventListener('change', function (event) {
+        choose(event.target.value);
+      });
+    }
+
+    if (tabsWrap) {
+      tabsWrap.addEventListener('click', function (event) {
+        var btn = event.target.closest('[data-hero-tab]');
+        if (!btn) return;
+        choose(btn.getAttribute('data-hero-tab'));
+      });
+
+      tabsWrap.addEventListener('keydown', function (event) {
+        var btns = Array.prototype.slice.call(tabsWrap.querySelectorAll('[data-hero-tab]'));
+        var index = btns.findIndex(function (b) {
+          return b.getAttribute('data-hero-tab') === activeId;
+        });
+        if (index < 0) index = 0;
+
+        var next = null;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % btns.length;
+        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + btns.length) % btns.length;
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = btns.length - 1;
+
+        if (next === null) return;
+        event.preventDefault();
+        var target = btns[next];
+        target.focus();
+        choose(target.getAttribute('data-hero-tab'));
+      });
+    }
+
+    inputsWrap.addEventListener('click', function (event) {
+      var btn = event.target.closest('[data-hero-step]');
+      if (!btn) return;
+      nudge(btn.getAttribute('data-hero-for'), num(btn.getAttribute('data-hero-step')));
+    });
+
+    inputsWrap.addEventListener('pointerdown', function (event) {
+      var btn = event.target.closest('[data-hero-step]');
+      if (btn) event.preventDefault();
+    });
+
+    inputsWrap.addEventListener('input', function (event) {
+      var target = event.target;
+      if (!target) return;
+
+      if (target.type === 'range') {
+        var rangeId = target.id.replace(/^hero-range-/, '');
+        var pairedNum = numInput(rangeId);
+        if (pairedNum) pairedNum.value = target.value;
+        syncSlider(target);
+        refreshSteppers();
+        run();
+        return;
+      }
+
+      // Live recalculation while typing in a number field: mirror the value to
+      // the slider and recompute without stealing focus or rewriting the field.
+      if (target.type === 'number') {
+        var typedId = target.id.replace(/^hero-num-/, '');
+        var typedSlider = rangeInput(typedId);
+        var typedInput = safeInputs(calculators[activeId]).find(function (candidate) {
+          return candidate.id === typedId;
+        });
+        if (typedSlider && typedInput) {
+          var typedValue = clamp(num(target.value), num(typedInput.min), num(typedInput.max));
+          typedSlider.value = String(typedValue);
+          syncSlider(typedSlider);
+        }
+        refreshSteppers();
+        run();
+      }
+    });
+
+    inputsWrap.addEventListener('change', function (event) {
+      var target = event.target;
+      if (!target || target.type !== 'number') return;
+
+      var input = safeInputs(calculators[activeId]).find(function (candidate) {
+        return 'hero-num-' + candidate.id === target.id;
+      });
+      var min = input ? num(input.min) : 0;
+      var max = input ? num(input.max) : 100;
+      var step = input && input.step != null ? input.step : 1;
+
+      var next = roundToStep(clamp(num(target.value), min, max), step);
+      target.value = String(next);
+
+      var id = target.id.replace(/^hero-num-/, '');
+      var slider = rangeInput(id);
+      if (slider) {
+        slider.value = String(next);
+        syncSlider(slider);
+      }
+
+      refreshSteppers();
+      run();
+    });
+
+    /* ---------------- deep link (?calc=<id>) + custom event ------------ */
+    /** Keep `?calc=<id>` in the URL so the selection survives a refresh. */
+    function rememberInUrl(id) {
+      if (typeof history === 'undefined' || !history.replaceState) return;
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('calc', id);
+        history.replaceState({}, '', url.toString());
+      } catch (err) {
+        /* History API unavailable — the selection still works in-page. */
+      }
+    }
+
+    function requestedIdFromUrl() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var wanted = params.get('calc') || params.get('exam');
+        return wanted && calculators[wanted] ? wanted : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    window.addEventListener('allcutoff:load-calculator', function (event) {
+      var id = event && event.detail ? event.detail.id : null;
+      if (!id) return;
+
+      var applied = selectExam(id, { flash: true });
+      if (!applied) return;
+
+      // `scroll-mt-24` on the root keeps the sticky header from covering it.
+      try {
+        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        window.scrollTo(0, 0);
+      }
+
+      rememberInUrl(id);
+    });
+
+    /* ---------------- initial paint ------------------------------------ */
+    if (buildFailed) {
+      showError(null);
+      if (statusDetail) {
+        statusDetail.textContent = 'This calculator could not be loaded. Please reload the page.';
+      }
+    } else {
+      var initialId = requestedIdFromUrl() || DEFAULT_ID;
+      selectExam(initialId, { flash: false });
+      if (initialId !== DEFAULT_ID) rememberInUrl(initialId);
+    }
+  })();
+</script>

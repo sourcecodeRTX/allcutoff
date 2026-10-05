@@ -1,0 +1,777 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss" source(none);
+
+/* Restrict class generation to this project's own source files only.
+   Automatic detection would otherwise scan the whole repo root (including the
+   .agents/ reference docs) and emit dead url() assets into the production CSS. */
+@source "../../src/**/*.{astro,html,js,ts}";
+
+/* ==========================================================================
+   Design tokens
+   --------------------------------------------------------------------------
+   Plain CSS custom properties (NOT @theme) so that every value stays a stable
+   `var(--color-*)` reference for hand-written markup across the project.
+   ========================================================================== */
+:root {
+  /* Surfaces */
+  --color-canvas: #f8fafc;
+  --color-canvas-elevated: #ffffff;
+
+  /* Text */
+  --color-ink: #0f172a;
+  --color-body: #334155;
+  --color-mute: #64748b;
+  --color-faint: #94a3b8;
+
+  /* Hairlines */
+  --color-hairline: #e2e8f0;
+  --color-hairline-soft: #f1f5f9;
+
+  /* Interactive / brand */
+  --color-link: #2563eb;
+  --color-link-deep: #1d4ed8;
+  --color-link-soft: #eff6ff;
+
+  /* Status */
+  --color-success: #059669;
+  --color-success-soft: #ecfdf5;
+  --color-warning: #d97706;
+  --color-warning-soft: #fffbeb;
+  --color-error: #dc2626;
+  --color-error-soft: #fef2f2;
+
+  /* Elevation + focus */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -18px rgba(15, 23, 42, 0.22);
+  --shadow-card-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 18px 40px -22px rgba(15, 23, 42, 0.28);
+  --ring-focus: 0 0 0 3px color-mix(in oklab, var(--color-link) 24%, transparent);
+
+  /* Type */
+  --font-geist: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ==========================================================================
+   Base layer — element defaults. Utilities always win over this layer.
+   ========================================================================== */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-geist);
+    background-color: var(--color-canvas);
+    color: var(--color-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Never split words mid-syllable on narrow phones. */
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
+    /* `clip` (not `hidden`) so no ancestor becomes a scroll container. */
+    overflow-x: clip;
+  }
+
+  /* Body copy floor: never below 15px / 1.6 for unclassed copy. */
+  p,
+  li,
+  dd,
+  dt,
+  figcaption {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-ink);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.15;
+  }
+
+  h4,
+  h5,
+  h6 {
+    line-height: 1.3;
+  }
+
+  a {
+    color: var(--color-link);
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+
+  a:hover {
+    color: var(--color-link-deep);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-link) 22%, transparent);
+    color: var(--color-ink);
+  }
+
+  /* Clean number fields: hide the native spinners, keep typing + arrow keys. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Zero-specificity safety net so nothing is ever keyboard-invisible. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+
+  hr {
+    border-color: var(--color-hairline);
+  }
+}
+
+/* ==========================================================================
+   Components layer — hand-written classes. Utilities still win.
+   ========================================================================== */
+@layer components {
+  /* ---- Type helpers --------------------------------------------------- */
+  .font-mono-eyebrow {
+    font-family: var(--font-geist-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+
+  /* ---- Hero ambient bloom --------------------------------------------- */
+  .mesh-gradient-glow {
+    background:
+      radial-gradient(circle at 50% 8%, color-mix(in oklab, var(--color-link) 16%, transparent) 0%, transparent 55%),
+      radial-gradient(circle at 18% 32%, color-mix(in oklab, #4f46e5 12%, transparent) 0%, transparent 46%),
+      radial-gradient(circle at 82% 24%, color-mix(in oklab, #0ea5e9 12%, transparent) 0%, transparent 50%),
+      radial-gradient(circle at 38% 62%, color-mix(in oklab, #7c3aed 8%, transparent) 0%, transparent 42%),
+      radial-gradient(circle at 72% 66%, color-mix(in oklab, var(--color-success) 8%, transparent) 0%, transparent 44%);
+  }
+
+  /* ---- Surfaces ------------------------------------------------------- */
+  .hairline-card {
+    background-color: var(--color-canvas-elevated);
+    border: 1px solid var(--color-hairline);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  }
+
+  .hairline-card:hover {
+    border-color: color-mix(in oklab, var(--color-hairline) 60%, var(--color-mute));
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .hairline-inset {
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+  }
+
+  .surface-card {
+    background-color: var(--color-canvas-elevated);
+    border: 1px solid var(--color-hairline);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ---- Focus ---------------------------------------------------------- */
+  .focus-ring {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .focus-ring:focus-visible {
+    outline-color: var(--color-link);
+  }
+
+  /* ---- Inputs --------------------------------------------------------- */
+  .calc-input {
+    width: 100%;
+    /* Allow the field to shrink inside the stepper flex row. */
+    min-width: 0;
+    background-color: var(--color-canvas-elevated);
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 600;
+    color: var(--color-ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .calc-input::placeholder {
+    color: var(--color-faint);
+    font-weight: 400;
+  }
+
+  .calc-input:hover {
+    border-color: color-mix(in oklab, var(--color-hairline) 60%, var(--color-mute));
+  }
+
+  .calc-input:focus,
+  .calc-input:focus-visible {
+    border-color: var(--color-link);
+    box-shadow: var(--ring-focus);
+  }
+
+  /* ---- Buttons -------------------------------------------------------- */
+  .btn-pill-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    background-color: var(--color-link);
+    color: #ffffff;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    padding: 10px 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    text-decoration: none;
+  }
+
+  .btn-pill-primary:hover {
+    background-color: var(--color-link-deep);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -10px color-mix(in oklab, var(--color-link) 65%, transparent);
+  }
+
+  .btn-pill-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-pill-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    background-color: var(--color-canvas-elevated);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+    border-radius: 9999px;
+    padding: 10px 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    text-decoration: none;
+  }
+
+  .btn-pill-secondary:hover {
+    background-color: var(--color-hairline-soft);
+    border-color: color-mix(in oklab, var(--color-hairline) 55%, var(--color-mute));
+    color: var(--color-ink);
+  }
+
+  .btn-sm-square {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 40px;
+    background-color: var(--color-canvas-elevated);
+    color: var(--color-body);
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.625rem;
+    padding: 8px 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .btn-sm-square:hover {
+    background-color: var(--color-hairline-soft);
+    border-color: color-mix(in oklab, var(--color-hairline) 55%, var(--color-mute));
+    color: var(--color-ink);
+  }
+
+  .btn-category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    background-color: var(--color-canvas-elevated);
+    color: var(--color-body);
+    border: 1px solid var(--color-hairline);
+    border-radius: 9999px;
+    padding: 6px 16px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .btn-category-pill:hover,
+  .btn-category-pill.active {
+    background-color: var(--color-ink);
+    color: #ffffff;
+    border-color: var(--color-ink);
+  }
+
+  .btn-accent {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    background-color: var(--color-link);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .btn-accent:hover {
+    background-color: var(--color-link-deep);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px -12px color-mix(in oklab, var(--color-link) 70%, transparent);
+  }
+
+  .btn-accent:active {
+    transform: translateY(0);
+  }
+
+  .btn-ghost-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-hairline);
+    background-color: var(--color-hairline-soft);
+    color: var(--color-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+
+  .btn-ghost-soft:hover {
+    background-color: var(--color-canvas-elevated);
+    border-color: color-mix(in oklab, var(--color-hairline) 55%, var(--color-mute));
+    color: var(--color-ink);
+  }
+
+  /* ---- Stepper -------------------------------------------------------- */
+  .stepper-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 0.625rem;
+    border: 1px solid var(--color-hairline);
+    background-color: var(--color-canvas-elevated);
+    color: var(--color-ink);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+
+  .stepper-btn:hover:not(:disabled) {
+    background-color: var(--color-link-soft);
+    border-color: color-mix(in oklab, var(--color-link) 35%, var(--color-hairline));
+    color: var(--color-link-deep);
+  }
+
+  .stepper-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .stepper-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ---- Range slider --------------------------------------------------- */
+  .calc-slider {
+    --slider-progress: 50%;
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 2rem;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    accent-color: var(--color-link);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .calc-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      var(--color-link) 0 var(--slider-progress),
+      var(--color-hairline) var(--slider-progress) 100%
+    );
+  }
+
+  .calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 24px;
+    width: 24px;
+    margin-top: -8px;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    border: 2px solid var(--color-link);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .calc-slider::-moz-range-track {
+    height: 8px;
+    border-radius: 9999px;
+    background-color: var(--color-hairline);
+  }
+
+  .calc-slider::-moz-range-progress {
+    height: 8px;
+    border-radius: 9999px;
+    background-color: var(--color-link);
+  }
+
+  .calc-slider::-moz-range-thumb {
+    height: 24px;
+    width: 24px;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    border: 2px solid var(--color-link);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .calc-slider:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 0 5px var(--color-link-soft);
+  }
+
+  .calc-slider:hover::-moz-range-thumb {
+    box-shadow: 0 0 0 5px var(--color-link-soft);
+  }
+
+  .calc-slider:active::-webkit-slider-thumb,
+  .calc-slider:active::-moz-range-thumb {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 7px var(--color-link-soft);
+  }
+
+  .calc-slider:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+    border-radius: 9999px;
+  }
+
+  /* ---- Score gauge ---------------------------------------------------- */
+  .score-gauge-track {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    border-radius: 9999px;
+    background-color: var(--color-hairline);
+    overflow: hidden;
+  }
+
+  .score-gauge-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 9999px;
+    background-color: var(--color-link);
+    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+  }
+
+  .score-gauge-fill[data-band='green'] {
+    background-color: var(--color-success);
+  }
+
+  .score-gauge-fill[data-band='amber'] {
+    background-color: var(--color-warning);
+  }
+
+  .score-gauge-fill[data-band='red'] {
+    background-color: var(--color-error);
+  }
+
+  /* ---- Qualifying status pills ---------------------------------------- */
+  .status-pill-green,
+  .status-pill-amber,
+  .status-pill-red {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    max-width: 100%;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+
+  .status-pill-green {
+    background-color: color-mix(in oklab, var(--color-success) 10%, var(--color-canvas-elevated));
+    border-color: color-mix(in oklab, var(--color-success) 30%, var(--color-canvas-elevated));
+    color: color-mix(in oklab, var(--color-success) 72%, var(--color-ink));
+  }
+
+  .status-pill-amber {
+    background-color: color-mix(in oklab, var(--color-warning) 12%, var(--color-canvas-elevated));
+    border-color: color-mix(in oklab, var(--color-warning) 32%, var(--color-canvas-elevated));
+    color: color-mix(in oklab, var(--color-warning) 72%, var(--color-ink));
+  }
+
+  .status-pill-red {
+    background-color: color-mix(in oklab, var(--color-error) 9%, var(--color-canvas-elevated));
+    border-color: color-mix(in oklab, var(--color-error) 30%, var(--color-canvas-elevated));
+    color: color-mix(in oklab, var(--color-error) 72%, var(--color-ink));
+  }
+
+  /* ---- Small key-info pills ------------------------------------------- */
+  .info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    max-width: 100%;
+    padding: 0.3125rem 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-hairline);
+    background-color: var(--color-hairline-soft);
+    color: var(--color-body);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+  }
+
+  .info-pill svg {
+    flex: none;
+    color: var(--color-faint);
+  }
+
+  /* ---- Micro animations ----------------------------------------------- */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+/* ==========================================================================
+   Reduced motion — honour the OS setting everywhere.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   Print — clean, black-on-white score summary.
+   ========================================================================== */
+
+/* Screen-only / paper-only helpers (declared first so @media print wins). */
+.no-print {
+  display: none !important;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  /* Chrome we never want on paper. */
+  header,
+  footer,
+  nav,
+  [data-print='hide'],
+  .no-print,
+  #cutoff-form,
+  button,
+  input,
+  select,
+  textarea,
+  .calc-slider,
+  .stepper-btn,
+  .btn-accent,
+  .btn-ghost-soft,
+  .btn-pill-primary,
+  .btn-pill-secondary,
+  .btn-sm-square,
+  .btn-category-pill {
+    display: none !important;
+  }
+
+  /* Expand every disclosure so nothing is hidden on paper. */
+  details:not([open]) > *:not(summary) {
+    display: block !important;
+  }
+
+  /* Newer engines also hide the content via ::details-content. */
+  details::details-content {
+    display: block !important;
+    content-visibility: visible !important;
+    block-size: auto !important;
+  }
+
+  details > summary {
+    list-style: none;
+    cursor: default;
+  }
+
+  details > summary::-webkit-details-marker {
+    display: none !important;
+  }
+
+  details > summary::marker {
+    content: '';
+  }
+
+  /* Flatten every surface. */
+  #calculator-container,
+  .surface-card,
+  .hairline-card,
+  .hairline-inset,
+  .info-pill,
+  .status-pill-green,
+  .status-pill-amber,
+  .status-pill-red {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border-color: #999999 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  li,
+  span,
+  td,
+  th,
+  label,
+  strong {
+    color: #000000 !important;
+    text-shadow: none !important;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  a {
+    color: #000000 !important;
+    text-decoration: underline;
+  }
+
+.print-only {
+    display: revert !important;
+  }
+
+  .score-gauge-fill {
+    background: #333333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

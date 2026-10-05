@@ -1,0 +1,413 @@
+---
+interface Props {
+  /** `header` renders a compact icon-only trigger; `footer` renders a full button. */
+  variant?: 'header' | 'footer';
+  class?: string;
+}
+
+const { variant = 'footer', class: className = '' } = Astro.props;
+const isHeader = variant === 'header';
+---
+
+{/*
+  Progressive enhancement: the root ships `hidden` and is only revealed by the
+  script below when an install path actually exists, so JS-disabled visitors and
+  users who already installed / dismissed never see it.
+
+  Mounted twice per page (Header + Footer). There are deliberately NO hardcoded
+  DOM ids here — everything is found via data attributes and styled with Astro's
+  scoped <style>, so the two instances cannot collide.
+*/}
+<div class:list={['install-app', 'no-print', className]} data-install-app data-variant={variant} hidden>
+  <button
+    type="button"
+    class:list={[
+      isHeader ? 'install-app__icon' : 'btn-ghost-soft install-app__full',
+      'focus-ring'
+    ]}
+    data-install-trigger
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Install All Cut Off app"
+    title="Install All Cut Off app"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3v12"></path>
+      <path d="m7 11 5 5 5-5"></path>
+      <path d="M5 21h14"></path>
+    </svg>
+    {!isHeader && <span>Install App</span>}
+    {isHeader && <span class="sr-only">Install app</span>}
+  </button>
+
+  <div
+    class="install-app__panel"
+    data-install-panel
+    role="dialog"
+    aria-modal="false"
+    aria-label="Add All Cut Off to your Home Screen"
+    hidden
+  >
+    <div class="install-app__panel-head">
+      <p class="install-app__panel-title">Add to Home Screen</p>
+      <button type="button" class="install-app__close focus-ring" data-install-close aria-label="Close install instructions">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <ol class="install-app__steps">
+      <li>Tap the <strong>Share</strong> icon in the Safari toolbar.</li>
+      <li>Scroll down and choose <strong>Add to Home Screen</strong>.</li>
+      <li>Tap <strong>Add</strong> — All Cut Off then opens like a native app.</li>
+    </ol>
+    <p class="install-app__note">No sign-up. Calculators keep working offline.</p>
+    <div class="install-app__actions">
+      <button type="button" class="btn-accent focus-ring install-app__done" data-install-done>Got it</button>
+      <button type="button" class="btn-ghost-soft focus-ring" data-install-close>Not now</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .install-app {
+    /* Deliberately NO `display` here. Astro emits scoped styles UNLAYERED, which
+       outranks every Tailwind v4 `@layer utilities` rule — setting display would
+       silently defeat the `md:hidden` the Header passes in. The consumer's
+       utility (or normal block flow) owns display; only the panel anchor is ours. */
+    position: relative;
+  }
+
+  /* A class-level `display` would otherwise beat the UA rule for [hidden]. */
+  .install-app[hidden],
+  .install-app__panel[hidden] {
+    display: none !important;
+  }
+
+  .install-app__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-hairline);
+    background-color: var(--color-canvas-elevated);
+    color: var(--color-body);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .install-app__icon:hover {
+    background-color: var(--color-hairline-soft);
+    color: var(--color-ink);
+  }
+
+  .install-app__full {
+    min-height: 44px;
+  }
+
+  .install-app__panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    z-index: 50;
+    width: min(19rem, calc(100vw - 2rem));
+    padding: 0.875rem;
+    border-radius: 0.875rem;
+    border: 1px solid var(--color-hairline);
+    background-color: var(--color-canvas-elevated);
+    box-shadow: 0 18px 40px -22px rgba(15, 23, 42, 0.45);
+    text-align: left;
+  }
+
+  /* Anchor the dropdown inward so it never overflows a narrow viewport. */
+  .install-app[data-variant='header'] .install-app__panel {
+    right: 0;
+  }
+
+  .install-app[data-variant='footer'] .install-app__panel {
+    left: 0;
+  }
+
+  .install-app__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .install-app__panel-title {
+    margin: 0;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .install-app__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background-color: var(--color-hairline-soft);
+    color: var(--color-mute);
+    cursor: pointer;
+  }
+
+  .install-app__close:hover {
+    background-color: var(--color-hairline);
+    color: var(--color-ink);
+  }
+
+  .install-app__steps {
+    margin: 0.625rem 0 0;
+    padding-left: 1.125rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    color: var(--color-body);
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .install-app__steps strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .install-app__note {
+    margin: 0.625rem 0 0;
+    color: var(--color-mute);
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .install-app__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.875rem;
+  }
+
+  .install-app__done {
+    min-height: 44px;
+    flex: 1 1 auto;
+  }
+</style>
+
+<script>
+  (function () {
+    'use strict';
+
+    try {
+      var DISMISS_KEY = 'allcutoff.installDismissed';
+      var INSTALLED_KEY = 'allcutoff.installed';
+      var DISMISS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+      var roots = Array.prototype.slice.call(document.querySelectorAll('[data-install-app]'));
+      if (!roots.length) return;
+
+      /* Every storage touch is defensive — Safari private mode throws on write. */
+      function readStore(key) {
+        try {
+          return window.localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function writeStore(key, value) {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch (e) {
+          /* storage unavailable — dismissal simply will not persist */
+        }
+      }
+
+      function isStandalone() {
+        try {
+          if (window.navigator.standalone === true) return true;
+          return window.matchMedia('(display-mode: standalone)').matches;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function isIOS() {
+        var nav = window.navigator || {};
+        return (
+          /iP(hone|ad|od)/.test(nav.userAgent || '') ||
+          (/Mac/.test(nav.platform || '') && (nav.maxTouchPoints || 0) > 1)
+        );
+      }
+
+      function isDismissed() {
+        var raw = readStore(DISMISS_KEY);
+        if (!raw) return false;
+        var at = parseInt(raw, 10);
+        if (!at || isNaN(at) || Date.now() - at > DISMISS_TTL_MS) {
+          if (raw) writeStore(DISMISS_KEY, '');
+          return false;
+        }
+        return true;
+      }
+
+      /* Shared across every mounted instance — the event fires once per page. */
+      var deferred = null;
+
+      function reveal() {
+        if (isStandalone() || isDismissed() || readStore(INSTALLED_KEY)) return;
+        for (var i = 0; i < roots.length; i++) roots[i].hidden = false;
+      }
+
+      function hideAll() {
+        for (var i = 0; i < roots.length; i++) {
+          roots[i].hidden = true;
+          var panel = roots[i].querySelector('[data-install-panel]');
+          if (panel) panel.hidden = true;
+        }
+      }
+
+      function dismissForever() {
+        writeStore(DISMISS_KEY, String(Date.now()));
+        hideAll();
+      }
+
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault(); // suppress the Chromium mini-infobar
+        deferred = event;
+        reveal();
+      });
+
+      window.addEventListener('appinstalled', function () {
+        deferred = null;
+        writeStore(INSTALLED_KEY, '1');
+        hideAll();
+      });
+
+      for (var i = 0; i < roots.length; i++) {
+        (function (root) {
+          var trigger = root.querySelector('[data-install-trigger]');
+          var panel = root.querySelector('[data-install-panel]');
+          if (!trigger) return;
+
+          function openPanel() {
+            if (!panel) return;
+            panel.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            var first = panel.querySelector('button');
+            if (first) first.focus();
+          }
+
+          function closePanel(refocus) {
+            if (!panel || panel.hidden) return;
+            panel.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            if (refocus) trigger.focus();
+          }
+
+          trigger.addEventListener('click', function () {
+            if (deferred) {
+              var promptEvent = deferred;
+              deferred = null;
+              closePanel(false);
+              try {
+                promptEvent.prompt();
+                var choice = promptEvent.userChoice;
+                if (choice && typeof choice.then === 'function') {
+                  choice.then(
+                    function (result) {
+                      if (result && result.outcome === 'accepted') {
+                        writeStore(INSTALLED_KEY, '1');
+                        hideAll();
+                      } else {
+                        dismissForever();
+                      }
+                    },
+                    function () {}
+                  );
+                }
+              } catch (e) {
+                /* prompt() throws if the event was already consumed */
+              }
+              return;
+            }
+            /* iOS Safari never fires beforeinstallprompt — show instructions. */
+            if (isIOS()) {
+              if (panel && !panel.hidden) closePanel(true);
+              else openPanel();
+            }
+          });
+
+          if (panel) {
+            panel.addEventListener('click', function (event) {
+              var target = event.target;
+              if (!target || !target.closest) return;
+              if (target.closest('[data-install-done]')) {
+                dismissForever();
+              } else if (target.closest('[data-install-close]')) {
+                closePanel(true);
+              }
+            });
+
+            document.addEventListener('click', function (event) {
+              if (panel.hidden) return;
+              if (root.contains(event.target)) return;
+              closePanel(false);
+            });
+          }
+        })(roots[i]);
+      }
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        for (var n = 0; n < roots.length; n++) {
+          var trigger = roots[n].querySelector('[data-install-trigger]');
+          var panel = roots[n].querySelector('[data-install-panel]');
+          if (!panel || panel.hidden) continue;
+          panel.hidden = true;
+          if (trigger) {
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.focus();
+          }
+        }
+      });
+
+      /* iOS has no install event, so surface the instructions once things settle. */
+      if (isIOS() && !isStandalone() && !readStore(INSTALLED_KEY)) {
+        var revealLater = function () {
+          if (!isDismissed()) reveal();
+        };
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(revealLater, { timeout: 2500 });
+        } else {
+          window.setTimeout(revealLater, 1200);
+        }
+      }
+    } catch (e) {
+      /* Never let install-prompt wiring break the page. */
+    }
+  })();
+</script>

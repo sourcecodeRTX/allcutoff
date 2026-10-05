@@ -1,0 +1,370 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import SearchModal from '../components/SearchModal.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  keywords?: string;
+  currentCategory?: string;
+  canonicalUrl?: string;
+  schemaType?: string;
+  calculatorData?: {
+    name: string;
+    description: string;
+    exam: string;
+    state: string;
+  };
+  extraSchema?: unknown | unknown[];
+}
+
+const {
+  title,
+  description = "Calculate your college admission cutoff quickly and accurately using verified, officially defined admission formulas for Engineering, Medical, Agriculture, and State Entrance exams across India.",
+  keywords,
+  currentCategory = '',
+  canonicalUrl,
+  calculatorData,
+  extraSchema
+} = Astro.props;
+
+const siteUrl = "https://allcutoff.com";
+const brandName = "All Cut Off";
+
+const normalizeUrl = (url: string) => {
+  const trimmed = url.replace(/\/+$/, '');
+  if (!trimmed) return `${siteUrl}/`;
+  return new URL(trimmed, siteUrl).pathname === '/' ? `${trimmed}/` : trimmed;
+};
+
+const canonical = canonicalUrl
+  ? normalizeUrl(canonicalUrl)
+  : normalizeUrl(Astro.url.href);
+
+const fullTitle = title.endsWith(`| ${brandName}`) ? title : `${title} | ${brandName}`;
+
+/* Social platforms reject SVG for og:image, so the PNG is the canonical asset.
+   /og-image.svg is kept in public/ purely as the vector source. */
+const ogImage = `${siteUrl}/og-image.png`;
+const ogImageWidth = 1200;
+const ogImageHeight = 630;
+const ogImageAlt = `${brandName} - verified admission cutoff calculators for India`;
+
+const organizationId = `${siteUrl}/#organization`;
+const websiteId = `${siteUrl}/#website`;
+
+const graph: Record<string, unknown>[] = [
+  {
+    '@type': 'WebSite',
+    '@id': websiteId,
+    name: brandName,
+    url: siteUrl,
+    description,
+    inLanguage: 'en-IN',
+    publisher: { '@id': organizationId },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/?q={search_term_string}`
+      },
+      'query-input': 'required name=q'
+    }
+  },
+  {
+    '@type': 'Organization',
+    '@id': organizationId,
+    name: brandName,
+    url: siteUrl,
+    logo: `${siteUrl}/icon-512.png`
+  },
+  {
+    '@type': 'WebApplication',
+    '@id': `${websiteId}-app`,
+    name: brandName,
+    url: siteUrl,
+    description,
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'All',
+    browserRequirements: 'Requires JavaScript',
+    isAccessibleForFree: true,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'INR'
+    },
+    publisher: { '@id': organizationId }
+  }
+];
+
+if (calculatorData) {
+  graph.push({
+    '@type': 'SoftwareApplication',
+    '@id': `${normalizeUrl(canonical)}-app`,
+    name: calculatorData.name,
+    description: calculatorData.description,
+    url: canonical,
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'All',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'INR'
+    },
+    featureList: [
+      'Instant cutoff calculation',
+      'Official formula transparency',
+      'No sign-up required'
+    ],
+    provider: { '@id': organizationId }
+  });
+}
+
+if (extraSchema) {
+  const extras = Array.isArray(extraSchema) ? extraSchema : [extraSchema];
+  for (const entry of extras) {
+    if (!entry || typeof entry !== 'object') continue;
+    const node = entry as Record<string, unknown>;
+    const id = typeof node['@id'] === 'string' ? node['@id'] : undefined;
+    const existing = id ? graph.findIndex((n) => n['@id'] === id) : -1;
+    // Merge into an existing node rather than emitting a second one: schema.org
+    // requires @id to be unique within a graph, and a duplicate silently voids
+    // the whole structured-data set.
+    if (existing !== -1) graph[existing] = { ...graph[existing], ...node };
+    else if (node['@type']) graph.push(node);
+  }
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': graph
+};
+---
+
+<!doctype html>
+<html lang="en-IN" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Icons & App Metadata (manifest link + preconnects already above) -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#2563eb" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="AllCutOff" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Primary SEO Meta Tags -->
+    <title>{fullTitle}</title>
+    <meta name="title" content={fullTitle} />
+    <meta name="description" content={description} />
+    {keywords && <meta name="keywords" content={keywords} />}
+    <meta name="author" content={brandName} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
+    <meta name="color-scheme" content="light" />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- Font Preconnections -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={brandName} />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:secure_url" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(ogImageWidth)} />
+    <meta property="og:image:height" content={String(ogImageHeight)} />
+    <meta property="og:image:alt" content={ogImageAlt} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonical} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+
+    <!-- Structured Data JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body class="flex min-h-screen flex-col bg-slate-50 text-slate-700 antialiased">
+    <Header currentCategory={currentCategory} />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <SearchModal />
+  </body>
+</html>
+
+<!--
+  Service-worker registration. Deliberately a processed <script> (NOT is:inline) so
+  that Vite can statically replace `import.meta.env.PROD`; left inline it would be
+  a live property read that throws in the browser. Astro bundles it once and emits
+  it as a deferred module, so it runs on every page without blocking render.
+-->
+<script>
+  (function () {
+    'use strict';
+
+    try {
+      if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
+
+      var RELOAD_FLAG = '_sw-reloaded';
+      var TOAST_MS = 8000;
+
+      /* A first-install clients.claim() also fires controllerchange; only a real
+         swap of an already-controlling worker should reload the page. */
+      var hadController = !!navigator.serviceWorker.controller;
+      var reloaded = false;
+
+      function alreadyReloaded() {
+        try {
+          return window.sessionStorage.getItem(RELOAD_FLAG) === '1';
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function markReloaded() {
+        try {
+          window.sessionStorage.setItem(RELOAD_FLAG, '1');
+        } catch (e) {
+          /* private mode — the in-memory guard still prevents a loop */
+        }
+      }
+
+      function showToast(message) {
+        if (!message || !document.body) return;
+
+        var bar = document.createElement('div');
+        bar.className = 'no-print';
+        bar.setAttribute('role', 'status');
+        bar.setAttribute('aria-live', 'polite');
+        bar.setAttribute('data-sw-toast', '');
+        bar.style.cssText = [
+          'position:fixed',
+          'left:50%',
+          'bottom:16px',
+          'transform:translateX(-50%)',
+          'z-index:9999',
+          'display:flex',
+          'align-items:center',
+          'gap:12px',
+          'max-width:calc(100vw - 32px)',
+          'padding:8px 8px 8px 16px',
+          'border-radius:12px',
+          'border:1px solid #e2e8f0',
+          'background:#ffffff',
+          'color:#334155',
+          'box-shadow:0 12px 32px -14px rgba(15,23,42,.45)',
+          'font-size:.875rem',
+          'line-height:1.4',
+          'pointer-events:auto'
+        ].join(';');
+
+        var text = document.createElement('span');
+        text.style.cssText = 'flex:1 1 auto;min-width:0;';
+        text.textContent = message;
+
+        function dismiss() {
+          if (bar.parentNode) bar.parentNode.removeChild(bar);
+        }
+
+        var close = document.createElement('button');
+        close.type = 'button';
+        close.setAttribute('aria-label', 'Dismiss notification');
+        close.textContent = '\u00d7';
+        close.style.cssText = [
+          'flex:none',
+          'width:32px',
+          'height:32px',
+          'padding:0',
+          'border:0',
+          'border-radius:8px',
+          'background:#f1f5f9',
+          'color:#64748b',
+          'font-size:20px',
+          'line-height:1',
+          'cursor:pointer'
+        ].join(';');
+
+        close.addEventListener('click', dismiss);
+        bar.appendChild(text);
+        bar.appendChild(close);
+        document.body.appendChild(bar);
+        window.setTimeout(dismiss, TOAST_MS);
+      }
+
+      function watch(reg) {
+        if (!reg) return;
+        if (reg.waiting) {
+          showToast('All Cut Off has been updated. Reloading\u2026');
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        reg.addEventListener('updatefound', function () {
+          var installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', function () {
+            /* `controller` existing means this is an update, not a first install. */
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('A new version of All Cut Off is ready. Reloading\u2026');
+            }
+          });
+        });
+      }
+
+      function register() {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .then(watch)
+          .catch(function () {
+            /* Unsupported, insecure origin, or blocked — offline just stays off. */
+          });
+      }
+
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        var data = event.data;
+        if (!data || typeof data !== 'object') return;
+        if (data.type === 'SW_ACTIVATED' && hadController) {
+          showToast('All Cut Off was updated. Reloading\u2026');
+        }
+      });
+
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadController) return; // first install: claim() is not an update
+        if (reloaded || alreadyReloaded()) return;
+        reloaded = true;
+        markReloaded();
+        window.location.reload();
+      });
+
+      function start() {
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(register, { timeout: 3000 });
+        } else {
+          register();
+        }
+      }
+
+      if (document.readyState === 'complete') start();
+      else window.addEventListener('load', start, { once: true });
+    } catch (e) {
+      /* Service workers are strictly progressive enhancement. */
+    }
+  })();
+</script>

@@ -1,0 +1,533 @@
+---
+import { CALCULATORS } from '../data/calculators';
+
+/**
+ * Search vocabulary per calculator, in two tiers.
+ *
+ * `identityTokens` are the tokens that unambiguously *are* this exam or the
+ * course it primarily serves. They outrank every other field, so typing
+ * "agriculture" lands on TNAU even though EAPCET also mentions the word in its
+ * target-course list.
+ *
+ * `searchAliases` is the wider net: board names, vernacular spellings,
+ * alternative codes and secondary courses. These rank below the calculator's
+ * short name and its identity tokens.
+ *
+ * Composed here rather than in `data/calculators.ts` so the registry stays
+ * purely about formulas.
+ */
+const IDENTITY_TOKENS: Record<string, string[]> = {
+  'tnea-engineering': ['tnea', 'anna university'],
+  'kcet-engineering': ['kcet', 'kea'],
+  'neet-ug-medical': ['neet', 'mbbs', 'bds', 'medical'],
+  'ap-ts-eapcet': ['eapcet'],
+  'tnau-agriculture': ['tnau', 'agriculture', 'agri'],
+  'keam-engineering': ['keam'],
+  'gujcet-acpc': ['gujcet', 'acpc'],
+  'mht-cet-engineering': ['mht cet', 'mhcet'],
+  'cuet-du-admission': ['du', 'cuet'],
+  'tn-paramedical': ['paramedical', 'b.pharm'],
+  'tanuvas-veterinary': ['tanuvas', 'bvsc', 'veterinary'],
+  'tngasa-arts-science': ['tngasa', 'bca', 'b.com']
+};
+
+const SEARCH_ALIASES: Record<string, string[]> = {
+  'tnea-engineering': ['tn 12th', 'tn12', 'anna university', 'b.e', 'b.tech', 'btech', 'do te', 'dote', 'engineering tamil nadu'],
+  'kcet-engineering': ['2nd puc', 'puc', 'karnataka common entrance', 'karnataka engineering'],
+  'neet-ug-medical': ['neet ug', 'ayush', 'medical', 'nta medical', 'national eligibility'],
+  'ap-ts-eapcet': ['ap eapcet', 'ts eapcet', 'apsche', 'tgche', 'ap', 'ts', 'intermediate', 'inter', 'andhra', 'telangana', 'pharmacy'],
+  'tnau-agriculture': ['b.sc agriculture', 'horticulture', 'tamilnadu agriculture', 'forestry'],
+  'keam-engineering': ['kerala', 'cee kerala', 'kerala engineering', 'nata'],
+  'gujcet-acpc': ['gseb', 'gujarat', 'gujarat engineering', 'pharmacy'],
+  'mht-cet-engineering': ['maharashtra', 'cap', 'hsc', 'state cet cell'],
+  'cuet-du-admission': ['du csas', 'b.com hons', 'delhi university', 'csas', 'ba hons'],
+  'tn-paramedical': ['bpt', 'baslp', 'nursing', 'radiography', 'dme tn', 'allied health'],
+  'tanuvas-veterinary': ['madras veterinary', 'a.h'],
+  'tngasa-arts-science': ['arts and science', 'collegiate education', 'dce tamil nadu', 'bba']
+};
+
+/** Tokenise + de-noise a free-form field for the alias index. */
+function tokens(value: string): string[] {
+  return String(value || '')
+    .toLowerCase()
+    .split(/[^a-z0-9.%/+]+/i)
+    .map((t) => t.replace(/\.$/, ''))
+    .filter((t) => t.length > 1);
+}
+
+const searchIndex = CALCULATORS.map((c) => {
+  const identity = (IDENTITY_TOKENS[c.id] ?? []).map((t) => t.toLowerCase());
+  const aliases = Array.from(
+    new Set(
+      tokens(`${c.shortName} ${c.exam} ${c.category} ${c.state} ${c.targetCourse} ${c.conductingAuthority}`).concat(
+        SEARCH_ALIASES[c.id] ?? []
+      )
+    )
+  );
+
+  return {
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    shortName: c.shortName,
+    category: c.category,
+    state: c.state,
+    exam: c.exam,
+    targetCourse: c.targetCourse,
+    authority: c.conductingAuthority,
+    identityTokens: identity,
+    searchAliases: aliases,
+    primary: c.shortName.toLowerCase()
+  };
+});
+
+const QUICK_FILTERS = [
+  { label: 'TNEA (Tamil Nadu)', query: 'tnea' },
+  { label: 'KCET (Karnataka)', query: 'kcet' },
+  { label: 'NEET UG (Medical)', query: 'neet' },
+  { label: 'TNAU (Agriculture)', query: 'tnau' }
+];
+---
+
+<div
+  id="search-modal-backdrop"
+  class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-xs transition-opacity duration-150"
+  aria-hidden="true"
+>
+  <div class="flex min-h-full items-start justify-center p-4 pt-16 sm:pt-24">
+    <div
+      id="search-modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search cutoff calculators"
+      class="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all"
+    >
+      <!-- Search Input Bar -->
+      <div class="flex items-center border-b border-slate-200 px-4 py-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-slate-500" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+
+        <input
+          id="search-input"
+          type="text"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="search-results"
+          aria-autocomplete="list"
+          aria-activedescendant=""
+          aria-label="Search by exam, course or state"
+          placeholder="Search by exam (TNEA, KCET, NEET, EAPCET), course, or state..."
+          class="ml-3 w-full border-none bg-transparent text-sm text-slate-900 placeholder-slate-500 outline-none"
+          autocomplete="off"
+        />
+        <button
+          id="close-search-btn"
+          type="button"
+          class="ml-2 min-h-8 shrink-0 cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-xs text-slate-600 hover:bg-slate-100"
+        >
+          ESC
+        </button>
+      </div>
+
+      <!-- Quick Suggestion Chips -->
+      <div class="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+        <span class="text-xs font-medium text-slate-500">Popular:</span>
+        {QUICK_FILTERS.map((q) => (
+          <button
+            type="button"
+            class="quick-filter-btn focus-ring rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50"
+            data-quick-query={q.query}
+          >
+            {q.label}
+          </button>
+        ))}
+      </div>
+
+      <!-- Search Results Container -->
+      <div
+        id="search-results"
+        role="listbox"
+        aria-label="Cutoff calculator results"
+        class="max-h-[70vh] overflow-y-auto p-2"
+      >
+        <!-- Results injected dynamically via JS -->
+      </div>
+
+      <!-- Footer Info -->
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">
+        <span>
+          Navigate with
+          <kbd class="rounded border border-slate-200 bg-white px-1 font-mono">↑</kbd>
+          <kbd class="rounded border border-slate-200 bg-white px-1 font-mono">↓</kbd>
+        </span>
+        <span>
+          Select with
+          <kbd class="rounded border border-slate-200 bg-white px-1 font-mono">Enter</kbd>
+        </span>
+        <span>Esc closes</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ searchIndex }}>
+  (function () {
+    'use strict';
+
+    var backdrop = document.getElementById('search-modal-backdrop');
+    var dialog = document.getElementById('search-modal-dialog');
+    var searchInput = document.getElementById('search-input');
+    var searchResults = document.getElementById('search-results');
+    var closeBtn = document.getElementById('close-search-btn');
+    var searchBtn = document.getElementById('search-btn');
+    var quickBtns = document.querySelectorAll('.quick-filter-btn');
+
+    if (!backdrop || !dialog || !searchInput || !searchResults) return;
+
+    /* `true` when the live hero widget exists on this page. */
+    var hasHeroCalculator = !!document.getElementById('hero-calculator');
+    var lastFocused = null;
+    var activeIndex = -1;
+    var currentResults = [];
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Ranking
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Field weights. Higher wins. Tier order is deliberate:
+     *   exact identity token (an exam code or its headline course)
+     *     > exact alias / short name
+     *       > prefix match anywhere
+     *         > incidental substring (state, category, course, authority)
+     *
+     * Every query token must produce a hit in at least one field, so a
+     * multi-word query narrows rather than widens.
+     */
+    var W = {
+      identityExact: 520,
+      aliasExact: 400,
+      primaryExact: 380,
+      primaryPrefix: 300,
+      identityPrefix: 280,
+      aliasPrefix: 220,
+      identityPartial: 180,
+      aliasPartial: 120,
+      namePrefix: 90,
+      namePartial: 60
+    };
+
+    /** Highest weight earned by `token` across one field group. */
+    function bestFor(values, token, exact, prefix, partial) {
+      var best = 0;
+      for (var i = 0; i < values.length; i += 1) {
+        var value = values[i];
+        if (value === token) best = Math.max(best, exact);
+        else if (value.indexOf(token) === 0) best = Math.max(best, prefix);
+        else if (value.indexOf(token) !== -1) best = Math.max(best, partial);
+      }
+      return best;
+    }
+
+    function scoreItem(item, query, tokens) {
+      if (!tokens.length) return 1;
+
+      var primary = item.primary;
+      var name = item.name.toLowerCase();
+      var identity = item.identityTokens || [];
+      var aliases = item.searchAliases;
+
+      // A literal, complete match on an identity token or a short name is
+      // treated as "the user asked for this calculator by name".
+      if (primary === query || identity.indexOf(query) !== -1) return 2000;
+      if (aliases.indexOf(query) !== -1) return 1500;
+
+      var total = 0;
+
+      for (var i = 0; i < tokens.length; i += 1) {
+        var token = tokens[i];
+        var best = 0;
+
+        best = Math.max(best, bestFor(identity, token, W.identityExact, W.identityPrefix, W.identityPartial));
+        best = Math.max(best, bestFor(aliases, token, W.aliasExact, W.aliasPrefix, W.aliasPartial));
+        best = Math.max(best, bestFor([primary], token, W.primaryExact, W.primaryPrefix, W.aliasPartial));
+        best = Math.max(best, bestFor([name], token, W.aliasExact, W.namePrefix, W.namePartial));
+
+        if (best === 0) return 0;
+        total += best;
+      }
+
+      // Normalise by token count so a two-word state query does not outrank a
+      // one-word exam code.
+      return total / tokens.length;
+    }
+
+    function runSearch(query) {
+      var q = (query || '').toLowerCase().trim();
+      var tokens = q.split(/[^a-z0-9.%/+]+/i).filter(function (t) {
+        return t.length > 0 && t.length > 1;
+      });
+
+      var scored = [];
+
+      searchIndex.forEach(function (item) {
+        var score = scoreItem(item, q, tokens);
+        if (score > 0) scored.push({ item: item, score: score });
+      });
+
+      scored.sort(function (a, b) {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.item.name.localeCompare(b.item.name);
+      });
+
+      return scored.map(function (entry) {
+        return entry.item;
+      });
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Rendering.
+     * ------------------------------------------------------------------ */
+    function resultMarkup(item, index) {
+      var slug = encodeURIComponent(item.slug);
+      var href = '/calculator/' + slug;
+
+      var secondaryLabel = hasHeroCalculator ? 'Load in Hero Calculator' : 'Use on home calculator';
+      var secondaryHref = '/?calc=' + encodeURIComponent(item.id);
+
+      return (
+        '<div id="search-opt-' + index + '" role="option" aria-selected="false"' +
+        ' data-calc-id="' + escapeHtml(item.id) + '" data-calc-slug="' + escapeHtml(item.slug) + '"' +
+        ' class="rounded-xl border border-transparent p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50' +
+        ' aria-selected:bg-blue-50 aria-selected:border-blue-300">' +
+        '<div class="flex flex-wrap items-start justify-between gap-2">' +
+        '<div class="min-w-0">' +
+        '<span class="block text-sm font-semibold text-slate-900">' + escapeHtml(item.name) + '</span>' +
+        '<span class="mt-0.5 block text-xs text-slate-600">' + escapeHtml(item.targetCourse) + ' &bull; ' + escapeHtml(item.state) + '</span>' +
+        '<span class="mt-0.5 block text-xs text-slate-500">' + escapeHtml(item.category) + ' &bull; ' + escapeHtml(item.authority) + '</span>' +
+        '</div>' +
+        '<span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600">' + escapeHtml(item.state) + '</span>' +
+        '</div>' +
+        '<div class="mt-2.5 flex flex-wrap gap-2">' +
+        '<a href="' + href + '" data-search-open class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+        '<a href="' + secondaryHref + '" data-search-load class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(secondaryLabel) + '</a>' +
+        '</div>' +
+        '</div>'
+      );
+    }
+
+    function renderResults(query) {
+      currentResults = runSearch(query);
+      activeIndex = -1;
+
+      if (currentResults.length === 0) {
+        searchResults.innerHTML =
+          '<div class="p-6 text-center">' +
+          '<p class="text-sm font-semibold text-slate-900">No calculators found for &ldquo;' + escapeHtml(query) + '&rdquo;</p>' +
+          '<p class="mt-1 text-xs text-slate-600">Try TNEA, KCET, NEET, B.Pharm, Agriculture, or a state name like Tamil Nadu.</p>' +
+          '</div>';
+        searchInput.setAttribute('aria-activedescendant', '');
+        return;
+      }
+
+      searchResults.innerHTML = currentResults.map(resultMarkup).join('');
+      searchInput.setAttribute('aria-activedescendant', '');
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Keyboard: activedescendant highlight + focus trap.
+     * ------------------------------------------------------------------ */
+    function optionNodes() {
+      return Array.prototype.slice.call(searchResults.querySelectorAll('[role="option"]'));
+    }
+
+    function setActive(next) {
+      var nodes = optionNodes();
+      if (!nodes.length) return;
+
+      activeIndex = Math.max(0, Math.min(next, nodes.length - 1));
+
+      nodes.forEach(function (node, i) {
+        node.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
+      });
+
+      var current = nodes[activeIndex];
+      if (!current) return;
+
+      searchInput.setAttribute('aria-activedescendant', current.id);
+      if (typeof current.scrollIntoView === 'function') {
+        current.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function clearActive() {
+      activeIndex = -1;
+      optionNodes().forEach(function (node) {
+        node.setAttribute('aria-selected', 'false');
+      });
+      searchInput.setAttribute('aria-activedescendant', '');
+    }
+
+    function focusableInDialog() {
+      return Array.prototype.slice
+        .call(dialog.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter(function (el) {
+          return el.offsetParent !== null || el === document.activeElement;
+        });
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Actions.
+     * ------------------------------------------------------------------ */
+    function loadCalculator(id) {
+      if (!id) return;
+
+      if (hasHeroCalculator) {
+        window.dispatchEvent(
+          new CustomEvent('allcutoff:load-calculator', { detail: { id: id } })
+        );
+        closeSearch();
+        return;
+      }
+
+      window.location.href = '/?calc=' + encodeURIComponent(id);
+    }
+
+    searchResults.addEventListener('click', function (event) {
+      var loadLink = event.target.closest('[data-search-load]');
+      if (loadLink) {
+        event.preventDefault();
+        event.stopPropagation();
+        var loadRow = loadLink.closest('[role="option"]');
+        loadCalculator(loadRow && loadRow.getAttribute('data-calc-id'));
+        return;
+      }
+
+      var openLink = event.target.closest('[data-search-open]');
+      if (openLink) {
+        event.preventDefault();
+        window.location.href = openLink.getAttribute('href');
+        return;
+      }
+
+      var row = event.target.closest('[role="option"]');
+      if (row) {
+        window.location.href = '/calculator/' + encodeURIComponent(row.getAttribute('data-calc-slug') || '');
+      }
+    });
+
+    /* ------------------------------------------------------------------ *
+     * Open / close + focus management.
+     * ------------------------------------------------------------------ */
+    function openSearch() {
+      lastFocused = document.activeElement;
+      backdrop.classList.remove('hidden');
+      backdrop.setAttribute('aria-hidden', 'false');
+      renderResults(searchInput.value);
+      searchInput.setAttribute('aria-expanded', 'true');
+      searchInput.focus();
+      var len = searchInput.value.length;
+      try {
+        searchInput.setSelectionRange(len, len);
+      } catch (err) {
+        /* Some input types disallow the selection APIs. */
+      }
+    }
+
+    function closeSearch() {
+      backdrop.classList.add('hidden');
+      backdrop.setAttribute('aria-hidden', 'true');
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.value = '';
+      clearActive();
+      if (lastFocused && typeof lastFocused.focus === 'function') {
+        lastFocused.focus();
+      }
+      lastFocused = null;
+    }
+
+    if (searchBtn) searchBtn.addEventListener('click', function () { openSearch(); });
+    if (closeBtn) closeBtn.addEventListener('click', function () { closeSearch(); });
+
+    backdrop.addEventListener('mousedown', function (event) {
+      if (event.target === backdrop) closeSearch();
+    });
+
+    quickBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var query = btn.getAttribute('data-quick-query') || (btn.textContent || '').split(' ')[0];
+        searchInput.value = query;
+        renderResults(query);
+        searchInput.focus();
+      });
+    });
+
+    searchInput.addEventListener('input', function (event) {
+      renderResults(event.target.value);
+    });
+
+    searchInput.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setActive(activeIndex + 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setActive(activeIndex <= 0 ? 0 : activeIndex - 1);
+      } else if (event.key === 'Home') {
+        if (currentResults.length) {
+          event.preventDefault();
+          setActive(0);
+        }
+      } else if (event.key === 'End') {
+        if (currentResults.length) {
+          event.preventDefault();
+          setActive(currentResults.length - 1);
+        }
+      } else if (event.key === 'Enter') {
+        if (activeIndex >= 0 && currentResults[activeIndex]) {
+          event.preventDefault();
+          window.location.href = '/calculator/' + encodeURIComponent(currentResults[activeIndex].slug);
+        }
+      } else if (event.key === 'Tab') {
+        // Trap focus inside the dialog while it is open.
+        var focusable = focusableInDialog();
+        if (!focusable.length) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === searchInput)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    window.addEventListener('keydown', function (event) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        if (backdrop.classList.contains('hidden')) openSearch();
+        else closeSearch();
+        return;
+      }
+
+      if (event.key === 'Escape' && !backdrop.classList.contains('hidden')) {
+        event.preventDefault();
+        closeSearch();
+      }
+    });
+  })();
+</script>

@@ -1,0 +1,139 @@
+---
+import { CATEGORIES, STATES } from '../data/calculators';
+import InstallApp from './InstallApp.astro';
+
+const year = new Date().getFullYear();
+const footerLink = 'text-sm text-slate-600 hover:text-blue-600 transition-colors';
+const footerHeading = 'text-sm font-semibold uppercase tracking-wider text-slate-900';
+---
+
+<footer class="border-t border-slate-200 bg-slate-50 pt-16 pb-12 text-slate-700">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="grid grid-cols-1 gap-10 md:grid-cols-5">
+      <!-- Col 1: Brand & Mission -->
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+              <line x1="8" x2="16" y1="12" y2="12"></line>
+              <line x1="12" x2="12" y1="8" y2="16"></line>
+            </svg>
+          </div>
+          <span class="text-base font-semibold text-slate-900">All Cut Off</span>
+        </div>
+        <p class="mt-3.5 max-w-sm text-sm leading-relaxed text-slate-600">
+          A student-focused platform delivering verified, rule-accurate online admission cutoff calculators for engineering, medical, agriculture, and university entrance examinations across India.
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
+            Verified 2025&ndash;2026 Formulas
+          </span>
+          <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-mono text-slate-600">
+            allcutoff.com
+          </span>
+        </div>
+        <div class="mt-4">
+          <InstallApp variant="footer" />
+        </div>
+      </div>
+
+      <!-- Col 2: Categories -->
+      <nav aria-label="Footer categories">
+        <h2 class={footerHeading}>Categories</h2>
+        <ul class="mt-3.5 space-y-2">
+          {CATEGORIES.map(cat => (
+            <li>
+              <a href={`/category/${cat.slug}`} class={footerLink}>
+                {cat.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <!-- Col 3: States Covered -->
+      <nav aria-label="Footer states and regions">
+        <h2 class={footerHeading}>By State / Region</h2>
+        <ul class="mt-3.5 space-y-2">
+          {STATES.map(st => (
+            <li>
+              <a href={`/state/${st.slug}`} class={footerLink}>
+                {st.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <!-- Col 4: Platform & Compliance -->
+      <nav aria-label="Footer transparency and legal pages">
+        <h2 class={footerHeading}>Transparency</h2>
+        <ul class="mt-3.5 space-y-2">
+          <li>
+            <a href="/about" class={footerLink}>
+              How Formulas Are Verified
+            </a>
+          </li>
+          <li>
+            <a href="/disclaimer" class={footerLink}>
+              Disclaimer &amp; Conduct Policy
+            </a>
+          </li>
+          <li>
+            <a href="/privacy" class={footerLink}>
+              Privacy &amp; Student Safety
+            </a>
+          </li>
+          <li>
+            <a href="/about" class={footerLink}>
+              About All Cut Off
+            </a>
+          </li>
+          <li>
+            <a href="/contact" class={footerLink}>
+              Contact &amp; Report a Formula Update
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Official Notice Callout -->
+    <div class="mt-12 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-slate-700 sm:p-5">
+      <div class="flex items-start gap-2.5">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-amber-600">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" x2="12" y1="8" y2="12"></line>
+          <line x1="12" x2="12.01" y1="16" y2="16"></line>
+        </svg>
+        <div>
+          <span class="font-semibold text-slate-900">Official Admission Rule Disclaimer:</span>
+          All Cut Off (allcutoff.com) calculates cutoff scores strictly in accordance with published guidelines from official authorities (DoTE Tamil Nadu, KEA Karnataka, APSCHE, TGCHE, NTA, CEE Kerala, ACPC Gujarat, etc.). We do not invent universal formulas. Always verify final round counselling ranks and reservation certificates with your respective conducting authority.
+        </div>
+      </div>
+      <div class="mt-4 flex items-start gap-2.5 border-t border-amber-200 pt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-slate-900">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" x2="12" y1="8" y2="12"></line>
+          <line x1="12" x2="12.01" y1="16" y2="16"></line>
+        </svg>
+        <div>
+          <span class="font-semibold text-slate-900">Independent Educational Site:</span>
+          All Cut Off is an independent educational project. It is not affiliated with, endorsed by, sponsored by, or representing any government department, university, examining body, or admissions committee. Every score shown on this site is informational only and is not an official merit list, rank, or seat allotment. Always confirm your result with the official conducting authority before applying or paying any fee.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 text-sm text-slate-500 sm:flex-row">
+      <p>&copy; {year} All Cut Off (allcutoff.com). Free educational tool for students.</p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <span>No registration required</span>
+        <span aria-hidden="true">&bull;</span>
+        <span>100% Free &amp; Client-Side Computation</span>
+      </div>
+    </div>
+  </div>
+</footer>

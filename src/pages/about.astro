@@ -1,0 +1,129 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const title = "About All Cut Off - Verified Formula Promise";
+const description = "Learn about All Cut Off (allcutoff.com), our methodology for verifying official Indian college admission cutoff formulas, and our student-first mission.";
+const keywords = "about All Cut Off, verified cutoff formulas, admission calculator methodology, allcutoff.com";
+const lastUpdated = new Date().toISOString().slice(0, 10);
+---
+
+<Layout title={title} description={description} keywords={keywords}>
+  <section class="border-b border-slate-200 bg-white py-12 sm:py-16">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6">
+      <nav aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2 text-sm text-slate-500">
+          <li><a href="/" class="transition-colors hover:text-blue-600">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="font-medium text-slate-900">About</li>
+        </ol>
+      </nav>
+      <span class="mt-6 block font-mono text-xs uppercase tracking-widest text-blue-600">OUR MISSION</span>
+      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+        About All Cut Off
+      </h1>
+      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        "Calculate your admission cutoff quickly and accurately using verified cutoff formulas and admission rules."
+      </p>
+      <p class="mt-4 text-sm text-slate-500">
+        Last updated: <time datetime={lastUpdated}>{lastUpdated}</time>
+      </p>
+    </div>
+  </section>
+
+  <section class="py-12 sm:py-16" aria-labelledby="about-content-heading">
+    <h2 id="about-content-heading" class="sr-only">About All Cut Off in detail</h2>
+    <div class="mx-auto max-w-4xl space-y-10 px-4 text-sm leading-relaxed text-slate-700 sm:px-6">
+      <!-- Purpose Block -->
+      <div class="hairline-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900 sm:text-lg">Why All Cut Off Was Created</h3>
+        <p class="mt-3">
+          Every year, millions of Indian school students completing Class 12 face immense stress navigating admission counseling for engineering, medical, agriculture, veterinary, and university degrees.
+        </p>
+        <p class="mt-3">
+          A persistent challenge is calculating their admission cutoffs manually. With confusing normalization ratios, subject halving formulas, percentile conversions, and state-specific policies, students frequently make mistakes or encounter misleading generic online calculators that invent a "one-size-fits-all" score.
+        </p>
+        <p class="mt-3">
+          <strong class="text-slate-900">All Cut Off (allcutoff.com)</strong> solves this by offering free, instantly computed online cutoff calculators that strictly adhere to officially published government and university admission brochures.
+        </p>
+      </div>
+
+      <!-- Core Rule: No Invented Formulas -->
+      <div class="hairline-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900 sm:text-lg">Our Core Guarantee: Verified Formulas Only</h3>
+        <p class="mt-3">
+          We strictly follow one uncompromising rule: <em>We do not invent universal cutoff formulas.</em>
+        </p>
+        <p class="mt-3">
+          In India, each conducting body defines its own mathematics:
+        </p>
+        <ul class="mt-4 list-disc space-y-2.5 pl-5 text-sm text-slate-600">
+          <li><strong class="text-slate-900">Tamil Nadu Engineering (TNEA):</strong> Anna University calculates out of 200 via <code>Maths + (Physics / 2) + (Chemistry / 2)</code>.</li>
+          <li><strong class="text-slate-900">Karnataka Engineering (KCET):</strong> KEA mandates a 50:50 composite score uniting 12th Board PCM and KCET entrance marks.</li>
+          <li><strong class="text-slate-900">Telugu States (AP &amp; TS EAPCET):</strong> Standardized composite models combining entrance weightage and intermediate group percentage.</li>
+          <li><strong class="text-slate-900">National Medical (NEET UG):</strong> NMC/NTA evaluated out of 720 with official 50th and 40th percentile qualifying thresholds.</li>
+          <li><strong class="text-slate-900">Tamil Nadu Agriculture (TNAU):</strong> Evaluates out of 200 marks across 4 core science subjects halved to 50 each.</li>
+          <li><strong class="text-slate-900">Delhi University (DU CSAS):</strong> Aggregates mapped CUET domain subject scores out of 800 (or 600 for B.Sc).</li>
+        </ul>
+      </div>
+
+      <!-- Verified Sources -->
+      <div class="hairline-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900 sm:text-lg">Authorities Cited &amp; Audited</h3>
+        <p class="mt-3">
+          Our calculation rules are regularly cross-checked with official government sources:
+        </p>
+        <div class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-slate-700">
+            DoTE Tamil Nadu (tneaonline.org)
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-slate-700">
+            KEA Karnataka (cetonline.karnataka.gov.in)
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-slate-700">
+            APSCHE &amp; TGCHE (cets.apsche.ap.gov.in)
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-slate-700">
+            NTA NEET UG (exams.nta.ac.in)
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-slate-700">
+            TNAU Coimbatore (tnau.ac.in)
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-slate-700">
+            ACPC Gujarat (acpc.gujarat.gov.in)
+          </div>
+        </div>
+      </div>
+
+      <!-- How We Verify (Footer CTA anchor target) -->
+      <div id="how-formulas-are-verified" class="hairline-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900 sm:text-lg">How Formulas Are Verified</h3>
+        <ol class="mt-4 list-decimal space-y-2.5 pl-5 text-sm text-slate-600">
+          <li>Identify the official conducting authority for the exam and the exact admission brochure or government order for the academic year.</li>
+          <li>Transcribe the published normalisation and weighting rule exactly as written, with the maximum marks for every component.</li>
+          <li>Reproduce the step-by-step arithmetic on every calculator page so a student can audit each line themselves.</li>
+          <li>Re-check the model against official tie-breaking and eligibility clauses before publishing.</li>
+          <li>Re-verify the rule whenever an authority issues a corrigendum. Corrections are reported through the contact page.</li>
+        </ol>
+        <p class="mt-4 text-sm text-slate-600">
+          Found an outdated rule? <a href="/contact" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Report a formula update</a> with the official circular link, or read the <a href="/disclaimer" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">full disclaimer</a>.
+        </p>
+      </div>
+
+      <!-- Future Roadmap -->
+      <div class="hairline-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900 sm:text-lg">Future Roadmap</h3>
+        <p class="mt-3">
+          We are committed to keeping All Cut Off lightweight and focused on cutoff calculators first. Later, as admission seasons progress, we will expand with complementary student tools:
+        </p>
+        <div class="mt-4 flex flex-wrap gap-2 text-sm">
+          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-slate-700">Rank Predictors</span>
+          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-slate-700">College Predictors</span>
+          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-slate-700">Previous-Year Cutoff Data</span>
+          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-slate-700">Eligibility Calculators</span>
+          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-slate-700">Percentage &amp; Marks Calculators</span>
+          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-slate-700">CGPA / SGPA Calculators</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

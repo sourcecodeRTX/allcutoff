@@ -1,0 +1,221 @@
+---
+import type { CutoffCalculator } from '../data/calculators';
+
+interface Props {
+  calculator: CutoffCalculator;
+}
+
+const { calculator } = Astro.props;
+
+const href = `/calculator/${calculator.slug}`;
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Engineering: '#2563eb',
+  Medical: '#e11d48',
+  Agriculture: '#059669',
+  'State Entrance': '#7c3aed',
+  'College/University Admission': '#d97706',
+};
+
+const categoryColor = CATEGORY_COLORS[calculator.category] ?? '#2563eb';
+
+/** Trim trailing punctuation without eating abbreviation dots (B.A, B.Com, A.H.). */
+function trimToken(value: string): string {
+  let out = value.replace(/[ \t;,:\s]+$/, '');
+  out = out.replace(/[a-z]\.$/, '');
+  out = out.replace(/[,:;]+$/, '');
+  return out.trim();
+}
+
+/** Hard truncate at a word boundary, appending an ellipsis. */
+function ellipsize(value: string, max: number): string {
+  const text = value.trim();
+  if (text.length <= max) return text;
+  const head = text.slice(0, max);
+  const cut = head.replace(/[\s,;/&]+$/, '');
+  const boundary = cut.lastIndexOf(' ');
+  const kept = boundary > 0 ? cut.slice(0, boundary) : cut;
+  return `${kept}…`;
+}
+
+function ellipsizeInputLabel(value: string, max = 18): string {
+  const text = value.trim();
+  if (text.length <= max) return text;
+  const head = text.slice(0, max);
+  const boundary = head.lastIndexOf(' ');
+  const kept = boundary > 0 ? head.slice(0, boundary) : head;
+  return `${kept.replace(/[\s,;/&(]+$/, '')}…`;
+}
+
+const COURSE_STOPWORDS = new Set([
+  'admission',
+  'admissions',
+  'at',
+  'course',
+  'courses',
+  'degree',
+  'degrees',
+  'engineering',
+  'for',
+  'in',
+  'of',
+  'the',
+]);
+
+/** Keep the original separator style: ", ", " / ", " & ". */
+function normalizeSep(delimiter: string): string {
+  if (!delimiter) return '';
+  return delimiter === ',' || delimiter === ';' ? `${delimiter} ` : ` ${delimiter} `;
+}
+
+/**
+ * Turn a free-form `targetCourse` string into a short, scannable badge label
+ * while preserving the original separators (", ", " / ", " & ").
+ */
+function courseBadge(raw: string): string {
+  const source = raw.replace(/\s+/g, ' ').trim();
+  if (!source) return raw;
+
+  // Parenthetical lists of alternatives ("(B.E. / B.Tech)") carry the real
+  // course codes, so they replace the prose that precedes them.
+  let text = source.replace(/[^()]*\(([^()]*(?:[/&,][^()]*)+)\)/g, '$1');
+  // Remaining parentheticals are plain-English glosses — drop them.
+  text = text.replace(/\s*\([^()]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Trailing "in Kerala" / "of Tamil Nadu" style qualifiers are not courses.
+  text = text.replace(/\s+(?:in|at|of|for)\s+.*$/i, ' ').replace(/\s+/g, ' ').trim();
+
+  const segments: { text: string; sep: string }[] = [];
+  const pattern = /([^,;&/]+)([,;&/]*)/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const words = match[1]
+      .split(/\s+/)
+      .filter((word) => word && !COURSE_STOPWORDS.has(word.toLowerCase().replace(/[^a-z]/g, '')))
+      .join(' ');
+    const cleaned = trimToken(words);
+    if (!cleaned) continue;
+    segments.push({ text: cleaned, sep: normalizeSep(match[2]) });
+  }
+
+  if (segments.length === 0) return ellipsize(raw, 40);
+
+  let out = segments[0].text;
+  for (let i = 1; i < Math.min(segments.length, 3); i += 1) {
+    out += segments[i - 1].sep + segments[i].text;
+  }
+
+  return ellipsize(out, 40);
+}
+
+const courseLabel = courseBadge(calculator.targetCourse);
+const inputLabels = ellipsize(
+  calculator.inputs.map((input) => ellipsizeInputLabel(input.shortLabel)).join(', '),
+  46
+);
+const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
+const titleLinkId = `calculator-title-${calculator.id}`;
+---
+
+<article
+  class="surface-card group relative flex h-full flex-col p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg motion-reduce:transition-none"
+>
+  <div class="flex flex-wrap items-center gap-2">
+    <span
+      class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+      style={`border-color:${categoryColor}33;background-color:${categoryColor}0f;color:${categoryColor};`}
+    >
+      <span class="h-1.5 w-1.5 shrink-0 rounded-full" style={`background-color:${categoryColor};`}></span>
+      {calculator.category}
+    </span>
+    <span class="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-slate-500">
+      {calculator.state}
+    </span>
+  </div>
+
+  <h3 class="mt-3 text-base font-semibold leading-snug text-slate-900">
+    <a
+      id={titleLinkId}
+      href={href}
+      class="stretched-link focus-ring rounded-sm transition-colors hover:text-blue-700"
+      aria-label={`Open the ${calculator.name} calculator`}
+    >
+      {calculator.name}
+    </a>
+  </h3>
+
+  <p class="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">
+    {calculator.summary}
+  </p>
+
+  <div class="mt-4 flex flex-wrap gap-1.5">
+    <span class="info-pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 21a9 9 0 1 0-9-9"></path>
+        <path d="M12 12l4-4"></path>
+        <path d="M3 12h2"></path>
+      </svg>
+      Max Score: {calculator.maxScore}
+    </span>
+
+    <span class="info-pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="4" x2="4" y1="21" y2="14"></line>
+        <line x1="4" x2="4" y1="10" y2="3"></line>
+        <line x1="12" x2="12" y1="21" y2="12"></line>
+        <line x1="12" x2="12" y1="8" y2="3"></line>
+        <line x1="20" x2="20" y1="21" y2="16"></line>
+        <line x1="20" x2="20" y1="12" y2="3"></line>
+        <line x1="2" x2="6" y1="14" y2="14"></line>
+        <line x1="10" x2="14" y1="8" y2="8"></line>
+        <line x1="18" x2="22" y1="16" y2="16"></line>
+      </svg>
+      Inputs: {inputLabels}
+    </span>
+
+    <span class="info-pill" title={calculator.conductingAuthority}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 21h18"></path>
+        <path d="M5 21V7l8-4v18"></path>
+        <path d="M19 21V11l-6-4"></path>
+      </svg>
+      Conducting Body: {authorityLabel}
+    </span>
+  </div>
+
+  <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+    <span class="font-mono-eyebrow block text-xs text-slate-400">Target Course</span>
+    <span class="mt-1 block text-sm font-semibold text-slate-800">{courseLabel}</span>
+    <span class="mt-1 block text-xs text-slate-500">Academic Year {calculator.academicYear}</span>
+  </div>
+
+  <div class="mt-auto pt-5">
+    <span class="btn-accent w-full" aria-hidden="true">
+      Open Calculator
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="m12 5 7 7-7 7"></path>
+      </svg>
+    </span>
+  </div>
+</article>
+
+<style>
+  /* Stretched link: the whole card is clickable, but the accessible name stays
+     on the single real <a> around the title. */
+  .stretched-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .surface-card:focus-within {
+    border-color: var(--color-link);
+    box-shadow: 0 0 0 3px var(--color-link-soft);
+  }
+
+  /* Keep the outline hugging the title text rather than the overlay box. */
+  .stretched-link:focus-visible {
+    outline-offset: 3px;
+  }
+</style>

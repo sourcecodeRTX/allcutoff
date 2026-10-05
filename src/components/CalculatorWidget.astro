@@ -1,0 +1,880 @@
+---
+import type { CutoffCalculator } from '../data/calculators';
+import { CALCULATORS } from '../data/calculators';
+
+interface Props {
+  calculator: CutoffCalculator;
+}
+
+const { calculator } = Astro.props;
+
+/**
+ * Client-safe registry: every calculator's *real* `calculate()` function is
+ * serialised to source text and rebuilt in the browser. This keeps the maths in
+ * exactly one place (`src/data/calculators.ts`) instead of duplicating it here.
+ */
+const registry = Object.fromEntries(
+  CALCULATORS.map((c) => [c.id, { ...c, calculate: undefined, fn: c.calculate.toString() }])
+);
+
+const maxScore = calculator.maxScore;
+const stepDecimals = (input: { step?: number }) =>
+  (String(input.step ?? 1).split('.')[1] ?? '').length;
+---
+
+<div id="calculator-container" data-calc-id={calculator.id} class="surface-card p-5 sm:p-7">
+  <!-- Context header (a div, not <header>, so print rules keep the title) -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+        {calculator.category}
+      </span>
+      <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs uppercase tracking-wider text-slate-500">
+        {calculator.state}
+      </span>
+      <span class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
+        AY {calculator.academicYear}
+      </span>
+      <span class="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500">
+        Max {maxScore}
+      </span>
+    </div>
+
+    <h2 class="mt-3 text-xl font-bold text-slate-900 sm:text-2xl">
+      {calculator.name}
+    </h2>
+    <p class="mt-2 text-sm leading-relaxed text-slate-600">
+      {calculator.summary}
+    </p>
+    <p class="mt-2 text-xs text-slate-500">
+      Conducting body: <span class="font-semibold text-slate-700">{calculator.conductingAuthority}</span>
+    </p>
+  </div>
+
+  <!-- Inputs -->
+  <form id="cutoff-form" class="mt-6" onsubmit="return false;">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {calculator.inputs.map((input) => {
+        const step = input.step ?? 1;
+        const labelId = `label-${calculator.id}-${input.id}`;
+        const hintId = `hint-${calculator.id}-${input.id}`;
+        return (
+          <div class="rounded-xl border border-slate-200 bg-white p-4 transition-colors focus-within:border-blue-500">
+            <div class="flex items-start justify-between gap-3">
+              <label id={labelId} for={`input-${input.id}`} class="text-sm font-semibold text-slate-900">
+                {input.name}
+              </label>
+              <span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500">
+                {input.unit ?? `Max ${input.max}`}
+              </span>
+            </div>
+
+            <div class="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                class="stepper-btn focus-ring"
+                data-step-target={input.id}
+                data-step-dir="-1"
+                aria-label={`Decrease ${input.name}`}
+              >
+                &minus;
+              </button>
+
+              <input
+                type="number"
+                id={`input-${input.id}`}
+                name={input.id}
+                min={input.min}
+                max={input.max}
+                step={step}
+                value={input.defaultValue}
+                inputmode={stepDecimals(input) > 0 ? 'decimal' : 'numeric'}
+                aria-describedby={input.hint ? hintId : undefined}
+                class="calc-input focus-ring text-center font-mono text-base font-semibold tabular-nums"
+                required
+              />
+
+              <button
+                type="button"
+                class="stepper-btn focus-ring"
+                data-step-target={input.id}
+                data-step-dir="1"
+                aria-label={`Increase ${input.name}`}
+              >
+                +
+              </button>
+            </div>
+
+            <input
+              type="range"
+              id={`range-${input.id}`}
+              min={input.min}
+              max={input.max}
+              step={step}
+              value={input.defaultValue}
+              class="calc-slider focus-ring mt-2"
+              aria-labelledby={labelId}
+            />
+
+            <p class="mt-1 flex items-baseline justify-between gap-2 font-mono text-xs text-slate-500">
+              <span>Min {input.min}</span>
+              <span>Max {input.max}</span>
+            </p>
+
+            {input.hint && (
+              <p id={hintId} class="mt-2 text-xs leading-relaxed text-slate-500">
+                {input.hint}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5">
+      <button type="button" id="btn-calculate" class="btn-accent focus-ring">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+          <line x1="8" x2="16" y1="12" y2="12"></line>
+          <line x1="12" x2="12" y1="8" y2="16"></line>
+        </svg>
+        Calculate Cutoff
+      </button>
+
+      <button type="button" id="btn-reset" class="btn-ghost-soft focus-ring">
+        Reset
+      </button>
+
+      <p class="text-xs text-slate-500 sm:ml-auto">
+        Recalculates instantly as you type.
+      </p>
+    </div>
+  </form>
+
+  <!-- Result region (announced politely) -->
+  <section id="result-region" aria-live="polite" class="mt-7 rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="min-w-0">
+        <span class="font-mono-eyebrow block text-xs text-slate-500">Calculated Cutoff Score</span>
+        <div class="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span id="display-total-cutoff" class="text-4xl font-extrabold tracking-tight text-slate-900 tabular-nums sm:text-5xl">&mdash;</span>
+          <span id="display-score-unit" class="text-sm font-semibold text-slate-500">{calculator.scoreUnit}</span>
+        </div>
+      </div>
+
+      <div class="text-left sm:text-right">
+        <span class="font-mono-eyebrow block text-xs text-slate-500">Score Band</span>
+        <span id="display-percentage" class="text-2xl font-bold text-slate-900 tabular-nums sm:text-3xl">&mdash;</span>
+      </div>
+    </div>
+
+    <div class="mt-5">
+      <div
+        id="score-gauge"
+        class="score-gauge-track"
+        role="progressbar"
+        aria-label="Cutoff score progress"
+        aria-valuemin="0"
+        aria-valuemax={maxScore}
+        aria-valuenow="0"
+      >
+        <div id="score-gauge-fill" class="score-gauge-fill" data-band="green" style="width:0%"></div>
+      </div>
+      <p class="mt-2 flex items-baseline justify-between gap-2 text-xs text-slate-500">
+        <span>0</span>
+        <span>Out of <span id="gauge-max">{maxScore}</span></span>
+      </p>
+    </div>
+
+    <p id="calculation-remarks" class="mt-4 text-sm leading-relaxed text-slate-600"></p>
+  </section>
+
+  <!-- Qualifying status (own live region so it is announced once) -->
+  <div id="qualifying-status" class="status-pill-green mt-4" role="status" aria-live="polite">
+    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true"></span>
+    <span class="min-w-0">
+      <span id="status-title" class="block text-sm font-semibold">Checking eligibility&hellip;</span>
+      <span id="status-desc" class="mt-0.5 block text-xs opacity-90">
+        Enter your marks to see your qualifying status.
+      </span>
+    </span>
+  </div>
+
+  <p
+    id="calc-error"
+    class="mt-4 hidden rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-relaxed text-red-900"
+  >
+    <strong class="font-semibold">We could not evaluate this formula.</strong>
+    <span id="calc-error-text">Please check the marks you entered and try again.</span>
+  </p>
+
+  <!-- Component breakdown -->
+  <div class="mt-6">
+    <h3 class="font-mono-eyebrow text-xs text-slate-500">Component Breakdown</h3>
+    <div class="mt-2.5 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table class="w-full min-w-[36rem] text-left text-sm">
+        <caption class="sr-only">
+          Component-wise breakdown of the {calculator.name} cutoff score
+        </caption>
+        <thead class="border-b border-slate-200 bg-slate-50 font-mono text-xs uppercase tracking-wider text-slate-500">
+          <tr>
+            <th scope="col" class="px-3.5 py-2.5 font-semibold">Component</th>
+            <th scope="col" class="px-3.5 py-2.5 text-right font-semibold">Score</th>
+            <th scope="col" class="px-3.5 py-2.5 text-right font-semibold">Max</th>
+            <th scope="col" class="px-3.5 py-2.5 font-semibold">Share of Max</th>
+            <th scope="col" class="px-3.5 py-2.5 font-semibold">Official Rule Note</th>
+          </tr>
+        </thead>
+        <tbody id="breakdown-tbody" class="text-slate-700"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Collapsible formula walkthrough -->
+  <details id="breakdown-details" class="group mt-6 rounded-xl border border-slate-200 bg-white">
+    <summary class="focus-ring flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-900">
+      <span>Formula &amp; Step-by-Step Breakdown</span>
+      <svg
+        class="shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6"></path>
+      </svg>
+    </summary>
+
+    <div class="border-t border-slate-200 px-4 py-4">
+      <span class="font-mono-eyebrow block text-xs text-slate-500">Official Governing Equation</span>
+      <p class="mt-1.5 break-words font-mono text-sm font-medium text-slate-800">
+        {calculator.verifiedFormulaText}
+      </p>
+
+      <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5">
+        <span class="font-mono-eyebrow block text-xs text-blue-700">Applied to your marks</span>
+        <p id="formula-applied-text" class="mt-1 break-words font-mono text-sm text-blue-900"></p>
+      </div>
+
+      <h4 class="mt-5 font-mono-eyebrow text-xs text-slate-500">Official Steps</h4>
+      <ol class="mt-2.5 space-y-3.5">
+        {calculator.formulaSteps.map((step) => (
+          <li class="flex gap-3">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 font-mono text-xs font-semibold text-white">
+              {step.stepNumber}
+            </span>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-900">{step.title}</p>
+              <p class="mt-0.5 text-sm leading-relaxed text-slate-600">{step.description}</p>
+              <p class="mt-1.5 break-words rounded-md bg-slate-50 px-2.5 py-1.5 font-mono text-xs text-slate-700">
+                {step.formula}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                Example: <span class="font-mono">{step.example}</span>
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <h4 class="mt-6 font-mono-eyebrow text-xs text-slate-500">Official Tie-Breaking Order</h4>
+      <ol class="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-slate-600">
+        {calculator.tieBreakingRules.map((rule) => (
+          <li>{rule.replace(/^\d+\.\s*/, '')}</li>
+        ))}
+      </ol>
+
+      {calculator.eligibilityCriteria && calculator.eligibilityCriteria.length > 0 && (
+        <>
+          <h4 class="mt-6 font-mono-eyebrow text-xs text-slate-500">Category-Wise Eligibility</h4>
+          <ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-600">
+            {calculator.eligibilityCriteria.map((crit) => (
+              <li>{crit}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  </details>
+
+  <!-- Result actions -->
+  <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <button type="button" id="btn-print-result" class="btn-accent focus-ring w-full sm:w-auto">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9V3h12v6"></path>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"></path>
+        <rect width="12" height="8" x="6" y="14"></rect>
+      </svg>
+      Download / Print Score Summary
+    </button>
+
+    <button type="button" id="btn-share-result" class="btn-ghost-soft focus-ring w-full sm:w-auto">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.6" x2="15.4" y1="10.5" y2="6.5"></line>
+        <line x1="8.6" x2="15.4" y1="13.5" y2="17.5"></line>
+      </svg>
+      <span id="share-btn-text">Share / Copy Result</span>
+    </button>
+  </div>
+
+  <p class="mt-2.5 text-xs text-slate-500">
+    Calculated on <span class="font-semibold text-slate-700">All Cut Off</span> &mdash; allcutoff.com
+  </p>
+
+  <!-- Official rules reminder -->
+  <aside class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+    <div class="flex items-start gap-3">
+      <svg class="mt-0.5 shrink-0 text-amber-600" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 9v4"></path>
+        <path d="M12 17h.01"></path>
+        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+      </svg>
+
+      <div class="min-w-0">
+        <h3 class="text-sm font-semibold text-amber-900">Always confirm against the official rules</h3>
+        <ul class="mt-2 space-y-1.5 text-xs leading-relaxed text-amber-900">
+          {calculator.officialRules.slice(0, 2).map((rule) => (
+            <li class="flex gap-2">
+              <span aria-hidden="true">&bull;</span>
+              <span class="min-w-0">{rule}</span>
+            </li>
+          ))}
+        </ul>
+
+        {calculator.authorityUrl && (
+          <a
+            href={calculator.authorityUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="focus-ring mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+            aria-label={`Open the official ${calculator.conductingAuthority} website in a new tab`}
+          >
+            Open the official authority website
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 3h6v6"></path>
+              <path d="M10 14 21 3"></path>
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            </svg>
+          </a>
+        )}
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script define:vars={{ calculator, registry }}>
+  (function () {
+    'use strict';
+
+    var BRAND = 'All Cut Off';
+    var SITE = 'https://allcutoff.com';
+    var SHARE_DEFAULT = 'Share / Copy Result';
+
+    var root = document.getElementById('calculator-container');
+    if (!root) return;
+
+    /* ------------------------------------------------------------------ *
+     * Rebuild the real calculate() functions from calculators.ts.
+     * ------------------------------------------------------------------ */
+    var calculators;
+    var buildFailed = false;
+
+    try {
+      calculators = Object.fromEntries(
+        Object.entries(registry).map(function (pair) {
+          var id = pair[0];
+          var source = pair[1];
+          var rebuilt = {};
+          Object.keys(source).forEach(function (key) {
+            if (key !== 'fn') rebuilt[key] = source[key];
+          });
+          rebuilt.calculate = new Function('values', 'return (' + source.fn + ')(values);');
+          return [id, rebuilt];
+        })
+      );
+    } catch (err) {
+      buildFailed = true;
+    }
+
+    var active = !buildFailed ? calculators[calculator.id] : null;
+
+    /* ------------------------------------------------------------------ *
+     * Element lookups (scoped to this widget).
+     * ------------------------------------------------------------------ */
+    var calculateBtn = root.querySelector('#btn-calculate');
+    var resetBtn = root.querySelector('#btn-reset');
+    var printBtn = root.querySelector('#btn-print-result');
+    var shareBtn = root.querySelector('#btn-share-result');
+    var shareBtnText = root.querySelector('#share-btn-text');
+
+    var displayTotal = root.querySelector('#display-total-cutoff');
+    var displayPercent = root.querySelector('#display-percentage');
+    var gauge = root.querySelector('#score-gauge');
+    var gaugeFill = root.querySelector('#score-gauge-fill');
+    var gaugeMax = root.querySelector('#gauge-max');
+    var remarks = root.querySelector('#calculation-remarks');
+    var statusPill = root.querySelector('#qualifying-status');
+    var statusTitle = root.querySelector('#status-title');
+    var statusDesc = root.querySelector('#status-desc');
+    var breakdownTbody = root.querySelector('#breakdown-tbody');
+    var formulaApplied = root.querySelector('#formula-applied-text');
+    var errorBox = root.querySelector('#calc-error');
+    var errorText = root.querySelector('#calc-error-text');
+
+    if (!displayTotal || !breakdownTbody) return;
+
+    /* ------------------------------------------------------------------ *
+     * Small helpers.
+     * ------------------------------------------------------------------ */
+    function num(value) {
+      var parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function fmt(value) {
+      return String(Number(num(value).toFixed(3)));
+    }
+
+    function decimalsOf(step) {
+      var parts = String(step || 1).split('.');
+      return parts[1] ? parts[1].length : 0;
+    }
+
+    function roundToStep(value, step) {
+      var places = decimalsOf(step);
+      var factor = Math.pow(10, places);
+      return Math.round(num(value) * factor) / factor;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function numberInput(id) {
+      return root.querySelector('#input-' + CSS.escape(id));
+    }
+
+    function rangeInput(id) {
+      return root.querySelector('#range-' + CSS.escape(id));
+    }
+
+    function syncSliderProgress(slider) {
+      if (!slider) return;
+      var min = num(slider.min);
+      var max = num(slider.max);
+      var span = max - min;
+      var ratio = span > 0 ? (num(slider.value) - min) / span : 0;
+      var pct = clamp(ratio * 100, 0, 100);
+      slider.style.setProperty('--slider-progress', pct.toFixed(2) + '%');
+    }
+
+    function readValues() {
+      var values = {};
+      calculator.inputs.forEach(function (input) {
+        var el = numberInput(input.id);
+        var step = input.step == null ? 1 : input.step;
+        var raw = el ? num(el.value) : num(input.defaultValue);
+        values[input.id] = roundToStep(clamp(raw, num(input.min), num(input.max)), step);
+      });
+      return values;
+    }
+
+    function refreshSteppers() {
+      var buttons = root.querySelectorAll('[data-step-target]');
+      Array.prototype.forEach.call(buttons, function (btn) {
+        var el = numberInput(btn.getAttribute('data-step-target'));
+        if (!el) return;
+        var value = el.value === '' ? num(el.min) : num(el.value);
+        var goingDown = Number(btn.getAttribute('data-step-dir')) < 0;
+        btn.disabled = goingDown ? value <= num(el.min) : value >= num(el.max);
+      });
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Status banding: green / amber / red.
+     * ------------------------------------------------------------------ */
+    function resolveBand(result, ratio) {
+      var status = result && result.qualifyingStatus;
+
+      if (!status) return ratio >= 0.8 ? 'amber' : 'red';
+      if (status.isQualified === false) return 'red';
+
+      var text = ((status.label || '') + ' ' + (status.details || '')).toLowerCase();
+      var borderline = /borderline|competitive|reserved/.test(text);
+      if (borderline) return 'amber';
+
+      return ratio >= 0.8 ? 'green' : 'amber';
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Render.
+     * ------------------------------------------------------------------ */
+    var lastState = null;
+
+    function hideError() {
+      if (errorBox) errorBox.classList.add('hidden');
+    }
+
+    function showError(err) {
+      if (errorBox) errorBox.classList.remove('hidden');
+      if (errorText) {
+        errorText.textContent = buildFailed
+          ? ' This calculator could not be loaded. Please reload the page.'
+          : ' Please check the marks you entered and try again.';
+      }
+      displayTotal.textContent = '—';
+      if (displayPercent) displayPercent.textContent = '—';
+      if (gaugeFill) gaugeFill.style.width = '0%';
+      breakdownTbody.innerHTML = '';
+      if (formulaApplied) formulaApplied.textContent = '';
+      if (remarks) remarks.textContent = '';
+      statusPill.className = 'status-pill-red mt-4';
+      statusTitle.textContent = 'Calculation unavailable';
+      statusDesc.textContent = 'We could not evaluate the official formula for these values.';
+      lastState = null;
+      if (window.console && err) window.console.error('[All Cut Off] calculation failed', err);
+    }
+
+    function render(result, values) {
+      hideError();
+
+      var breakdown = Array.isArray(result.breakdown) ? result.breakdown : [];
+      var total = num(result.totalCutoff);
+
+      // Denominator: some calculators include an eligibility-gate row (e.g. HSC
+      // board marks) in the breakdown that does not add to the score, and the
+      // DU 3-subject mode drops to / 600. Taking the smaller of the two keeps
+      // the gauge honest without duplicating any formula logic.
+      var sumMax = breakdown.reduce(function (sum, row) {
+        return sum + num(row.max);
+      }, 0);
+      var denom = sumMax > 0 ? Math.min(sumMax, num(calculator.maxScore) || sumMax) : num(calculator.maxScore) || 1;
+      var pct = denom > 0 ? clamp((total / denom) * 100, 0, 100) : 0;
+      var ratio = denom > 0 ? total / denom : 0;
+
+      var status = result.qualifyingStatus || null;
+      var band = resolveBand(result, ratio);
+
+      displayTotal.textContent = fmt(total);
+      if (displayPercent) displayPercent.textContent = pct.toFixed(1) + '%';
+      if (gaugeMax) gaugeMax.textContent = fmt(denom);
+      if (gaugeFill) {
+        gaugeFill.style.width = pct.toFixed(2) + '%';
+        gaugeFill.setAttribute('data-band', band);
+      }
+      if (gauge) {
+        gauge.setAttribute('aria-valuemax', fmt(denom));
+        gauge.setAttribute('aria-valuenow', fmt(total));
+        gauge.setAttribute(
+          'aria-valuetext',
+          fmt(total) + ' out of ' + fmt(denom) + ' (' + pct.toFixed(1) + ' percent)'
+        );
+      }
+
+      if (statusPill) statusPill.className = 'status-pill-' + band + ' mt-4';
+      if (statusTitle) statusTitle.textContent = status ? status.label : 'Score computed';
+      if (statusDesc) {
+        statusDesc.textContent = status
+          ? status.details
+          : 'Your score is ' + fmt(total) + ' out of ' + fmt(denom) + '.';
+      }
+      if (remarks) remarks.textContent = result.remarks || '';
+
+      if (formulaApplied) {
+        var given = calculator.inputs
+          .map(function (input) {
+            return input.shortLabel + ' ' + fmt(values[input.id]);
+          })
+          .join(', ');
+        var terms = breakdown
+          .map(function (row) {
+            return row.label + ' ' + fmt(row.score);
+          })
+          .join(' + ');
+        formulaApplied.textContent =
+          given + ' \u2192 ' + (terms || fmt(total)) + ' = ' + fmt(total) + ' ' + (calculator.scoreUnit || '');
+      }
+
+      breakdownTbody.innerHTML = breakdown
+        .map(function (row) {
+          var score = num(row.score);
+          var max = num(row.max);
+          var share = max > 0 ? clamp((score / max) * 100, 0, 100) : 0;
+          return (
+            '<tr>' +
+            '<th scope="row" class="px-3.5 py-2.5 text-left font-medium text-slate-800">' +
+            esc(row.label) +
+            '</th>' +
+            '<td class="px-3.5 py-2.5 text-right font-mono text-sm font-semibold text-slate-900 tabular-nums">' +
+            esc(fmt(score)) +
+            '</td>' +
+            '<td class="px-3.5 py-2.5 text-right font-mono text-xs text-slate-500 tabular-nums">' +
+            esc(fmt(max)) +
+            '</td>' +
+            '<td class="px-3.5 py-2.5">' +
+            '<span class="flex min-w-32 items-center gap-2">' +
+            '<span class="score-gauge-track h-1.5 flex-1"><span class="score-gauge-fill" style="width:' +
+            share.toFixed(1) +
+            '%"></span></span>' +
+            '<span class="font-mono text-xs text-slate-500 tabular-nums">' +
+            share.toFixed(0) +
+            '%</span></span></td>' +
+            '<td class="px-3.5 py-2.5 text-xs leading-relaxed text-slate-500">' +
+            esc(row.note) +
+            '</td>' +
+            '</tr>'
+          );
+        })
+        .join('');
+
+      lastState = {
+        total: fmt(total),
+        denom: fmt(denom),
+        pct: pct,
+        band: band,
+        statusLabel: status ? status.label : '',
+        remarks: result.remarks || ''
+      };
+    }
+
+    function runCalculation() {
+      if (!active) {
+        showError(null);
+        return;
+      }
+
+      var values = readValues();
+
+      try {
+        render(active.calculate(values), values);
+      } catch (err) {
+        showError(err);
+      }
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Input wiring: number field + slider + steppers stay in sync.
+     * ------------------------------------------------------------------ */
+    function nudge(id, direction) {
+      var el = numberInput(id);
+      if (!el) return;
+
+      var min = num(el.min);
+      var max = num(el.max);
+      var step = num(el.step) || 1;
+      var current = el.value === '' ? min : num(el.value);
+      var next = roundToStep(clamp(current + direction * step, min, max), step);
+
+      el.value = String(next);
+      var slider = rangeInput(id);
+      if (slider) {
+        slider.value = String(next);
+        syncSliderProgress(slider);
+      }
+
+      refreshSteppers();
+      runCalculation();
+    }
+
+    calculator.inputs.forEach(function (input) {
+      var numEl = numberInput(input.id);
+      var slider = rangeInput(input.id);
+      var min = num(input.min);
+      var max = num(input.max);
+      var step = input.step == null ? 1 : input.step;
+
+      if (slider) {
+        syncSliderProgress(slider);
+
+        slider.addEventListener('input', function () {
+          if (numEl) numEl.value = slider.value;
+          refreshSteppers();
+          runCalculation();
+        });
+      }
+
+      if (numEl) {
+        numEl.addEventListener('input', function () {
+          if (slider) {
+            slider.value = numEl.value;
+            syncSliderProgress(slider);
+          }
+          refreshSteppers();
+          runCalculation();
+        });
+
+        numEl.addEventListener('change', function () {
+          var next = roundToStep(clamp(num(numEl.value), min, max), step);
+          numEl.value = String(next);
+          if (slider) {
+            slider.value = String(next);
+            syncSliderProgress(slider);
+          }
+          refreshSteppers();
+          runCalculation();
+        });
+      }
+    });
+
+    Array.prototype.forEach.call(root.querySelectorAll('[data-step-target]'), function (btn) {
+      // Stop the browser from starting a scroll/selection gesture on the button.
+      btn.addEventListener('pointerdown', function (event) {
+        event.preventDefault();
+      });
+      btn.addEventListener('click', function () {
+        nudge(btn.getAttribute('data-step-target'), Number(btn.getAttribute('data-step-dir')));
+      });
+    });
+
+    /* ------------------------------------------------------------------ *
+     * Actions.
+     * ------------------------------------------------------------------ */
+    if (calculateBtn) {
+      calculateBtn.addEventListener('click', function () {
+        runCalculation();
+        var region = root.querySelector('#result-region');
+        if (region && typeof region.scrollIntoView === 'function') {
+          region.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        calculator.inputs.forEach(function (input) {
+          var numEl = numberInput(input.id);
+          var slider = rangeInput(input.id);
+          if (numEl) numEl.value = String(input.defaultValue);
+          if (slider) {
+            slider.value = String(input.defaultValue);
+            syncSliderProgress(slider);
+          }
+        });
+        refreshSteppers();
+        runCalculation();
+      });
+    }
+
+    if (printBtn) {
+      printBtn.addEventListener('click', function () {
+        if (typeof window.print === 'function') window.print();
+      });
+    }
+
+    function legacyCopy(text) {
+      try {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.top = '0';
+        area.style.left = '-9999px';
+        document.body.appendChild(area);
+        area.select();
+        area.setSelectionRange(0, area.value.length);
+        var ok = document.execCommand('copy');
+        document.body.removeChild(area);
+        return !!ok;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        return navigator.clipboard
+          .writeText(text)
+          .then(function () {
+            return true;
+          })
+          .catch(function () {
+            return legacyCopy(text);
+          });
+      }
+      return Promise.resolve(legacyCopy(text));
+    }
+
+    function buildResultText() {
+      if (!lastState) {
+        return calculator.name + '\n\nCalculated on ' + BRAND + ' — ' + SITE;
+      }
+
+      var lines = [
+        calculator.name + ' (' + calculator.academicYear + ')',
+        '',
+        'Calculated Cutoff: ' + lastState.total + ' ' + (calculator.scoreUnit || ''),
+        'Score band: ' + lastState.pct.toFixed(1) + '% of ' + lastState.denom
+      ];
+
+      if (lastState.statusLabel) lines.push('Qualifying status: ' + lastState.statusLabel);
+      if (lastState.remarks) lines.push('', lastState.remarks);
+
+      lines.push('', 'Calculated on ' + BRAND + ' — ' + SITE);
+      return lines.join('\n');
+    }
+
+    var flashTimer = null;
+
+    function flash(label, ms) {
+      if (!shareBtnText) return;
+      shareBtnText.textContent = label;
+      if (flashTimer) window.clearTimeout(flashTimer);
+      flashTimer = window.setTimeout(function () {
+        shareBtnText.textContent = SHARE_DEFAULT;
+      }, ms || 2000);
+    }
+
+    function copyAndConfirm() {
+      copyText(buildResultText()).then(function (ok) {
+        flash(ok ? 'Copied!' : 'Press Ctrl+C to copy');
+      });
+    }
+
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function () {
+        var text = buildResultText();
+
+        if (typeof navigator.share === 'function') {
+          navigator
+            .share({
+              title: calculator.name,
+              text: text,
+              url: SITE + '/calculator/' + calculator.slug
+            })
+            .then(function () {
+              flash('Shared');
+            })
+            .catch(function (err) {
+              if (err && err.name === 'AbortError') return;
+              copyAndConfirm();
+            });
+          return;
+        }
+
+        copyAndConfirm();
+      });
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Initial paint.
+     * ------------------------------------------------------------------ */
+    refreshSteppers();
+    runCalculation();
+  })();
+</script>
