@@ -1,5 +1,11 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout, {
+  BRAND_SUFFIX,
+  SITE_URL,
+  TITLE_MAX,
+  clampDescription,
+  pickDescription
+} from '../../layouts/Layout.astro';
 import CalculatorWidget from '../../components/CalculatorWidget.astro';
 import CalculatorCard from '../../components/CalculatorCard.astro';
 import {
@@ -19,9 +25,12 @@ export function getStaticPaths() {
 
 const { calculator } = Astro.props as { calculator: (typeof CALCULATORS)[number] };
 
-const siteUrl = 'https://allcutoff.com';
+const siteUrl = SITE_URL;
 const websiteId = `${siteUrl}/#website`;
 const organizationId = `${siteUrl}/#organization`;
+
+/** Real content-review date for the formula set. Hand-set, never `new Date()`. */
+const FORMULA_REVIEWED = '2026-10-06';
 
 const YEAR_LABEL = calculator.academicYear.replace(/\s*-\s*/g, '-');
 const canonical = `${siteUrl}/calculator/${calculator.slug}`;
@@ -52,53 +61,57 @@ const authorityDomain = calculator.authorityUrl
   ? calculator.authorityUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
   : null;
 
-/** Real exam acronyms, read off the exam + authority strings only (no invented terms). */
-const ACRO_STOP = new Set(['UG', 'PG', 'II', 'III', 'IT', 'NC', 'NT', 'THE']);
-const examAcronyms = Array.from(
-  new Set(
-    (`${calculator.exam} ${calculator.conductingAuthority}`.match(/\b[A-Z][A-Z0-9&.]{1,9}\b/g) ?? [])
-      .map((token) => token.replace(/\.$/, ''))
-      .filter((token) => token.length >= 2 && !ACRO_STOP.has(token))
-  )
-).slice(0, 5);
-
-/** First comma-free chunk of the target course, e.g. "B.Pharm" or "B.E." */
-const courseToken = calculator.targetCourse.split(',')[0].split(' in ')[0].split(' / ')[0].trim();
-
 /** "EAPCET Cutoff" must not become "EAPCET Cutoff cutoff calculator". */
 const calcNoun = /cutoff/i.test(calculator.shortName)
   ? `${calculator.shortName} calculator`
   : `${calculator.shortName} cutoff calculator`;
 
-const keywords = Array.from(new Set([
-  calcNoun,
-  `${categoryBase.toLowerCase()} cutoff calculator`,
-  calculator.state === 'All India' ? 'NEET cutoff calculator' : `${stateMeta?.name ?? calculator.state} admission cutoff ${YEAR_LABEL}`,
-  ...examAcronyms.map((token) => `${token} cutoff marks ${YEAR_LABEL}`),
-  `${courseToken} cutoff ${YEAR_LABEL}`,
-  'admission cutoff calculator'
-])).filter((kw) => !kw.includes(',')).slice(0, 8).join(', ');
-
-const clamp = (value: string, max = 158) => {
-  if (value.length <= max) return value;
-  const cut = value.slice(0, max);
-  const boundary = cut.lastIndexOf(' ');
-  return `${(boundary > 40 ? cut.slice(0, boundary) : cut).replace(/[\s,;:.\-]+$/, '')}...`;
-};
-
-const description = clamp(
-  `Free ${calcNoun} for ${calculator.targetCourse}. Get your official ${calculator.maxScore}-mark ${courseToken} admission score using ${authorityLabel} rules for ${YEAR_LABEL}.`
-);
+/**
+ * A short course label for meta copy.
+ *
+ * Parentheticals are stripped BEFORE splitting on separators. Splitting on
+ * `' / '` alone cut inside a bracket: GUJCET's target course is
+ * "Degree Engineering (B.E. / B.Tech) & Pharmacy", so the old code produced
+ * "Degree Engineering (B.E." and the SERP snippet read `…(B.E. admission score`.
+ * Delhi, TNGASA and TANUVAS were mangled the same way.
+ */
+const courseToken = (() => {
+  const withoutParens = calculator.targetCourse.replace(/\([^)]*\)/g, ' ');
+  const first = withoutParens
+    .split(/,| in |\s\/\s|\s&\s/)
+    .map((part) => part.replace(/\s+/g, ' ').trim())
+    .find((part) => part.length > 0) ?? '';
+  // A long phrase such as "Delhi University UG Courses" would eat the budget.
+  return first.length <= 34 ? first : first.slice(0, first.lastIndexOf(' ', 34)).trim();
+})();
 
 /**
  * Title core from `shortName` (never the full `name`, which is often 60+ chars).
- * Multi-state entries get their real state codes prefixed (AP & TS, not Andhra & Telangana).
+ * Multi-state entries get their real state codes prefixed (AP & TS, not Andhra
+ * & Telangana). The academic year is appended only while the whole rendered
+ * `<title>` still fits the SERP budget once the layout adds " | All Cut Off".
  */
 const stateCodePrefix = calculator.state.includes('&') && stateMeta?.code
   ? `${stateMeta.code.replace(/\//g, ' & ')} `
   : '';
 const coreName = `${stateCodePrefix}${calculator.shortName}`.trim();
-const title = `${/cutoff/i.test(coreName) ? coreName : `${coreName} Cutoff`} Calculator (${YEAR_LABEL})`;
+const titleCore = /cutoff/i.test(coreName) ? `${coreName} Calculator` : `${coreName} Cutoff Calculator`;
+const titleWithYear = `${titleCore} (${YEAR_LABEL})`;
+const title = titleWithYear.length + BRAND_SUFFIX.length <= TITLE_MAX ? titleWithYear : titleCore;
+
+/* --------------------------------------------------------------- description -- */
+
+/**
+ * The ladder is ordered richest-first; `pickDescription` takes the first wording
+ * that lands inside the snippet window, so no page is ever truncated and no
+ * description is cut mid-word or mid-parenthesis.
+ */
+const description = clampDescription(
+  pickDescription([
+    `Free ${calcNoun}. Get your official ${courseToken} admission score for ${YEAR_LABEL} instantly, with no signup and no data stored.`,
+    `Free ${calcNoun}. Get your official ${courseToken} admission score for ${YEAR_LABEL} instantly.`
+  ])
+);
 
 /* ---------------------------------------------------------------- schema -- */
 
@@ -116,22 +129,30 @@ const jsonSafe = (value: unknown): unknown => {
   return value;
 };
 
+const cleanTieBreakers = calculator.tieBreakingRules.map((rule) => rule.replace(/^\d+\.\s*/, ''));
+const hasEligibility = Array.isArray(calculator.eligibilityCriteria) && calculator.eligibilityCriteria.length > 0;
+
 const featureList = [
   'Instant client-side cutoff calculation',
   'Official formula transparency with step-by-step breakdown',
   'No sign-up, no login, no data stored',
-  'Category-wise eligibility check',
+  // Claiming this on every calculator was a manual-action risk: the
+  // category-wise marks block below only renders when `eligibilityCriteria`
+  // exists, which today is one calculator out of twelve.
+  ...(hasEligibility ? ['Category-wise eligibility check'] : []),
   'Shareable and printable score summary'
 ];
 
 const breadcrumbSchema = {
   '@type': 'BreadcrumbList',
   '@id': `${canonical}#breadcrumb`,
+  /* Exactly the three crumbs rendered below, in the same order and with the
+     same labels. Every `item` is a real absolute page URL — never a `#fragment`
+     of the current page, which used to advertise a fourth, invisible level. */
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/#website` },
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
     { '@type': 'ListItem', position: 2, name: categoryHeading, item: `${siteUrl}/category/${calculator.categorySlug}` },
-    { '@type': 'ListItem', position: 3, name: calculator.name, item: pageId },
-    { '@type': 'ListItem', position: 4, name: 'Cutoff calculator tool', item: webappId }
+    { '@type': 'ListItem', position: 3, name: calculator.shortName, item: canonical }
   ]
 };
 
@@ -142,6 +163,7 @@ const webPageSchema = {
   name: title,
   description,
   inLanguage: 'en-IN',
+  dateModified: FORMULA_REVIEWED,
   isPartOf: { '@id': websiteId },
   about: { '@id': webappId },
   breadcrumb: { '@id': `${canonical}#breadcrumb` }
@@ -166,21 +188,12 @@ const webAppSchema = {
   provider: { '@id': organizationId }
 };
 
-const howToSchema = calculator.formulaSteps.length > 0 ? {
-  '@type': 'HowTo',
-  '@id': `${canonical}#howto`,
-  name: `How to calculate your ${calculator.shortName} cutoff score (${calculator.verifiedFormulaText})`,
-  description: `Step-by-step ${calculator.name.toLowerCase()} procedure published by ${authorityLabel} for ${YEAR_LABEL} admissions.`,
-  inLanguage: 'en-IN',
-  totalTime: 'P1M',
-  step: calculator.formulaSteps.map((step) => ({
-    '@type': 'HowToStep',
-    position: step.stepNumber,
-    name: step.title,
-    text: `${step.description} ${step.formula}. ${step.example}.`,
-    url: `${canonical}#step-${step.stepNumber}`
-  }))
-} : null;
+/*
+ * No `HowTo` node. Google retired HowTo rich results in August 2023, so the node
+ * earned nothing, while its `totalTime: 'P1M'` (one month) sat on all twelve
+ * pages describing a procedure that runs instantly. The visible step-by-step
+ * breakdown below is the content that actually earns links.
+ */
 
 const faqSchema = calculator.faqs.length > 0 ? {
   '@type': 'FAQPage',
@@ -206,12 +219,10 @@ const relatedSchema = relatedCalculators.length > 0 ? {
   }))
 } : null;
 
-const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, howToSchema, faqSchema, relatedSchema]
+const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema, relatedSchema]
   .filter(Boolean)
   .map(jsonSafe);
 
-const cleanTieBreakers = calculator.tieBreakingRules.map((rule) => rule.replace(/^\d+\.\s*/, ''));
-const hasEligibility = Array.isArray(calculator.eligibilityCriteria) && calculator.eligibilityCriteria.length > 0;
 const relatedByState = sameStateAlternatives.filter(
   (alt) => !relatedCalculators.some((r) => r.id === alt.id)
 );
@@ -229,8 +240,9 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
 <Layout
   title={title}
   description={description}
-  keywords={keywords}
   currentCategory={calculator.categorySlug}
+  canonicalUrl={canonical}
+  dateModified={FORMULA_REVIEWED}
   extraSchema={extraSchema}
 >
   <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
@@ -246,8 +258,11 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
   </nav>
 
   <article class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-    <!-- Page header -->
-    <header>
+    <!-- Page header. A <div>, not a <header>: a bare <header> inside <main> is a
+         second `banner` landmark, and the site already has one in Header.astro.
+         global.css's print rules scope to `body > header`, so this stays visible
+         on paper either way — and it holds the H1, so it must. -->
+    <div>
       <div class="flex flex-wrap items-center gap-2">
         <a href={`/category/${calculator.categorySlug}`} class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-blue-600">
           {calculator.category}
@@ -265,7 +280,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         </span>
       </div>
 
-      <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+      <h1 class="mt-4 text-[1.75rem] text-slate-900 sm:text-[2.125rem]">
         {calculator.name} &mdash; {YEAR_LABEL}
       </h1>
 
@@ -299,7 +314,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
           <dd class="mt-1 font-semibold text-slate-900">{calculator.maxScore} marks ({calculator.scoreUnit})</dd>
         </div>
       </dl>
-    </header>
+    </div>
 
     <!-- Interactive calculator -->
     <section id="calculator" aria-labelledby="calculator-heading" class="mt-8 scroll-mt-24">
@@ -434,7 +449,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
               <code class="whitespace-pre">{step.formula}</code>
             </p>
             <p class="mt-2 text-xs text-slate-500">
-              Example: <span class="font-mono text-slate-700">{step.example}</span>
+              Example: <span class="break-words font-mono text-slate-700">{step.example}</span>
             </p>
           </li>
         ))}

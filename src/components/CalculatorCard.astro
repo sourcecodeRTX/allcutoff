@@ -114,7 +114,6 @@ const inputLabels = ellipsize(
   46
 );
 const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
-const titleLinkId = `calculator-title-${calculator.id}`;
 ---
 
 <article
@@ -134,11 +133,12 @@ const titleLinkId = `calculator-title-${calculator.id}`;
   </div>
 
   <h3 class="mt-3 text-base font-semibold leading-snug text-slate-900">
+    <!-- No aria-label: the visible name already ends in "Calculator", so a
+         label like "Open the X calculator" both read badly and break WCAG 2.5.3
+         (the accessible name must contain the visible label text). -->
     <a
-      id={titleLinkId}
       href={href}
       class="stretched-link focus-ring rounded-sm transition-colors hover:text-blue-700"
-      aria-label={`Open the ${calculator.name} calculator`}
     >
       {calculator.name}
     </a>
@@ -184,7 +184,7 @@ const titleLinkId = `calculator-title-${calculator.id}`;
   </div>
 
   <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-    <span class="font-mono-eyebrow block text-xs text-slate-400">Target Course</span>
+    <span class="font-mono-eyebrow block text-xs text-slate-600">Target Course</span>
     <span class="mt-1 block text-sm font-semibold text-slate-800">{courseLabel}</span>
     <span class="mt-1 block text-xs text-slate-500">Academic Year {calculator.academicYear}</span>
   </div>
@@ -192,7 +192,7 @@ const titleLinkId = `calculator-title-${calculator.id}`;
   <div class="mt-auto pt-5">
     <span class="btn-accent w-full" aria-hidden="true">
       Open Calculator
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M5 12h14"></path>
         <path d="m12 5 7 7-7 7"></path>
       </svg>

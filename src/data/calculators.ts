@@ -51,6 +51,41 @@ export interface CutoffCalculator {
   };
 }
 
+/**
+ * The admission cycle every calculator on this site is published against.
+ *
+ * This is the single value that has to change when a new cycle opens. It is
+ * referenced here once per record, and every page template reads it back out
+ * of the registry (`CALCULATORS[0].academicYear`, `calculator.academicYear`),
+ * so the hero badge, every page title, every meta description, the disclaimer
+ * scope line and the sitemap all move together.
+ *
+ * Bump this ONE line to move the whole site to the next cycle.
+ */
+export const ACADEMIC_YEAR = '2025 - 2026';
+
+/**
+ * NEET UG marks that landed on the 50th percentile for the General (UR) / EWS
+ * category. The NTA qualifying RULE (50th percentile General/EWS, 40th
+ * OBC/SC/ST, 45th UR-PwD) is stable, but a percentile is a rank position, so the
+ * MARKS that reach it move every year: 137 (2023), 162 (2024), 144 (2025),
+ * 213 (2026).
+ * Source: https://www.collegedekho.com/exam/neet-ug/cutoff
+ *
+ * IMPORTANT: every calculate() is serialised with Function.prototype.toString()
+ * and rebuilt in the browser (CalculatorWidget.astro / HeroCalculator.astro), so
+ * it cannot close over module scope. These values are therefore repeated as
+ * literals inside calculate(); the test suite pins the two in sync.
+ */
+export const NEET_UR_50TH_PERCENTILE_2026 = 213;
+
+/**
+ * Approximate All India Quota (15%) General-category MBBS closing mark for the
+ * 2025 cycle, used only as a named reference point for admission prospects.
+ * Source: https://medicine.careers360.com/articles/neet-2025-cutoff-category-wise-rank-cut-off-mbbs-government-colleges
+ */
+export const NEET_AIQ_15_GENERAL_CLOSING_2025 = 525;
+
 export const CALCULATORS: CutoffCalculator[] = [
   // 1. TNEA Tamil Nadu Engineering
   {
@@ -64,14 +99,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Tamil Nadu',
     stateSlug: 'tamil-nadu',
     targetCourse: 'B.E. / B.Tech Admissions',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Directorate of Technical Education (DoTE), Tamil Nadu',
     authorityUrl: 'https://www.tneaonline.org',
     maxScore: 200,
     scoreUnit: '/ 200',
     summary: 'Calculates the official 200-mark engineering cutoff score for Anna University and affiliated engineering colleges in Tamil Nadu based on 12th standard Physics, Chemistry, and Mathematics marks.',
     verifiedFormulaText: 'Cutoff = Mathematics + (Physics / 2) + (Chemistry / 2)',
-    formulaDisplay: 'Cutoff (200) = Maths + \\frac{Physics}{2} + \\frac{Chemistry}{2}',
+    formulaDisplay: 'Cutoff (out of 200) = Mathematics + (Physics / 2) + (Chemistry / 2)',
     inputs: [
       { id: 'maths', name: 'Mathematics Marks', shortLabel: 'Maths', min: 0, max: 100, step: 0.5, defaultValue: 90, unit: 'out of 100', hint: 'Enter 12th board marks in Mathematics (max 100)' },
       { id: 'physics', name: 'Physics Marks', shortLabel: 'Physics', min: 0, max: 100, step: 0.5, defaultValue: 85, unit: 'out of 100', hint: 'Enter 12th board marks in Physics (max 100)' },
@@ -182,32 +217,32 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Tamil Nadu',
     stateSlug: 'tamil-nadu',
     targetCourse: 'B.Sc. (Hons.) Agriculture & Allied Degrees',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Tamil Nadu Agricultural University, Coimbatore',
     authorityUrl: 'https://tnau.ac.in',
     maxScore: 200,
     scoreUnit: '/ 200',
     summary: 'Calculates the official 200-mark agriculture merit cutoff for B.Sc. (Hons.) Agriculture, Horticulture, Forestry, and Food Nutrition admissions in TNAU and affiliated colleges.',
-    verifiedFormulaText: 'Cutoff = (Physics / 2) + (Chemistry / 2) + (Biology / 2) + (Mathematics / 2) [or Botany + Zoology]',
-    formulaDisplay: 'Cutoff (200) = \\frac{Physics + Chemistry + Biology (or Botany + Zoology) + Maths (or Computer Science)}{2}',
+    verifiedFormulaText: 'Cutoff = (Physics / 2) + (Chemistry / 2) + (Biology / 2) + (4th Subject / 2) — Biology may be one 100-mark subject or the SUM of Botany + Zoology (out of 200)',
+    formulaDisplay: 'Cutoff (out of 200) = (Physics + Chemistry + Biology (or Botany + Zoology) + Maths (or Computer Science)) / 2',
     inputs: [
       { id: 'physics', name: 'Physics Marks', shortLabel: 'Physics', min: 0, max: 100, step: 0.5, defaultValue: 88, unit: 'out of 100' },
       { id: 'chemistry', name: 'Chemistry Marks', shortLabel: 'Chemistry', min: 0, max: 100, step: 0.5, defaultValue: 86, unit: 'out of 100' },
-      { id: 'biology', name: 'Biology Marks', shortLabel: 'Biology / (Botany+Zoo avg)', min: 0, max: 100, step: 0.5, defaultValue: 92, unit: 'out of 100', hint: 'If you took Botany & Zoology separately, enter their combined average out of 100' },
-      { id: 'maths', name: '4th Subject (Maths / Computer Science)', shortLabel: 'Maths / CS', min: 0, max: 100, step: 0.5, defaultValue: 90, unit: 'out of 100' }
+      { id: 'biology', name: 'Biology Marks (or Botany + Zoology)', shortLabel: 'Biology / Botany+Zoology', min: 0, max: 200, step: 0.5, defaultValue: 92, unit: 'out of 200', hint: 'If Biology was one subject, enter it out of 100. If you studied Botany and Zoology separately, ADD the two marks together and enter the total out of 200 (Botany 90 + Zoology 90 = 180). TNAU sums Botany + Zoology as two separate 50-mark subjects; it never averages them. When you use this 200-mark option, leave the 4th subject field at 0 because Group II(A) then has only Physics, Chemistry, Botany and Zoology.' },
+      { id: 'maths', name: '4th Subject (Maths / Computer Science)', shortLabel: 'Maths / CS', min: 0, max: 100, step: 0.5, defaultValue: 90, unit: 'out of 100', hint: 'Mathematics, or Computer Science if Mathematics was not studied. Enter 0 when you have already supplied Botany + Zoology in the Biology field.' }
     ],
     formulaSteps: [
       {
         stepNumber: 1,
         title: 'Subject Normalization to 50 Each',
-        description: 'Each of the 4 eligible core subjects is evaluated out of 50 marks by dividing the mark out of 100 by 2.',
+        description: 'Each of the 4 eligible core subjects is evaluated out of 50 marks. A single 100-mark subject is divided by 2; Botany and Zoology are two separate 100-mark subjects, so their SUM out of 200 is divided by 2 and contributes out of 100.',
         formula: 'Subject Component = Subject Marks / 2',
         example: 'Physics 88/2 = 44, Chemistry 86/2 = 43, Biology 92/2 = 46, Maths 90/2 = 45'
       },
       {
         stepNumber: 2,
         title: 'Combine all 4 Subjects',
-        description: 'Sum the four 50-mark components to get the official aggregate cutoff out of 200.',
+        description: 'Sum the 50-mark components to get the official aggregate cutoff out of 200.',
         formula: 'Cutoff = 44 + 43 + 46 + 45 = 178.00 / 200',
         example: 'Total = 178.00 / 200'
       }
@@ -217,16 +252,18 @@ export const CALCULATORS: CutoffCalculator[] = [
       'Academic Stream: Candidates must have studied Physics, Chemistry, Biology/Botany & Zoology, and Mathematics or Computer Science.',
       'Vocational Stream: 5% seats reserved with vocational subject formula as specified by TNAU.'
     ],
+    // Order per G.O. M.S. 191 (AP.6) dt. 16.05.2007, quoted in the TNAU UG brochure.
     tieBreakingRules: [
-      '1. Percentage of marks in Biology (or Botany & Zoology taken together)',
-      '2. Percentage of marks in Physics & Chemistry taken together',
-      '3. Percentage of marks in 4th core subject (Maths/Computer Science)',
-      '4. Date of birth (seniority in age)'
+      '1. Marks out of 50 in Mathematics, or in Biology / Botany + Zoology if Mathematics was not studied',
+      '2. Marks out of 50 in Physics',
+      '3. Marks out of 50 in Chemistry',
+      '4. Date of birth (older candidate ranked higher)',
+      '5. Random number allotted by TNAU (higher number ranked higher)'
     ],
     faqs: [
       {
         question: 'What if I am a pure science student with Botany and Zoology?',
-        answer: 'For pure science students without Mathematics, the four subjects are Physics (50), Chemistry (50), Botany (50), and Zoology (50), adding up to 200. You can enter Botany & Zoology marks accordingly.'
+        answer: 'For pure science students without Mathematics, Group II(A) has four subjects: Physics, Chemistry, Botany and Zoology, each evaluated out of 50 for a total of 200. Botany and Zoology are SUMMED, not averaged — Botany 90 and Zoology 90 score 45 + 45 = 90, not 45. Enter Botany + Zoology together as one total out of 200 in the Biology field and leave the 4th subject field at 0.'
       },
       {
         question: 'Is NEET required for TNAU Agriculture?',
@@ -236,9 +273,12 @@ export const CALCULATORS: CutoffCalculator[] = [
     calculate: (values) => {
       const p = Math.min(100, Math.max(0, values.physics || 0));
       const c = Math.min(100, Math.max(0, values.chemistry || 0));
-      const b = Math.min(100, Math.max(0, values.biology || 0));
+      const b = Math.min(200, Math.max(0, values.biology || 0));
       const m = Math.min(100, Math.max(0, values.maths || 0));
 
+      // b is either one 100-mark Biology subject or the SUM of Botany + Zoology
+      // out of 200. Both are official components out of 50 per subject, so /2 is
+      // correct for either input and the total stays out of 200.
       const p50 = p / 2;
       const c50 = c / 2;
       const b50 = b / 2;
@@ -250,14 +290,19 @@ export const CALCULATORS: CutoffCalculator[] = [
         breakdown: [
           { label: 'Physics (50%)', score: Number(p50.toFixed(2)), max: 50, note: 'Divided by 2' },
           { label: 'Chemistry (50%)', score: Number(c50.toFixed(2)), max: 50, note: 'Divided by 2' },
-          { label: 'Biology (50%)', score: Number(b50.toFixed(2)), max: 50, note: 'Divided by 2' },
-          { label: '4th Subject (50%)', score: Number(m50.toFixed(2)), max: 50, note: 'Divided by 2' }
+          b > 100
+            ? { label: 'Botany + Zoology (100%)', score: Number(b50.toFixed(2)), max: 100, note: 'Entered as the SUM out of 200, divided by 2' }
+            : { label: 'Biology (50%)', score: Number(b50.toFixed(2)), max: 50, note: 'Divided by 2' },
+          { label: '4th Subject (50%)', score: Number(m50.toFixed(2)), max: 50, note: 'Maths / Computer Science, divided by 2' }
         ],
         remarks: `Your official TNAU Agriculture cutoff is ${total} out of 200.`,
         qualifyingStatus: {
+          // 110 is an INDICATIVE band, not an official rule: TNAU publishes no
+          // single minimum aggregate for UG Group II merit, so it must never be
+          // presented to students as "required" or "official".
           isQualified: total >= 110,
-          label: total >= 110 ? 'Eligible for TNAU General Counseling' : 'Below Typical TNAU Merit Cutoff',
-          details: 'Official minimum eligibility requires passing with prescribed category aggregate.'
+          label: total >= 110 ? 'Within the Indicative TNAU Range' : 'Below the Indicative TNAU Range',
+          details: 'Indicative estimate, not an official rule. TNAU publishes no fixed minimum aggregate for UG Group II merit — the closing mark changes with every course and college. Passing the qualifying examination is what makes you eligible to apply, so use this range only to judge your relative strength.'
         }
       };
     }
@@ -275,14 +320,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Karnataka',
     stateSlug: 'karnataka',
     targetCourse: 'B.Tech / B.E. Engineering Admissions',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Karnataka Examinations Authority (KEA)',
     authorityUrl: 'https://cetonline.karnataka.gov.in/kea/',
     maxScore: 100,
     scoreUnit: '% / 100',
     summary: 'Calculates the official 50:50 composite merit score for Karnataka Engineering admissions by combining 2nd PUC / 12th Board PCM marks (50% weightage) and KCET entrance exam PCM marks (50% weightage).',
     verifiedFormulaText: 'Combined Score = ((Board PCM / 300) * 50) + ((KCET PCM / 180) * 50)',
-    formulaDisplay: 'Merit\\ Score\\ (100) = \\left(\\frac{Board\\ PCM}{300} \\times 50\\right) + \\left(\\frac{KCET\\ PCM}{180} \\times 50\\right)',
+    formulaDisplay: 'Composite Score (out of 100) = (Board PCM / 300) * 50 + (KCET PCM / 180) * 50',
     inputs: [
       { id: 'board_pcm', name: '2nd PUC / 12th Board PCM Total', shortLabel: 'Board PCM', min: 0, max: 300, step: 1, defaultValue: 270, unit: 'out of 300', hint: 'Total marks in Physics + Chemistry + Maths in 12th / 2nd PUC (max 300)' },
       { id: 'kcet_pcm', name: 'KCET Entrance Exam PCM Total', shortLabel: 'KCET PCM', min: 0, max: 180, step: 1, defaultValue: 135, unit: 'out of 180', hint: 'Total score in KCET Physics (60) + Chemistry (60) + Maths (60) (max 180)' }
@@ -369,14 +414,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Andhra Pradesh & Telangana',
     stateSlug: 'andhra-pradesh-telangana',
     targetCourse: 'B.Tech / B.E. / B.Pharmacy / Agriculture',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'APSCHE & TGCHE',
     authorityUrl: 'https://cets.apsche.ap.gov.in',
     maxScore: 100,
     scoreUnit: '/ 100',
     summary: 'Calculates the official 75:25 composite score for AP & TS EAPCET combining 75% weightage for EAPCET entrance exam score (out of 160) and 25% weightage for Class 12 / Intermediate Group subjects.',
     verifiedFormulaText: 'Composite = ((EAPCET Score / 160) * 75) + ((Inter Group % / 100) * 25)',
-    formulaDisplay: 'Composite\\ Score\\ (100) = \\left(\\frac{EAPCET\\ Marks}{160} \\times 75\\right) + \\left(\\frac{Inter\\ Group\\ Marks}{Total\\ Group\\ Marks} \\times 25\\right)',
+    formulaDisplay: 'Composite Score (out of 100) = (EAPCET Marks / 160) * 75 + (Inter Group % / 100) * 25',
     inputs: [
       { id: 'eapcet_marks', name: 'EAPCET Entrance Marks', shortLabel: 'EAPCET Score', min: 0, max: 160, step: 0.25, defaultValue: 105, unit: 'out of 160', hint: 'Marks scored in AP/TS EAPCET exam (max 160)' },
       { id: 'inter_group_pct', name: 'Intermediate Group Subjects % (PCM / PCB)', shortLabel: 'Inter Group %', min: 0, max: 100, step: 0.1, defaultValue: 92, unit: '% (out of 100)', hint: 'Percentage of marks in group subjects (Maths/Bio, Physics, Chemistry) in 10+2 / Intermediate' }
@@ -463,14 +508,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Tamil Nadu',
     stateSlug: 'tamil-nadu',
     targetCourse: 'B.Pharm, B.Sc. Nursing, BPT, BASLP, Radiography',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Selection Committee, Directorate of Medical Education & Research, Chennai',
     authorityUrl: 'https://tnmedicalselection.net',
     maxScore: 200,
     scoreUnit: '/ 200',
     summary: 'Calculates the official 200-mark merit cutoff score for Tamil Nadu Government & Self-Financing Paramedical Degree courses including B.Pharm, B.Sc Nursing, BPT, and Allied Health Sciences.',
     verifiedFormulaText: 'Cutoff = Biology + ((Physics + Chemistry) / 2)',
-    formulaDisplay: 'Cutoff (200) = Biology + \\frac{Physics + Chemistry}{2}',
+    formulaDisplay: 'Cutoff (out of 200) = Biology + (Physics + Chemistry) / 2',
     inputs: [
       { id: 'biology', name: 'Biology Marks (or Botany + Zoo avg)', shortLabel: 'Biology', min: 0, max: 100, step: 0.5, defaultValue: 90, unit: 'out of 100', hint: 'If studied Botany & Zoology, enter average of both out of 100' },
       { id: 'physics', name: 'Physics Marks', shortLabel: 'Physics', min: 0, max: 100, step: 0.5, defaultValue: 82, unit: 'out of 100' },
@@ -532,9 +577,12 @@ export const CALCULATORS: CutoffCalculator[] = [
         ],
         remarks: `Your official TN Paramedical cutoff is ${total} out of 200.`,
         qualifyingStatus: {
+          // 100 is an INDICATIVE band, not an official rule: DME TN publishes no
+          // single minimum aggregate for paramedical merit, so it must never be
+          // presented to students as "required" or "official".
           isQualified: total >= 100,
-          label: total >= 100 ? 'Eligible for Paramedical Counseling' : 'Below Typical Competitive Score',
-          details: 'Official minimum criteria requires passing all prescribed science subjects.'
+          label: total >= 100 ? 'Within the Indicative Competitive Range' : 'Below the Indicative Competitive Range',
+          details: 'Indicative estimate, not an official rule. DME TN publishes no fixed minimum aggregate for paramedical merit — the closing mark changes with every course and college. The binding requirement is a pass in all prescribed science subjects, so use this range only to judge your relative strength.'
         }
       };
     }
@@ -552,14 +600,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Tamil Nadu',
     stateSlug: 'tamil-nadu',
     targetCourse: 'B.V.Sc & A.H. (Bachelor of Veterinary Science)',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Tamil Nadu Veterinary and Animal Sciences University, Chennai',
     authorityUrl: 'https://tanuvas.ac.in',
     maxScore: 200,
     scoreUnit: '/ 200',
     summary: 'Calculates the official 200-mark veterinary merit cutoff score for B.V.Sc & A.H. admissions in TANUVAS veterinary colleges across Tamil Nadu.',
     verifiedFormulaText: 'Cutoff = Biology + ((Physics + Chemistry) / 2)',
-    formulaDisplay: 'Cutoff (200) = Biology\\ (100) + \\frac{Physics + Chemistry}{2}\\ (100)',
+    formulaDisplay: 'Cutoff (out of 200) = Biology (out of 100) + (Physics + Chemistry) / 2 (out of 100)',
     inputs: [
       { id: 'biology', name: 'Biology Marks', shortLabel: 'Biology', min: 0, max: 100, step: 0.5, defaultValue: 96, unit: 'out of 100' },
       { id: 'physics', name: 'Physics Marks', shortLabel: 'Physics', min: 0, max: 100, step: 0.5, defaultValue: 92, unit: 'out of 100' },
@@ -591,7 +639,7 @@ export const CALCULATORS: CutoffCalculator[] = [
     officialRules: [
       'Official regulation of TANUVAS Undergraduate Admissions Committee.',
       'For B.Tech courses (Food Tech, Poultry Tech, Dairy Tech), Mathematics is used instead of Biology.',
-      'Strict minimum aggregate marks as per Veterinary Council of India (VCI) regulations.'
+      'Open Category minimum: Biology at least 60%, Physics and Chemistry together at least 60%, and an aggregate of at least 70% — that is 140 out of 200.'
     ],
     tieBreakingRules: [
       '1. Percentage of marks in Biology',
@@ -621,9 +669,11 @@ export const CALCULATORS: CutoffCalculator[] = [
         ],
         remarks: `Your official TANUVAS Veterinary cutoff score is ${total} out of 200.`,
         qualifyingStatus: {
-          isQualified: total >= 120,
-          label: total >= 185 ? 'High Chance for B.V.Sc & A.H.' : total >= 150 ? 'Moderate Chance' : 'Competitive for B.Tech Tech Courses',
-          details: 'Top veterinary colleges (Madras Veterinary College) typically close around 194-198 for General category.'
+          // 140/200 is the Open Category minimum: Biology >= 60%, Physics and
+          // Chemistry together >= 60%, aggregate >= 70%.
+          isQualified: total >= 140,
+          label: total >= 185 ? 'High Chance for B.V.Sc & A.H.' : total >= 150 ? 'Moderate Chance for B.V.Sc & A.H.' : total >= 140 ? 'Meets TANUVAS Open Category Minimum' : 'Below TANUVAS Open Category Minimum',
+          details: 'The Open Category minimum is Biology at least 60%, Physics and Chemistry together at least 60%, and an aggregate of at least 70% (140 out of 200). Top veterinary colleges (Madras Veterinary College) typically close around 194-198 for General category.'
         }
       };
     }
@@ -641,45 +691,49 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Kerala',
     stateSlug: 'kerala',
     targetCourse: 'B.Tech / B.E. Engineering Admissions in Kerala',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Commissioner for Entrance Examinations (CEE), Kerala',
     authorityUrl: 'https://cee.kerala.gov.in',
     maxScore: 600,
     scoreUnit: '/ 600',
-    summary: 'Calculates the official 50:50 normalized KEAM engineering rank index mark combining KEAM entrance exam score and standardized Class 12 PCM Board score.',
-    verifiedFormulaText: 'KEAM Index = Standardized KEAM Entrance Score (300) + Standardized Board PCM Score (300)',
-    formulaDisplay: 'Index\\ (600) = Entrance\\ Scaled\\ (300) + Board\\ PCM\\ Scaled\\ (300)',
+    summary: 'Calculates the official 50:50 KEAM engineering rank index mark out of 600, combining the 600-mark entrance paper scaled to 300 with the Class 12 board component scaled to 300 in the mandatory 5:3:2 ratio (Mathematics 150, Physics 90, Chemistry 60).',
+    verifiedFormulaText: 'KEAM Index = Entrance Scaled (300) + Board Scaled (300), where Board Scaled = Maths (150) + Physics (90) + Chemistry (60)',
+    formulaDisplay: 'Index (out of 600) = (KEAM Score / 600) * 300 + (Maths % / 100) * 150 + (Physics % / 100) * 90 + (Chemistry % / 100) * 60',
     inputs: [
-      { id: 'keam_entrance', name: 'KEAM Entrance Score', shortLabel: 'KEAM Entrance', min: 0, max: 480, step: 1, defaultValue: 320, unit: 'out of 480 (or total exam marks)', hint: 'Score obtained in KEAM Entrance Examination' },
-      { id: 'board_pcm_pct', name: 'Standardized Class 12 Board PCM %', shortLabel: 'Board PCM %', min: 0, max: 100, step: 0.1, defaultValue: 92, unit: '% (out of 100)', hint: 'Normalized / Standardized Class 12 PCM percentage' }
+      { id: 'keam_entrance', name: 'KEAM Entrance Score', shortLabel: 'KEAM Entrance', min: 0, max: 600, step: 1, defaultValue: 400, unit: 'out of 600', hint: 'The Engineering Entrance Examination is out of 600 marks: Mathematics 300 + Physics 180 + Chemistry 120' },
+      { id: 'board_maths', name: 'Class 12 Mathematics %', shortLabel: 'Board Maths %', min: 0, max: 100, step: 0.1, defaultValue: 92, unit: '% (out of 100)', hint: 'Your Class 12 Mathematics percentage. CEE Kerala weights it out of 150 (5:3:2 ratio)' },
+      { id: 'board_physics', name: 'Class 12 Physics %', shortLabel: 'Board Physics %', min: 0, max: 100, step: 0.1, defaultValue: 88, unit: '% (out of 100)', hint: 'Your Class 12 Physics percentage. CEE Kerala weights it out of 90 (5:3:2 ratio)' },
+      { id: 'board_chemistry', name: 'Class 12 Chemistry %', shortLabel: 'Board Chemistry %', min: 0, max: 100, step: 0.1, defaultValue: 90, unit: '% (out of 100)', hint: 'Your Class 12 Chemistry percentage. CEE Kerala weights it out of 60 (5:3:2 ratio)' }
     ],
     formulaSteps: [
       {
         stepNumber: 1,
         title: 'Entrance Score Scaling to 300',
-        description: 'Your entrance exam score is scaled to an index of 300 marks (50% weightage).',
-        formula: 'Scaled Entrance = (Entrance Score / 480) * 300',
-        example: '320 / 480 * 300 = 200.00'
+        description: 'The entrance paper is out of 600 marks and is scaled to an index of 300 marks (50% weightage).',
+        formula: 'Scaled Entrance = (Entrance Score / 600) * 300',
+        example: '400 / 600 * 300 = 200.00'
       },
       {
         stepNumber: 2,
-        title: 'Board PCM Scaling to 300',
-        description: 'Normalized 12th Board PCM percentage is scaled to 300 marks (50% weightage).',
-        formula: 'Scaled Board = (Board % / 100) * 300',
-        example: '92% -> (92 / 100) * 300 = 276.00'
+        title: 'Board Subject Scaling to 300 (5:3:2 Ratio)',
+        description: 'The three Class 12 subjects are NOT blended. They are scaled separately in the mandatory 5:3:2 ratio: Mathematics out of 150, Physics out of 90, Chemistry out of 60.',
+        formula: 'Scaled Board = (Maths % / 100) * 150 + (Physics % / 100) * 90 + (Chemistry % / 100) * 60',
+        example: 'Maths 92% -> 138.00, Physics 88% -> 79.20, Chemistry 90% -> 54.00 (total 271.20)'
       },
       {
         stepNumber: 3,
         title: 'Combined KEAM Engineering Index',
         description: 'Add both 300-point components to obtain your total index mark out of 600.',
-        formula: 'Total Index = 200.00 + 276.00 = 476.00 / 600',
-        example: '476.00 / 600'
+        formula: 'Total Index = 200.00 + 271.20 = 471.20 / 600',
+        example: '471.20 / 600'
       }
     ],
     officialRules: [
       'Official ranking method adopted by Commissioner for Entrance Examinations (CEE), Kerala.',
       'Equal weightage of 50:50 is given to the marks obtained in the Entrance Examination and the marks obtained for Mathematics, Physics, and Chemistry in the qualifying examination.',
-      'Board marks undergo statistical standardization across state and national boards.'
+      'Board marks undergo statistical standardization across state and national boards.',
+      'Class 12 marks enter the index in the fixed 5:3:2 ratio: Mathematics 150, Physics 90 and Chemistry 60, for 300 marks in total.',
+      'The Engineering Entrance Examination is out of 600 marks (Mathematics 300, Physics 180, Chemistry 120) and a minimum normalised score of 10 is required to be eligible for ranking.'
     ],
     tieBreakingRules: [
       '1. Higher standardized marks in Mathematics in qualifying examination',
@@ -690,28 +744,40 @@ export const CALCULATORS: CutoffCalculator[] = [
     faqs: [
       {
         question: 'What is the minimum qualification mark in KEAM entrance?',
-        answer: 'Candidates must score a minimum of 10 marks in each paper of the entrance examination (relaxation applies to SC/ST candidates).'
+        answer: 'Candidates must score a minimum of 10 marks in each paper of the entrance examination (relaxation applies to SC/ST candidates). This calculator uses the official 10-mark minimum.'
+      },
+      {
+        question: 'How is the Class 12 board component calculated?',
+        answer: 'Not from a single blended percentage. CEE Kerala scales your three Class 12 subjects in a fixed 5:3:2 ratio — Mathematics out of 150, Physics out of 90 and Chemistry out of 60, for 300 marks in total. That is why this calculator asks for the three subjects separately instead of one PCM percentage.'
       }
     ],
     calculate: (values) => {
-      const entrance = Math.min(480, Math.max(0, values.keam_entrance || 0));
-      const boardPct = Math.min(100, Math.max(0, values.board_pcm_pct || 0));
+      const entrance = Math.min(600, Math.max(0, values.keam_entrance || 0));
+      const boardMaths = Math.min(100, Math.max(0, values.board_maths || 0));
+      const boardPhysics = Math.min(100, Math.max(0, values.board_physics || 0));
+      const boardChemistry = Math.min(100, Math.max(0, values.board_chemistry || 0));
 
-      const entranceScaled = (entrance / 480) * 300;
-      const boardScaled = (boardPct / 100) * 300;
+      const entranceScaled = (entrance / 600) * 300;
+      const mathsScaled = (boardMaths / 100) * 150;
+      const physicsScaled = (boardPhysics / 100) * 90;
+      const chemistryScaled = (boardChemistry / 100) * 60;
+      const boardScaled = mathsScaled + physicsScaled + chemistryScaled;
       const total = Number((entranceScaled + boardScaled).toFixed(2));
 
       return {
         totalCutoff: total,
         breakdown: [
-          { label: 'KEAM Entrance Component (50%)', score: Number(entranceScaled.toFixed(2)), max: 300, note: 'Scaled to 300' },
-          { label: 'Class 12 Board PCM Component (50%)', score: Number(boardScaled.toFixed(2)), max: 300, note: 'Scaled to 300' }
+          { label: 'KEAM Entrance Component (50%)', score: Number(entranceScaled.toFixed(2)), max: 300, note: `Entrance out of 600 scaled to 300` },
+          { label: 'Class 12 Board Component (50%)', score: Number(boardScaled.toFixed(2)), max: 300, note: 'Maths 150 + Physics 90 + Chemistry 60 (5:3:2 ratio)' }
         ],
-        remarks: `Your total KEAM Engineering Index mark is ${total} out of 600.`,
+        remarks: `Your total KEAM Engineering Index mark is ${total} out of 600. Board contribution: Maths ${mathsScaled.toFixed(2)}/150 + Physics ${physicsScaled.toFixed(2)}/90 + Chemistry ${chemistryScaled.toFixed(2)}/60.`,
         qualifyingStatus: {
-          isQualified: entrance >= 20,
-          label: entrance >= 20 ? 'Qualified for Ranking' : 'Below Minimum Threshold',
-          details: 'Meets paper qualification criteria.'
+          // Prospectus 9.7.5(i): minimum normalised score of 10 in the entrance.
+          isQualified: entrance >= 10,
+          label: entrance >= 10 ? 'Qualified for Ranking' : 'Below Minimum Threshold',
+          details: entrance >= 10
+            ? 'Your entrance score is at or above the official minimum normalised score of 10 required to be included in the engineering rank list.'
+            : 'The official minimum normalised score in the Engineering Entrance Examination is 10. Clear that first — the index mark is only used for ranking among qualified candidates.'
         }
       };
     }
@@ -729,45 +795,46 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Gujarat',
     stateSlug: 'gujarat',
     targetCourse: 'Degree Engineering (B.E. / B.Tech) & Pharmacy',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Admission Committee for Professional Courses (ACPC), Gujarat',
     authorityUrl: 'https://acpc.gujarat.gov.in',
     maxScore: 100,
     scoreUnit: 'Merit Marks / 100',
-    summary: 'Calculates the official 50:50 ACPC Gujarat Engineering merit score combining Class 12 Board PCM theory marks (50% weightage) and GUJCET entrance exam marks (50% weightage).',
-    verifiedFormulaText: 'Merit Score = ((Board PCM Theory / 300) * 50) + ((GUJCET PCM / 120) * 50)',
-    formulaDisplay: 'Merit\\ Marks\\ (100) = \\left(\\frac{Board\\ PCM\\ Theory}{300} \\times 50\\right) + \\left(\\frac{GUJCET\\ Marks}{120} \\times 50\\right)',
+    summary: 'Calculates the ACPC Gujarat Engineering merit score out of 100: 60% weightage to Class 12 Board PCM theory marks and 40% weightage to the GUJCET entrance score.',
+    verifiedFormulaText: 'Merit Marks = ((Board PCM Theory / 300) * 60) + ((GUJCET PCM / 120) * 40)',
+    formulaDisplay: 'Merit Marks (out of 100) = (Board PCM Theory / 300) * 60 + (GUJCET PCM / 120) * 40',
     inputs: [
-      { id: 'board_pcm', name: '12th Board PCM Theory Marks', shortLabel: 'Board Theory', min: 0, max: 300, step: 0.5, defaultValue: 250, unit: 'out of 300', hint: 'PCM Theory marks in 12th Board exam (excluding practicals, max 300)' },
-      { id: 'gujcet_pcm', name: 'GUJCET Entrance Marks', shortLabel: 'GUJCET Score', min: 0, max: 120, step: 0.25, defaultValue: 95, unit: 'out of 120', hint: 'Physics (40) + Chemistry (40) + Maths (40) in GUJCET (max 120)' }
+      { id: 'board_pcm', name: '12th Board PCM Theory Marks', shortLabel: 'Board Theory', min: 0, max: 300, step: 0.5, defaultValue: 250, unit: 'out of 300', hint: 'PCM theory marks in the 12th Board (practical marks excluded, max 300). Board weightage is 60 of the 100 merit marks.' },
+      { id: 'gujcet_pcm', name: 'GUJCET Entrance Marks', shortLabel: 'GUJCET Score', min: 0, max: 120, step: 0.25, defaultValue: 95, unit: 'out of 120', hint: 'Physics (40) + Chemistry (40) + Maths (40) in GUJCET (max 120). GUJCET weightage is 40 of the 100 merit marks. IMPORTANT: the official ACPC merit ranks on the GUJCET PERCENTILE from the ACPC percentile table, not on the raw score. This calculator scales your raw score linearly as a proxy ((GUJCET / 120) * 40), so this component is an estimate — check your real merit against the ACPC percentile table.' }
     ],
     formulaSteps: [
       {
         stepNumber: 1,
-        title: 'Board PCM Theory Marks (50% Weightage)',
-        description: 'Theory marks scored in Physics, Chemistry, and Mathematics (max 300) converted to 50.',
-        formula: 'Board Component = (Board PCM / 300) * 50',
-        example: '(250 / 300) * 50 = 41.67'
+        title: 'Board PCM Theory Marks (60% Weightage)',
+        description: 'Theory marks scored in Physics, Chemistry and Mathematics (max 300) are converted to a 60-point score.',
+        formula: 'Board Component = (Board PCM / 300) * 60',
+        example: '(250 / 300) * 60 = 50.00'
       },
       {
         stepNumber: 2,
-        title: 'GUJCET Marks (50% Weightage)',
-        description: 'GUJCET marks (max 120) converted to 50.',
-        formula: 'GUJCET Component = (GUJCET / 120) * 50',
-        example: '(95 / 120) * 50 = 39.58'
+        title: 'GUJCET Marks (40% Weightage)',
+        description: 'GUJCET marks (max 120) are converted to a 40-point score. This raw-score scaling is a proxy for the official GUJCET percentile.',
+        formula: 'GUJCET Component = (GUJCET / 120) * 40',
+        example: '(95 / 120) * 40 = 31.667'
       },
       {
         stepNumber: 3,
         title: 'ACPC Merit Marks',
-        description: 'Sum both components to obtain your official merit score out of 100.',
-        formula: 'Merit Marks = 41.67 + 39.58 = 81.25 / 100',
-        example: '81.25 / 100'
+        description: 'Sum both components to obtain your merit score out of 100.',
+        formula: 'Merit Marks = 50.00 + 31.667 = 81.667 / 100',
+        example: '81.667 / 100'
       }
     ],
     officialRules: [
       'Prescribed by Admission Committee for Professional Courses (ACPC), Government of Gujarat.',
       'Only theory marks of Board PCM are considered (practical marks are excluded).',
-      'Eligibility: Minimum 45% (135/300) in PCM theory for Open Category; 40% (120/300) for SC/ST/SEBC/EWS.'
+      'Eligibility: Minimum 45% (135/300) in PCM theory for Open Category; 40% (120/300) for SC/ST/SEBC/EWS.',
+      'The official merit list ranks on the GUJCET percentile published in the ACPC percentile table, which is not the same as the raw score out of 120.'
     ],
     tieBreakingRules: [
       '1. Higher marks in GUJCET Mathematics',
@@ -778,26 +845,30 @@ export const CALCULATORS: CutoffCalculator[] = [
     ],
     faqs: [
       {
-        question: 'Does ACPC use 50:50 or 60:40 formula?',
-        answer: 'ACPC Gujarat officially amended the merit formula to 50% Board PCM Theory marks + 50% GUJCET marks for fair parity.'
+        question: 'Does ACPC use 50:50 or 60:40 weighting?',
+        answer: 'ACPC uses 60% Class 12 Board PCM theory marks and 40% GUJCET, both normalised to a 100-point merit scale. We could not find any published ACPC notification amending this to 50:50, so this calculator applies the documented 60:40 rule.'
+      },
+      {
+        question: 'Why does this calculator use my raw GUJCET score instead of the official percentile?',
+        answer: 'The official ACPC merit list ranks on the GUJCET percentile from the ACPC percentile table, and that percentile is not the same as your raw score out of 120. Because the percentile table cannot be evaluated offline, this calculator scales the raw score linearly ((GUJCET / 120) * 40) as a proxy. Treat that component as an estimate and verify your real merit marks against the ACPC percentile table on acpc.gujarat.gov.in.'
       }
     ],
     calculate: (values) => {
       const board = Math.min(300, Math.max(0, values.board_pcm || 0));
       const gujcet = Math.min(120, Math.max(0, values.gujcet_pcm || 0));
 
-      const boardPart = (board / 300) * 50;
-      const gujcetPart = (gujcet / 120) * 50;
+      const boardPart = (board / 300) * 60;
+      const gujcetPart = (gujcet / 120) * 40;
       const total = Number((boardPart + gujcetPart).toFixed(2));
       const boardPct = (board / 300) * 100;
 
       return {
         totalCutoff: total,
         breakdown: [
-          { label: 'Board PCM Theory (50%)', score: Number(boardPart.toFixed(2)), max: 50, note: `${boardPct.toFixed(1)}% theory marks` },
-          { label: 'GUJCET Entrance (50%)', score: Number(gujcetPart.toFixed(2)), max: 50, note: `${((gujcet / 120) * 100).toFixed(1)}% entrance marks` }
+          { label: 'Board PCM Theory (60%)', score: Number(boardPart.toFixed(2)), max: 60, note: `${boardPct.toFixed(1)}% theory marks scaled to 60` },
+          { label: 'GUJCET Raw Score Proxy (40%)', score: Number(gujcetPart.toFixed(2)), max: 40, note: `${((gujcet / 120) * 100).toFixed(1)}% raw marks scaled to 40 — proxy for the official ACPC percentile` }
         ],
-        remarks: `Your official ACPC Gujarat merit marks: ${total} out of 100.`,
+        remarks: `Your ACPC Gujarat merit marks are ${total} out of 100 (60% board + 40% GUJCET raw-score proxy). The official merit uses the GUJCET percentile from the ACPC percentile table, so verify there.`,
         qualifyingStatus: {
           isQualified: board >= 135,
           label: board >= 135 ? 'Meets Open Category Eligibility (>= 45%)' : board >= 120 ? 'Eligible for Reserved Categories (40%-45%)' : 'Below Minimum Eligibility',
@@ -819,14 +890,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'All India',
     stateSlug: 'all-india',
     targetCourse: 'MBBS / BDS / AYUSH / BVSc',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'National Testing Agency (NTA) & National Medical Commission (NMC)',
     authorityUrl: 'https://exams.nta.ac.in/NEET/',
     maxScore: 720,
     scoreUnit: '/ 720',
-    summary: 'Calculates your NEET UG total score out of 720 from subject marks and evaluates qualifying cutoff percentile status and MBBS admission prospects.',
+    summary: 'Totals your NEET UG score out of 720 from subject marks and compares it against the current cycle\'s published 50th-percentile band and the 2025 All India Quota reference closing mark.',
     verifiedFormulaText: 'NEET Total = Physics (180) + Chemistry (180) + Biology (360)',
-    formulaDisplay: 'Score\\ (720) = Physics\\ (180) + Chemistry\\ (180) + Biology\\ (360)',
+    formulaDisplay: 'Total Score (out of 720) = Physics (180) + Chemistry (180) + Biology (360)',
     inputs: [
       { id: 'physics', name: 'Physics Score', shortLabel: 'Physics', min: -45, max: 180, step: 1, defaultValue: 140, unit: 'out of 180', hint: 'Score in Physics (max 180)' },
       { id: 'chemistry', name: 'Chemistry Score', shortLabel: 'Chemistry', min: -45, max: 180, step: 1, defaultValue: 145, unit: 'out of 180', hint: 'Score in Chemistry (max 180)' },
@@ -864,7 +935,8 @@ export const CALCULATORS: CutoffCalculator[] = [
     ],
     officialRules: [
       'Official marking scheme: 4 marks for every correct answer, minus 1 mark for every incorrect answer, 0 for unattempted.',
-      'Qualifying Cutoff: UR/EWS: 50th percentile (typically ~135 - 164 marks); OBC/SC/ST: 40th percentile (typically ~107 - 129 marks); UR-PwD: 45th percentile.',
+      'Qualifying criterion (NTA, unchanged year to year): General/EWS candidates must be at or above the 50th percentile, OBC/SC/ST at or above the 40th percentile, UR-PwD at or above the 45th percentile.',
+      'A percentile is a rank position, not a fixed score, so the MARKS that reach it change every year: 137 (2023), 162 (2024), 144 (2025) and 213 (2026) for the UR 50th percentile. This calculator uses the 2026 figure of 213.',
       'Only qualified candidates are eligible for MCC AIQ and State Medical counseling.'
     ],
     tieBreakingRules: [
@@ -877,7 +949,11 @@ export const CALCULATORS: CutoffCalculator[] = [
     faqs: [
       {
         question: 'What score is generally required for a Government Medical College (MBBS)?',
-        answer: 'For All India Quota (15%) General category, a score of 620-655+ is generally required. For state quota seats, cutoffs vary by state, category, and domicile.'
+        answer: 'All India Quota (15%) General category closed around 525 marks in 2025. Treat that as a reference point, not a promise — admission depends on your rank and category, not on the raw score. State quota cutoffs are published separately by each state and vary widely by category and domicile, so check your own state board for the figures that actually apply to you.'
+      },
+      {
+        question: 'Is there one fixed NEET qualifying score?',
+        answer: 'No. NTA fixes the qualifying PERCENTILE — 50th for General/EWS, 40th for OBC/SC/ST — but the marks that land on that percentile change every year: 137 in 2023, 162 in 2024, 144 in 2025 and 213 in 2026. This calculator compares your score with the 2026 UR 50th-percentile mark of 213.'
       }
     ],
     calculate: (values) => {
@@ -886,15 +962,13 @@ export const CALCULATORS: CutoffCalculator[] = [
       const b = Math.min(360, Math.max(-90, values.biology || 0));
 
       const total = p + c + b;
-      const isQualifiedUR = total >= 140;
+      const isQualifiedUR = total >= 213;
 
-      let estimate = 'Needs higher score for MBBS seat.';
-      if (total >= 620) {
-        estimate = 'Strong prospect for Government Medical College (AIQ 15% / Top State Quota).';
-      } else if (total >= 540) {
-        estimate = 'Good chance for State Quota Govt / Semi-Govt MBBS seats (depending on state/category).';
+      let estimate = 'Needs a higher score for an MBBS seat.';
+      if (total >= 525) {
+        estimate = 'At or above the 2025 All India Quota (15%) General reference closing mark of 525 — competitive for Government MBBS seats, though admission still depends on your rank and category.';
       } else if (total >= 450) {
-        estimate = 'Competitive for Private Medical MBBS / Government BDS & AYUSH courses.';
+        estimate = 'Competitive for State Quota Government and Semi-Government MBBS seats, and for Private MBBS (check your own state cutoffs).';
       } else if (isQualifiedUR) {
         estimate = 'Qualified in NEET UG. Eligible for Deemed Universities, Management Quota, and Private BDS/AYUSH.';
       }
@@ -909,8 +983,10 @@ export const CALCULATORS: CutoffCalculator[] = [
         remarks: `Total NEET Score: ${total} out of 720 (${((total / 720) * 100).toFixed(1)}%). ${estimate}`,
         qualifyingStatus: {
           isQualified: isQualifiedUR,
-          label: isQualifiedUR ? 'Qualified (Above UR 50th Percentile Cutoff Band)' : 'Below Typical Qualifying Threshold',
-          details: isQualifiedUR ? 'Eligible for MCC All India Quota & State Medical Counseling.' : 'Marks below typical qualifying cutoff range for General category.'
+          label: isQualifiedUR ? 'Qualified - Above the 2026 UR 50th Percentile (213)' : 'Below the 2026 UR 50th Percentile (213)',
+          details: isQualifiedUR
+            ? 'Your score clears the 2026 UR 50th-percentile mark of 213, so you are in the General/EWS qualifying band for this cycle. The NTA percentile rule is fixed; only the marks behind it move each year (137 in 2023, 162 in 2024, 144 in 2025, 213 in 2026).'
+            : 'NTA requires the 50th percentile for General/EWS, which was 213 marks in 2026. The marks behind a given percentile change every year, so confirm against the current-year figure before concluding you are disqualified.'
         }
       };
     }
@@ -928,41 +1004,42 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Delhi (Central University)',
     stateSlug: 'delhi',
     targetCourse: 'Delhi University UG Courses (B.Com Hons, B.Sc Hons, BA Hons)',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'University of Delhi (CSAS UG Portal)',
     authorityUrl: 'https://admission.uod.ac.in',
-    maxScore: 800,
-    scoreUnit: '/ 800 (or / 600 for B.Sc)',
-    summary: 'Calculates the official course-specific merit score for Delhi University Common Seat Allocation System (CSAS UG) based on mapped CUET subject combinations (out of 800 for Commerce/Arts or 600 for B.Sc Science).',
-    verifiedFormulaText: 'Merit = Sum of NTA Normalized/Raw Scores of 4 mapped subjects (or 3 mapped subjects for B.Sc)',
-    formulaDisplay: 'Merit\\ (800) = Subject\\ 1\\ (200) + Subject\\ 2\\ (200) + Subject\\ 3\\ (200) + Subject\\ 4\\ (200)',
+    maxScore: 1000,
+    scoreUnit: '/ 1000',
+    summary: 'Calculates the official course-specific merit score for Delhi University Common Seat Allocation System (CSAS UG) based on mapped CUET subject combinations. Each CUET UG subject is 50 questions x 5 marks = 250, so a 1 Language + 3 Domain course merit is out of 1000.',
+    verifiedFormulaText: 'Merit = Subject 1 + Subject 2 + Subject 3 + Subject 4 (each CUET subject out of 250, total out of 1000)',
+    formulaDisplay: 'Merit (out of 1000) = Subject 1 (250) + Subject 2 (250) + Subject 3 (250) + Subject 4 (250)',
     inputs: [
-      { id: 'subject_1', name: 'Subject 1 (e.g. Language / English)', shortLabel: 'Sub 1 (Lang)', min: 0, max: 200, step: 0.5, defaultValue: 185, unit: 'out of 200', hint: 'CUET score in Language (e.g. English)' },
-      { id: 'subject_2', name: 'Subject 2 (Domain 1)', shortLabel: 'Sub 2 (Domain)', min: 0, max: 200, step: 0.5, defaultValue: 190, unit: 'out of 200', hint: 'CUET score in Domain Subject 1' },
-      { id: 'subject_3', name: 'Subject 3 (Domain 2)', shortLabel: 'Sub 3 (Domain)', min: 0, max: 200, step: 0.5, defaultValue: 180, unit: 'out of 200', hint: 'CUET score in Domain Subject 2' },
-      { id: 'subject_4', name: 'Subject 4 (Domain 3 / Math / General)', shortLabel: 'Sub 4 (Domain/Math)', min: 0, max: 200, step: 0.5, defaultValue: 175, unit: 'out of 200', hint: 'CUET score in Domain Subject 3 (enter 0 if calculating 3-subject B.Sc 600-mark merit)' }
+      { id: 'subject_1', name: 'Subject 1 (e.g. Language / English)', shortLabel: 'Sub 1 (Lang)', min: 0, max: 250, step: 0.5, defaultValue: 235, unit: 'out of 250', hint: 'CUET score in Language (e.g. English). A CUET UG subject is 50 questions x 5 marks = 250' },
+      { id: 'subject_2', name: 'Subject 2 (Domain 1)', shortLabel: 'Sub 2 (Domain)', min: 0, max: 250, step: 0.5, defaultValue: 240, unit: 'out of 250', hint: 'CUET score in Domain Subject 1' },
+      { id: 'subject_3', name: 'Subject 3 (Domain 2)', shortLabel: 'Sub 3 (Domain)', min: 0, max: 250, step: 0.5, defaultValue: 230, unit: 'out of 250', hint: 'CUET score in Domain Subject 2' },
+      { id: 'subject_4', name: 'Subject 4 (Domain 3 / Math / General)', shortLabel: 'Sub 4 (Domain/Math)', min: 0, max: 250, step: 0.5, defaultValue: 225, unit: 'out of 250', hint: 'CUET score in Domain Subject 3. For a 3-subject science programme the CSAS sum is out of 750; enter the three mapped subjects plus 0 here and read your result as a percentage of 1000' }
     ],
     formulaSteps: [
       {
         stepNumber: 1,
-        title: 'Subject Mapping Verification',
-        description: 'DU CSAS only considers subjects appeared in CUET that candidate passed in Class 12.',
-        formula: '4 Subjects * 200 Marks each = 800 Marks',
-        example: '185 + 190 + 180 + 175'
+        title: 'Subject Scale Verification',
+        description: 'Each CUET UG subject is 50 questions x +5 marks = 250 marks, and DU CSAS only considers subjects appeared in CUET that the candidate passed in Class 12.',
+        formula: '4 Subjects x 250 Marks each = 1000 Marks',
+        example: '235 + 240 + 230 + 225'
       },
       {
         stepNumber: 2,
         title: 'Aggregate Course Merit Calculation',
-        description: 'Sum of selected eligible subjects forms your CSAS merit score.',
+        description: 'The sum of the mapped eligible subjects forms your CSAS merit score.',
         formula: 'Merit = Sub1 + Sub2 + Sub3 + Sub4',
-        example: '185 + 190 + 180 + 175 = 730.00 / 800'
+        example: '235 + 240 + 230 + 225 = 930.00 / 1000'
       }
     ],
     officialRules: [
       'Mandated by University of Delhi CSAS (UG) Admission Policy.',
       'Candidates must have studied and passed the chosen subjects in Class 12.',
-      'For B.Sc. (Hons) Physics, Chemistry, Mathematics: Merit is calculated from PCM out of 600 marks (Language requires min 30% qualifying).',
-      'For B.Com (Hons) and BA (Hons): Merit is calculated from 1 Language + 3 Domain subjects out of 800 marks.'
+      'Each CUET UG subject carries 250 marks (50 questions x +5).',
+      'For B.Com (Hons) and BA (Hons): Merit is calculated from 1 Language + 3 Domain subjects out of 1000 marks.',
+      'For B.Sc. (Hons) Physics, Chemistry, Mathematics: the CSAS subject-merit sum is out of 750 (Language requires min 30% qualifying). This calculator always uses the full four-subject /1000 scale, so read your result as a percentage of 1000 and compare it with the percentage published for your course.'
     ],
     tieBreakingRules: [
       '1. Higher percentage of marks aggregate in best 3 subjects in Class 12',
@@ -974,25 +1051,28 @@ export const CALCULATORS: CutoffCalculator[] = [
       {
         question: 'Can I include a subject in CUET that I did not take in Class 12?',
         answer: 'No. Delhi University CSAS rules strictly state that only subjects appeared in CUET which match the subjects passed in Class 12 are considered.'
+      },
+      {
+        question: 'Why does this calculator always show a total out of 1000?',
+        answer: 'Because the calculator cannot detect a three-subject course from your marks alone — a genuine zero in the fourth subject must not silently rescale your score. So it always uses the official four-subject /1000 scale (4 x 250). If you are applying to a three-subject science programme whose CSAS sum is out of 750, enter your three mapped subjects with 0 in the fourth field and compare the resulting percentage against the percentage published for your course.'
       }
     ],
     calculate: (values) => {
-      const s1 = Math.min(200, Math.max(0, values.subject_1 || 0));
-      const s2 = Math.min(200, Math.max(0, values.subject_2 || 0));
-      const s3 = Math.min(200, Math.max(0, values.subject_3 || 0));
-      const s4 = Math.min(200, Math.max(0, values.subject_4 || 0));
+      const s1 = Math.min(250, Math.max(0, values.subject_1 || 0));
+      const s2 = Math.min(250, Math.max(0, values.subject_2 || 0));
+      const s3 = Math.min(250, Math.max(0, values.subject_3 || 0));
+      const s4 = Math.min(250, Math.max(0, values.subject_4 || 0));
 
-      const isThreeSubject = s4 === 0;
       const total = Number((s1 + s2 + s3 + s4).toFixed(2));
-      const maxScore = isThreeSubject ? 600 : 800;
+      const maxScore = 1000;
 
       return {
         totalCutoff: total,
         breakdown: [
-          { label: 'Subject 1', score: s1, max: 200, note: 'Out of 200' },
-          { label: 'Subject 2', score: s2, max: 200, note: 'Out of 200' },
-          { label: 'Subject 3', score: s3, max: 200, note: 'Out of 200' },
-          ...(isThreeSubject ? [] : [{ label: 'Subject 4', score: s4, max: 200, note: 'Out of 200' }])
+          { label: 'Subject 1', score: s1, max: 250, note: 'Out of 250' },
+          { label: 'Subject 2', score: s2, max: 250, note: 'Out of 250' },
+          { label: 'Subject 3', score: s3, max: 250, note: 'Out of 250' },
+          { label: 'Subject 4', score: s4, max: 250, note: 'Out of 250' }
         ],
         remarks: `Your DU CSAS merit score is ${total} out of ${maxScore} (${((total / maxScore) * 100).toFixed(1)}%).`,
         qualifyingStatus: {
@@ -1016,14 +1096,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Maharashtra',
     stateSlug: 'maharashtra',
     targetCourse: 'B.E. / B.Tech Engineering Admissions in Maharashtra',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'State Common Entrance Test Cell, Maharashtra',
     authorityUrl: 'https://cetcell.mahacet.org',
     maxScore: 200,
     scoreUnit: '/ 200',
-    summary: 'Calculates your MHT CET PCM entrance score (Mathematics 100 + Physics 50 + Chemistry 50 = 200) and verifies HSC Class 12 PCM minimum eligibility criteria for CAP counseling.',
+    summary: 'Calculates your MHT CET PCM entrance score (Mathematics 100 + Physics 50 + Chemistry 50 = 200) and verifies the HSC Class 12 PCM minimum eligibility criteria for CAP counseling.',
     verifiedFormulaText: 'MHT CET Score = Mathematics (100) + Physics (50) + Chemistry (50)',
-    formulaDisplay: 'Score\\ (200) = Mathematics\\ (100) + Physics\\ (50) + Chemistry\\ (50)',
+    formulaDisplay: 'Score (out of 200) = Mathematics (out of 100) + Physics (out of 50) + Chemistry (out of 50)',
     inputs: [
       { id: 'maths', name: 'MHT CET Mathematics Score', shortLabel: 'Maths', min: 0, max: 100, step: 1, defaultValue: 76, unit: 'out of 100', hint: 'Maths carries 2 marks per question (max 100)' },
       { id: 'physics', name: 'MHT CET Physics Score', shortLabel: 'Physics', min: 0, max: 50, step: 1, defaultValue: 38, unit: 'out of 50', hint: 'Physics carries 1 mark per question (max 50)' },
@@ -1041,7 +1121,7 @@ export const CALCULATORS: CutoffCalculator[] = [
       {
         stepNumber: 2,
         title: 'HSC Board PCM Eligibility Check',
-        description: 'State CET Cell requires candidates to pass HSC with PCM and score minimum 45% (135/300) for Open or 40% (120/300) for Reserved categories.',
+        description: 'The State CET Cell requires at least 50% (150/300) in HSC PCM for the Open Category, or at least 40% (120/300) for Reserved categories, EWS and PwD candidates belonging to Maharashtra State only.',
         formula: 'HSC % = (HSC PCM / 300) * 100',
         example: '(210 / 300) * 100 = 70.00%'
       }
@@ -1049,7 +1129,8 @@ export const CALCULATORS: CutoffCalculator[] = [
     officialRules: [
       'Governed by State CET Cell, Government of Maharashtra Information Brochure.',
       'There is no negative marking in MHT CET.',
-      'CAP Engineering ranks are based on the MHT CET Percentile Score computed across exam shifts.'
+      'CAP Engineering ranks are based on the MHT CET Percentile Score computed across exam shifts.',
+      'HSC eligibility: at least 50% (150/300) in PCM for the Open Category; at least 40% (120/300) for Reserved categories, EWS and PwD candidates belonging to Maharashtra State only.'
     ],
     tieBreakingRules: [
       '1. Higher percentile / marks in Mathematics in MHT CET',
@@ -1061,7 +1142,7 @@ export const CALCULATORS: CutoffCalculator[] = [
     faqs: [
       {
         question: 'Are HSC marks included in the MHT CET engineering rank?',
-        answer: 'The Maharashtra Government decided to base CAP engineering admissions on 100% MHT CET entrance percentile scores, while Class 12 PCM marks serve as the mandatory qualifying eligibility gate (45% for Open, 40% for Reserved).'
+        answer: 'The Maharashtra Government decided to base CAP engineering admissions on 100% MHT CET entrance percentile scores, while Class 12 PCM marks serve as the mandatory qualifying eligibility gate: at least 50% (150/300) for the Open Category and at least 40% (120/300) for Reserved categories, EWS and PwD candidates belonging to Maharashtra State only.'
       }
     ],
     calculate: (values) => {
@@ -1072,7 +1153,9 @@ export const CALCULATORS: CutoffCalculator[] = [
 
       const total = m + p + c;
       const hscPct = (hsc / 300) * 100;
-      const isEligibleOpen = hsc >= 135;
+      // Official brochure: at least 50% (150/300) for Open; at least 40%
+      // (120/300) for Reserved, EWS and PwD candidates of Maharashtra State.
+      const isEligibleOpen = hsc >= 150;
 
       return {
         totalCutoff: total,
@@ -1085,8 +1168,8 @@ export const CALCULATORS: CutoffCalculator[] = [
         remarks: `Your total MHT CET score is ${total} out of 200. HSC PCM percentage is ${hscPct.toFixed(2)}%.`,
         qualifyingStatus: {
           isQualified: isEligibleOpen,
-          label: isEligibleOpen ? 'Eligible for CAP Counseling (Open & Reserved)' : hsc >= 120 ? 'Eligible for Reserved Categories Only (40%-45%)' : 'HSC Aggregate Below 40%',
-          details: isEligibleOpen ? 'Fulfills the mandatory 45% aggregate in HSC PCM.' : 'Open category requires at least 135/300 (45%).'
+          label: isEligibleOpen ? 'Eligible for CAP Counseling (Open & Reserved)' : hsc >= 120 ? 'Eligible for Reserved Categories Only (40%-50%)' : 'HSC Aggregate Below 40%',
+          details: isEligibleOpen ? 'Fulfills the mandatory 50% aggregate in HSC PCM (150 out of 300).' : 'Open Category requires at least 150/300 (50%). Reserved categories, EWS and PwD candidates of Maharashtra State require at least 120/300 (40%).'
         }
       };
     }
@@ -1104,14 +1187,14 @@ export const CALCULATORS: CutoffCalculator[] = [
     state: 'Tamil Nadu',
     stateSlug: 'tamil-nadu',
     targetCourse: 'B.Com, B.Sc, B.A, BBA, BCA Admissions',
-    academicYear: '2025 - 2026',
+    academicYear: ACADEMIC_YEAR,
     conductingAuthority: 'Directorate of Collegiate Education (DCE), Tamil Nadu',
     authorityUrl: 'https://tngasa.in',
     maxScore: 400,
     scoreUnit: '/ 400',
     summary: 'Calculates the official 400-mark cutoff score for Tamil Nadu Government Arts & Science Colleges (TNGASA) based on the 4 core major subjects in 12th standard (excluding language papers).',
     verifiedFormulaText: 'Cutoff = Core Subject 1 + Core Subject 2 + Core Subject 3 + Core Subject 4',
-    formulaDisplay: 'Cutoff\\ (400) = Subject\\ 1 + Subject\\ 2 + Subject\\ 3 + Subject\\ 4',
+    formulaDisplay: 'Cutoff (out of 400) = Core Subject 1 (100) + Core Subject 2 (100) + Core Subject 3 (100) + Core Subject 4 (100)',
     inputs: [
       { id: 'sub_1', name: 'Core Subject 1 (e.g. Commerce / Physics / Maths)', shortLabel: 'Subject 1', min: 0, max: 100, step: 0.5, defaultValue: 94, unit: 'out of 100' },
       { id: 'sub_2', name: 'Core Subject 2 (e.g. Accountancy / Chemistry)', shortLabel: 'Subject 2', min: 0, max: 100, step: 0.5, defaultValue: 96, unit: 'out of 100' },
@@ -1178,13 +1261,41 @@ export const CALCULATORS: CutoffCalculator[] = [
   }
 ];
 
-export const CATEGORIES = [
-  { name: 'Engineering Cutoff', slug: 'engineering', count: 2, description: 'Calculators for state & national engineering admissions including TNEA, MHT CET, and KEAM.' },
-  { name: 'Medical Cutoff', slug: 'medical', count: 3, description: 'Cutoff tools for MBBS, BDS, Paramedical, and Veterinary admissions like NEET UG, TN Paramedical, and TANUVAS.' },
-  { name: 'Agriculture Cutoff', slug: 'agriculture', count: 1, description: 'Specialized calculators for B.Sc. (Hons.) Agriculture & allied courses including TNAU.' },
-  { name: 'State-level Entrance Exam Cutoffs', slug: 'state-entrance', count: 4, description: 'Official formula calculators for KCET, AP EAPCET, TS EAPCET, GUJCET ACPC, and KEAM.' },
-  { name: 'College/University Admission Cutoffs', slug: 'university-admission', count: 2, description: 'Calculators for central and state university admissions including DU CSAS CUET and TNGASA.' }
-];
+/**
+ * Category rollups. The exam lists are derived from the registry rather than
+ * hand-written, because a hand-written list silently goes stale the moment a
+ * calculator is recategorised — the previous copy credited KEAM to both
+ * Engineering and State Entrance, and named five exams for a category whose
+ * count is four.
+ */
+const CATEGORY_BLURB: Record<string, string> = {
+  engineering: 'Official formula calculators for state and national engineering admissions.',
+  medical: 'Cutoff calculators for MBBS, BDS, paramedical and veterinary admissions.',
+  agriculture: 'Cutoff calculators for B.Sc. (Hons.) Agriculture and allied degree programmes.',
+  'state-entrance': 'Official formula calculators for state-level engineering and pharmacy entrance exams.',
+  'university-admission': 'Cutoff calculators for central and state university UG admissions.'
+};
+
+const CATEGORY_NAMES: Record<string, string> = {
+  engineering: 'Engineering Cutoff',
+  medical: 'Medical Cutoff',
+  agriculture: 'Agriculture Cutoff',
+  'state-entrance': 'State-level Entrance Exam Cutoffs',
+  'university-admission': 'College/University Admission Cutoffs'
+};
+
+const listExams = (slug: string) => {
+  const exams = CALCULATORS.filter(c => c.categorySlug === slug).map(c => c.shortName);
+  if (exams.length <= 1) return '';
+  return ` Covers ${exams.slice(0, -1).join(', ')} and ${exams[exams.length - 1]}.`;
+};
+
+export const CATEGORIES = Object.keys(CATEGORY_NAMES).map((slug) => ({
+  name: CATEGORY_NAMES[slug],
+  slug,
+  count: CALCULATORS.filter(c => c.categorySlug === slug).length,
+  description: CATEGORY_BLURB[slug] + listExams(slug)
+}));
 
 export const STATES = [
   { name: 'Tamil Nadu', slug: 'tamil-nadu', code: 'TN', count: 5 },

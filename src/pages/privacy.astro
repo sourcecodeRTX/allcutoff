@@ -1,38 +1,51 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout, { SITE_URL } from '../layouts/Layout.astro';
+import { CALCULATORS } from '../data/calculators';
+
+const siteUrl = SITE_URL;
+const canonical = `${siteUrl}/privacy`;
+
+/** Real content-review date for this policy. Never the build clock. */
+const lastUpdated = '2026-10-06';
+
+const YEAR_LABEL = (CALCULATORS[0]?.academicYear ?? '2025 - 2026').replace(/\s*-\s*/g, '-');
 
 const title = "Privacy Policy - Student Data Protection";
-const description = "All Cut Off privacy policy: no registration required, client-side calculations, and zero personal marks stored or transmitted.";
-const keywords = "All Cut Off privacy policy, no data collection, client-side calculator, Google AdSense policy";
-const lastUpdated = new Date().toISOString().slice(0, 10);
+const description = "All Cut Off privacy policy: no registration required, all calculations run client-side, and no personal marks are stored or transmitted.";
 
 const extraSchema = [
   {
-    '@type': 'WebPage',
-    name: 'Privacy Policy',
-    url: `${new URL('/privacy', 'https://allcutoff.com').href}`,
-    description,
-    inLanguage: 'en-IN',
-    isPartOf: { '@id': 'https://allcutoff.com/#website' }
+    '@type': 'BreadcrumbList',
+    '@id': `${canonical}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Privacy', item: canonical }
+    ]
   }
 ];
 ---
 
-<Layout title={title} description={description} keywords={keywords} extraSchema={extraSchema}>
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={lastUpdated}
+  extraSchema={extraSchema}
+>
   <section class="border-b border-slate-200 bg-white py-12 sm:py-16">
     <div class="mx-auto max-w-4xl px-4 sm:px-6">
       <nav aria-label="Breadcrumb">
-        <ol class="flex items-center gap-2 text-sm text-slate-500">
+        <ol class="flex flex-wrap items-center gap-2 text-[0.9375rem] text-slate-600">
           <li><a href="/" class="transition-colors hover:text-blue-600">Home</a></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" class="font-medium text-slate-900">Privacy</li>
         </ol>
       </nav>
       <span class="mt-6 block font-mono text-xs uppercase tracking-widest text-blue-600">STUDENT PRIVACY</span>
-      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+      <h1 class="mt-2 text-[1.75rem] text-slate-900 sm:text-[2.125rem]">
         Privacy &amp; Data Protection
       </h1>
-      <p class="mt-3 text-sm text-slate-600 sm:text-base">
+      <p class="mt-3 text-[0.9375rem] text-slate-700 sm:text-base">
         Safe, anonymous, and client-side calculations. Last updated: <time datetime={lastUpdated}>{lastUpdated}</time>
       </p>
     </div>
@@ -41,7 +54,7 @@ const extraSchema = [
   <section class="py-12 sm:py-16" aria-labelledby="privacy-content-heading">
     <div class="mx-auto max-w-4xl space-y-6 px-4 sm:px-6">
       <h2 id="privacy-content-heading" class="sr-only">Privacy policy details</h2>
-      <div class="hairline-card space-y-4 p-6 text-sm leading-relaxed text-slate-700 sm:p-8">
+      <div class="hairline-card space-y-4 p-6 text-[0.9375rem] leading-[1.7] text-slate-700 sm:p-8">
         <h3 class="text-base font-bold text-slate-900">1. Zero Mark Retention (Client-Side Math)</h3>
         <p>
           All cutoff calculations happen entirely inside your web browser using JavaScript. The subject marks or entrance exam scores you enter are never transmitted to our servers or stored in any database. There is no account, no submission step, and no server-side calculation endpoint.
@@ -57,14 +70,23 @@ const extraSchema = [
           You do not need to provide any identifying information to access the All Cut Off cutoff calculators. The service is free and open to everyone.
         </p>
 
-        <h3 class="pt-2 text-base font-bold text-slate-900">4. Advertising</h3>
+        <h3 class="pt-2 text-base font-bold text-slate-900">4. No Advertising, No Ad Trackers</h3>
         <p>
-          This site may display advertising provided by Google AdSense. We do not operate third-party ad trackers that store or sell personal data beyond Google's own certified ad partner policies. Google's use of advertising cookies enables it and its partners to serve ads based on your visit to this and other sites. You can opt out of personalised advertising in your Google Ads Settings, or visit <a href="https://www.google.com/settings/ads" rel="nofollow noopener" target="_blank" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Google Ads Settings</a>.
+          This site displays no advertising. There is no Google AdSense code, no third-party ad network, no ad exchange, and no advertising or cross-site tracking cookie on any page. Nothing about your visit is shared with an advertising partner, because there is no advertising partner to share it with.
+        </p>
+        <p class="mt-3">
+          If advertising is ever introduced, this policy will be rewritten before the first impression is served, and the change will be dated below. An opt-out link or a "limited ad partners" list would not be an adequate description of this site.
         </p>
 
-        <h3 class="pt-2 text-base font-bold text-slate-900">5. Analytics &amp; Server Logs</h3>
+        <h3 class="pt-2 text-base font-bold text-slate-900">5. No Analytics, No Cookies, No Tracking</h3>
         <p>
-          We may use lightweight, privacy-respecting analytics to track aggregate page view metrics, such as which calculators are most popular, in order to improve site performance and reliability. These reports are not linked to any individual student and never include the marks or scores you enter.
+          We run no analytics package. There is no Google Analytics, Google Tag Manager, Plausible, or Clarity script, no pixels, and no session recording. We do not count page views, and we cannot tell whether you used the TNEA calculator or the NEET UG calculator.
+        </p>
+        <p class="mt-3">
+          The only script tags this site loads are its own JavaScript bundles and its own service worker, all served from this domain. The one exception worth naming honestly: the web font request to Google's fonts service and the outbound links to official university and government websites are third-party requests your browser makes directly, and those recipients have their own privacy policies.
+        </p>
+        <p class="mt-3">
+          A calculator result therefore lives only in your browser's memory for as long as the page is open. Close the tab and it is gone; it was never copied anywhere else in the first place.
         </p>
 
         <h3 class="pt-2 text-base font-bold text-slate-900">6. External Links</h3>
@@ -79,7 +101,7 @@ const extraSchema = [
 
         <h3 class="pt-2 text-base font-bold text-slate-900">8. Changes to This Policy</h3>
         <p>
-          Any future change to this policy will be published on this page with an updated "last updated" date. See also the <a href="/disclaimer" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Official Disclaimer</a> and the <a href="/contact" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">contact page</a> for questions.
+          This policy covers the whole site and every calculator published for the {YEAR_LABEL} admission cycle. Any future change will be published on this page with an updated "last updated" date. See also the <a href="/disclaimer" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Official Disclaimer</a> and the <a href="/contact" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">contact page</a> for questions.
         </p>
       </div>
     </div>

@@ -1,30 +1,53 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout, { SITE_URL } from '../layouts/Layout.astro';
+
+const siteUrl = SITE_URL;
+const canonical = `${siteUrl}/about`;
+
+/** Real content-review date for this page. Never the build clock. */
+const lastUpdated = '2026-10-06';
 
 const title = "About All Cut Off - Verified Formula Promise";
 const description = "Learn about All Cut Off (allcutoff.com), our methodology for verifying official Indian college admission cutoff formulas, and our student-first mission.";
-const keywords = "about All Cut Off, verified cutoff formulas, admission calculator methodology, allcutoff.com";
-const lastUpdated = new Date().toISOString().slice(0, 10);
+
+/* A visible breadcrumb with no BreadcrumbList is an unclaimed SERP feature. The
+   two levels below match the two crumbs rendered in the page header. */
+const extraSchema = [
+  {
+    '@type': 'BreadcrumbList',
+    '@id': `${canonical}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'About', item: canonical }
+    ]
+  }
+];
 ---
 
-<Layout title={title} description={description} keywords={keywords}>
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={lastUpdated}
+  extraSchema={extraSchema}
+>
   <section class="border-b border-slate-200 bg-white py-12 sm:py-16">
     <div class="mx-auto max-w-4xl px-4 sm:px-6">
       <nav aria-label="Breadcrumb">
-        <ol class="flex items-center gap-2 text-sm text-slate-500">
+        <ol class="flex flex-wrap items-center gap-2 text-[0.9375rem] text-slate-600">
           <li><a href="/" class="transition-colors hover:text-blue-600">Home</a></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" class="font-medium text-slate-900">About</li>
         </ol>
       </nav>
       <span class="mt-6 block font-mono text-xs uppercase tracking-widest text-blue-600">OUR MISSION</span>
-      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+      <h1 class="mt-2 text-[1.75rem] text-slate-900 sm:text-[2.125rem]">
         About All Cut Off
       </h1>
-      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+      <p class="mt-3 text-[0.9375rem] leading-[1.7] text-slate-700 sm:text-base">
         "Calculate your admission cutoff quickly and accurately using verified cutoff formulas and admission rules."
       </p>
-      <p class="mt-4 text-sm text-slate-500">
+      <p class="mt-4 text-[0.9375rem] text-slate-600">
         Last updated: <time datetime={lastUpdated}>{lastUpdated}</time>
       </p>
     </div>
@@ -32,7 +55,7 @@ const lastUpdated = new Date().toISOString().slice(0, 10);
 
   <section class="py-12 sm:py-16" aria-labelledby="about-content-heading">
     <h2 id="about-content-heading" class="sr-only">About All Cut Off in detail</h2>
-    <div class="mx-auto max-w-4xl space-y-10 px-4 text-sm leading-relaxed text-slate-700 sm:px-6">
+    <div class="mx-auto max-w-4xl space-y-10 px-4 text-[0.9375rem] leading-[1.7] text-slate-700 sm:px-6">
       <!-- Purpose Block -->
       <div class="hairline-card rounded-2xl p-6 sm:p-8">
         <h3 class="text-base font-bold text-slate-900 sm:text-lg">Why All Cut Off Was Created</h3>
@@ -56,7 +79,7 @@ const lastUpdated = new Date().toISOString().slice(0, 10);
         <p class="mt-3">
           In India, each conducting body defines its own mathematics:
         </p>
-        <ul class="mt-4 list-disc space-y-2.5 pl-5 text-sm text-slate-600">
+        <ul class="mt-4 list-disc space-y-2.5 pl-5 text-[0.9375rem] text-slate-700">
           <li><strong class="text-slate-900">Tamil Nadu Engineering (TNEA):</strong> Anna University calculates out of 200 via <code>Maths + (Physics / 2) + (Chemistry / 2)</code>.</li>
           <li><strong class="text-slate-900">Karnataka Engineering (KCET):</strong> KEA mandates a 50:50 composite score uniting 12th Board PCM and KCET entrance marks.</li>
           <li><strong class="text-slate-900">Telugu States (AP &amp; TS EAPCET):</strong> Standardized composite models combining entrance weightage and intermediate group percentage.</li>
@@ -97,14 +120,14 @@ const lastUpdated = new Date().toISOString().slice(0, 10);
       <!-- How We Verify (Footer CTA anchor target) -->
       <div id="how-formulas-are-verified" class="hairline-card rounded-2xl p-6 sm:p-8">
         <h3 class="text-base font-bold text-slate-900 sm:text-lg">How Formulas Are Verified</h3>
-        <ol class="mt-4 list-decimal space-y-2.5 pl-5 text-sm text-slate-600">
+        <ol class="mt-4 list-decimal space-y-2.5 pl-5 text-[0.9375rem] text-slate-700">
           <li>Identify the official conducting authority for the exam and the exact admission brochure or government order for the academic year.</li>
           <li>Transcribe the published normalisation and weighting rule exactly as written, with the maximum marks for every component.</li>
           <li>Reproduce the step-by-step arithmetic on every calculator page so a student can audit each line themselves.</li>
           <li>Re-check the model against official tie-breaking and eligibility clauses before publishing.</li>
           <li>Re-verify the rule whenever an authority issues a corrigendum. Corrections are reported through the contact page.</li>
         </ol>
-        <p class="mt-4 text-sm text-slate-600">
+        <p class="mt-4 text-[0.9375rem] text-slate-700">
           Found an outdated rule? <a href="/contact" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Report a formula update</a> with the official circular link, or read the <a href="/disclaimer" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">full disclaimer</a>.
         </p>
       </div>

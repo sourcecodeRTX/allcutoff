@@ -1,9 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout, { SITE_URL } from '../layouts/Layout.astro';
+
+const siteUrl = SITE_URL;
+const canonical = `${siteUrl}/contact`;
+
+/** Real content-review date for this page. Never the build clock. */
+const lastUpdated = '2026-10-06';
 
 const title = "Contact Us & Report Formula Updates";
 const description = "Contact the All Cut Off team to suggest new exam calculators, report state rule changes, or ask questions about a cutoff formula.";
-const keywords = "contact All Cut Off, report cutoff formula update, allcutoff.com contact, admission calculator support";
 
 const contactEmail = 'contact@allcutoff.com';
 
@@ -27,23 +32,41 @@ const buildMailto = (topic: string, details: string) => {
 const generalMailto = buildMailto('General Question', '');
 const correctionMailto = buildMailto('Formula Correction', '');
 const requestMailto = buildMailto('New Calculator Request', '');
+
+/* Matches the two visible crumbs, so the breadcrumb trail is claimable. */
+const extraSchema = [
+  {
+    '@type': 'BreadcrumbList',
+    '@id': `${canonical}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Contact', item: canonical }
+    ]
+  }
+];
 ---
 
-<Layout title={title} description={description} keywords={keywords}>
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={lastUpdated}
+  extraSchema={extraSchema}
+>
   <section class="border-b border-slate-200 bg-white py-12 sm:py-16">
     <div class="mx-auto max-w-4xl px-4 sm:px-6">
       <nav aria-label="Breadcrumb">
-        <ol class="flex items-center gap-2 text-sm text-slate-500">
+        <ol class="flex flex-wrap items-center gap-2 text-[0.9375rem] text-slate-600">
           <li><a href="/" class="transition-colors hover:text-blue-600">Home</a></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" class="font-medium text-slate-900">Contact</li>
         </ol>
       </nav>
       <span class="mt-6 block font-mono text-xs uppercase tracking-widest text-blue-600">GET IN TOUCH</span>
-      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+      <h1 class="mt-2 text-[1.75rem] text-slate-900 sm:text-[2.125rem]">
         Contact &amp; Feedback
       </h1>
-      <p class="mt-3 text-sm text-slate-600 sm:text-base">
+      <p class="mt-3 text-[0.9375rem] text-slate-700 sm:text-base">
         Have an admission rule update or want a new state calculator added? Email us and we will verify it against the official circular.
       </p>
     </div>
@@ -54,13 +77,13 @@ const requestMailto = buildMailto('New Calculator Request', '');
       <h2 id="contact-methods-heading" class="text-xl font-bold tracking-tight text-slate-900">
         How to reach us
       </h2>
-      <p class="text-sm leading-relaxed text-slate-700">
+      <p class="text-[0.9375rem] leading-[1.7] text-slate-700">
         All Cut Off is a fully static, client-side site with no backend and no contact form processor. The fastest and most reliable way to reach the team is email. Every button below opens your own mail app with the subject and message template already filled in, so nothing is lost.
       </p>
 
       <div class="hairline-card rounded-2xl p-6 sm:p-8">
         <h2 class="text-base font-bold text-slate-900">Email address</h2>
-        <p class="mt-2 text-sm text-slate-600">
+        <p class="mt-2 text-[0.9375rem] text-slate-700">
           Write to us at
           <a href={`mailto:${contactEmail}`} class="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700 wrap-anywhere">{contactEmail}</a>
         </p>
@@ -83,7 +106,7 @@ const requestMailto = buildMailto('New Calculator Request', '');
 
       <div class="hairline-card rounded-2xl p-6 sm:p-8">
         <h2 class="text-base font-bold text-slate-900">Send us a pre-filled message</h2>
-        <p class="mt-2 text-sm text-slate-600">
+        <p class="mt-2 text-[0.9375rem] text-slate-700">
           Pick the topic that matches your message. Each link opens a draft with a template, so you only need to fill in the blanks.
         </p>
         <ul class="mt-4 space-y-3 text-sm">
@@ -106,16 +129,16 @@ const requestMailto = buildMailto('New Calculator Request', '');
 
       <div class="hairline-card rounded-2xl p-6 sm:p-8">
         <h2 class="text-base font-bold text-slate-900">What to include in your email</h2>
-        <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[0.9375rem] text-slate-700">
           <li>The name of the exam, state, and the calculator page you are referring to.</li>
           <li>The official circular, gazette, or brochure link showing the published rule.</li>
           <li>The marks or scores you entered and the result you expected instead.</li>
           <li>Your contact email if you would like a reply.</li>
         </ul>
-        <p class="mt-4 text-sm text-slate-600">
+        <p class="mt-4 text-[0.9375rem] text-slate-700">
           Please do not email student names, roll numbers, or full personal records. Every calculation on this site already runs entirely in your browser, so no personal data is needed to review a formula.
         </p>
-        <p class="mt-4 text-sm text-slate-600">
+        <p class="mt-4 text-[0.9375rem] text-slate-700">
           For how we verify each formula, read <a href="/about#how-formulas-are-verified" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">How Formulas Are Verified</a>.
         </p>
       </div>

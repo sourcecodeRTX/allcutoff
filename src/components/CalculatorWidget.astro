@@ -64,7 +64,7 @@ const stepDecimals = (input: { step?: number }) =>
               <label id={labelId} for={`input-${input.id}`} class="text-sm font-semibold text-slate-900">
                 {input.name}
               </label>
-              <span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500">
+              <span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600">
                 {input.unit ?? `Max ${input.max}`}
               </span>
             </div>
@@ -151,13 +151,19 @@ const stepDecimals = (input: { step?: number }) =>
     </div>
   </form>
 
-  <!-- Result region (announced politely) -->
-  <section id="result-region" aria-live="polite" class="mt-7 rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+  <!-- The calculator's ONE live region. Every visible node below updates
+       instantly but deliberately sits OUTSIDE this region; only this off-screen
+       mirror is written, and only once the input settles, so a slider drag
+       cannot spam a screen reader and the result is never announced twice. -->
+  <p id="calc-live" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+
+  <!-- Result region (visible; not a live region itself) -->
+  <section id="result-region" class="mt-7 rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div class="min-w-0">
         <span class="font-mono-eyebrow block text-xs text-slate-500">Calculated Cutoff Score</span>
         <div class="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span id="display-total-cutoff" class="text-4xl font-extrabold tracking-tight text-slate-900 tabular-nums sm:text-5xl">&mdash;</span>
+          <span id="display-total-cutoff" class="text-[2.25rem] leading-none text-slate-900 tabular-nums sm:text-[2.5rem]">&mdash;</span>
           <span id="display-score-unit" class="text-sm font-semibold text-slate-500">{calculator.scoreUnit}</span>
         </div>
       </div>
@@ -189,8 +195,8 @@ const stepDecimals = (input: { step?: number }) =>
     <p id="calculation-remarks" class="mt-4 text-sm leading-relaxed text-slate-600"></p>
   </section>
 
-  <!-- Qualifying status (own live region so it is announced once) -->
-  <div id="qualifying-status" class="status-pill-green mt-4" role="status" aria-live="polite">
+  <!-- Qualifying status (visual only; announced via #calc-live) -->
+  <div id="qualifying-status" class="status-pill-green mt-4">
     <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true"></span>
     <span class="min-w-0">
       <span id="status-title" class="block text-sm font-semibold">Checking eligibility&hellip;</span>
@@ -377,6 +383,9 @@ const stepDecimals = (input: { step?: number }) =>
     var BRAND = 'All Cut Off';
     var SITE = 'https://allcutoff.com';
     var SHARE_DEFAULT = 'Share / Copy Result';
+    /* Long enough that a slider drag reads as one result, short enough that a
+       typing user still hears each figure they settle on. */
+    var LIVE_DEBOUNCE_MS = 500;
 
     var root = document.getElementById('calculator-container');
     if (!root) return;
@@ -421,6 +430,7 @@ const stepDecimals = (input: { step?: number }) =>
     var gaugeFill = root.querySelector('#score-gauge-fill');
     var gaugeMax = root.querySelector('#gauge-max');
     var remarks = root.querySelector('#calculation-remarks');
+    var liveRegion = root.querySelector('#calc-live');
     var statusPill = root.querySelector('#qualifying-status');
     var statusTitle = root.querySelector('#status-title');
     var statusDesc = root.querySelector('#status-desc');
@@ -458,12 +468,41 @@ const stepDecimals = (input: { step?: number }) =>
       return Math.max(min, Math.min(max, value));
     }
 
+    /* Duplicated pending a shared module: the same helper exists in
+       HeroCalculator.astro (esc) and SearchModal.astro (escapeHtml). Keep all
+       three complete — a missing quote escape is a latent injection. */
     function esc(value) {
       return String(value == null ? '' : value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /** `global.css` only neutralises CSS transitions, not scripted scrolling. */
+    function prefersReducedMotion() {
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
+    /**
+     * The single polite live region. Writes are debounced so a slider drag or a
+     * burst of keystrokes is announced once, at the value the user settled on.
+     */
+    function announceLive(text, immediate) {
+      if (!liveRegion) return;
+      if (liveTimer) {
+        window.clearTimeout(liveTimer);
+        liveTimer = null;
+      }
+      if (immediate) {
+        liveRegion.textContent = text;
+        return;
+      }
+      liveTimer = window.setTimeout(function () {
+        liveTimer = null;
+        liveRegion.textContent = text;
+      }, LIVE_DEBOUNCE_MS);
     }
 
     function numberInput(id) {
@@ -489,6 +528,9 @@ const stepDecimals = (input: { step?: number }) =>
       calculator.inputs.forEach(function (input) {
         var el = numberInput(input.id);
         var step = input.step == null ? 1 : input.step;
+        // An explicitly cleared field reads as 0 (then clamps to the min). Never
+        // silently fall back to defaultValue — a mark the user deleted is not a
+        // mark they typed. Kept byte-identical with HeroCalculator.readValues.
         var raw = el ? num(el.value) : num(input.defaultValue);
         values[input.id] = roundToStep(clamp(raw, num(input.min), num(input.max)), step);
       });
@@ -508,6 +550,9 @@ const stepDecimals = (input: { step?: number }) =>
 
     /* ------------------------------------------------------------------ *
      * Status banding: green / amber / red.
+     * The amber token list below is duplicated verbatim in
+     * HeroCalculator.astro (resolveBand) — keep the two in sync. `moderate`
+     * is a mid-confidence state, so it is amber and never green.
      * ------------------------------------------------------------------ */
     function resolveBand(result, ratio) {
       var status = result && result.qualifyingStatus;
@@ -516,8 +561,8 @@ const stepDecimals = (input: { step?: number }) =>
       if (status.isQualified === false) return 'red';
 
       var text = ((status.label || '') + ' ' + (status.details || '')).toLowerCase();
-      var borderline = /borderline|competitive|reserved/.test(text);
-      if (borderline) return 'amber';
+      var midConfidence = /borderline|competitive|reserved|moderate/.test(text);
+      if (midConfidence) return 'amber';
 
       return ratio >= 0.8 ? 'green' : 'amber';
     }
@@ -526,6 +571,7 @@ const stepDecimals = (input: { step?: number }) =>
      * Render.
      * ------------------------------------------------------------------ */
     var lastState = null;
+    var liveTimer = null;
 
     function hideError() {
       if (errorBox) errorBox.classList.add('hidden');
@@ -548,10 +594,14 @@ const stepDecimals = (input: { step?: number }) =>
       statusTitle.textContent = 'Calculation unavailable';
       statusDesc.textContent = 'We could not evaluate the official formula for these values.';
       lastState = null;
+      announceLive(
+        'Calculation unavailable. We could not evaluate the official formula for these values.',
+        true
+      );
       if (window.console && err) window.console.error('[All Cut Off] calculation failed', err);
     }
 
-    function render(result, values) {
+    function render(result, values, announce) {
       hideError();
 
       var breakdown = Array.isArray(result.breakdown) ? result.breakdown : [];
@@ -602,7 +652,20 @@ const stepDecimals = (input: { step?: number }) =>
             return input.shortLabel + ' ' + fmt(values[input.id]);
           })
           .join(', ');
-        var terms = breakdown
+        // Only score components may appear in the printed equation. Walk the
+        // rows against the same denominator the total uses, so an
+        // eligibility-gate row (MHT-CET's HSC board aggregate, say) can never
+        // be added into a sum that is then claimed to equal the score. Zero
+        // components are kept: dropping them is what makes a real sum read as
+        // wrong.
+        var budget = denom;
+        var components = breakdown.filter(function (row) {
+          var max = num(row.max);
+          if (max <= 0 || budget <= 0) return false;
+          budget -= max;
+          return true;
+        });
+        var terms = components
           .map(function (row) {
             return row.label + ' ' + fmt(row.score);
           })
@@ -651,9 +714,24 @@ const stepDecimals = (input: { step?: number }) =>
         statusLabel: status ? status.label : '',
         remarks: result.remarks || ''
       };
+
+      // Announced from the single live region only, and only once the user has
+      // stopped typing or dragging.
+      if (announce !== false) {
+        announceLive(
+          'Calculated cutoff ' +
+            fmt(total) +
+            ' out of ' +
+            fmt(denom) +
+            ', ' +
+            pct.toFixed(1) +
+            ' percent. ' +
+            (status ? status.label + '. ' + (status.details || '') : '')
+        );
+      }
     }
 
-    function runCalculation() {
+    function runCalculation(opts) {
       if (!active) {
         showError(null);
         return;
@@ -662,7 +740,7 @@ const stepDecimals = (input: { step?: number }) =>
       var values = readValues();
 
       try {
-        render(active.calculate(values), values);
+        render(active.calculate(values), values, opts && opts.announce);
       } catch (err) {
         showError(err);
       }
@@ -712,7 +790,10 @@ const stepDecimals = (input: { step?: number }) =>
       if (numEl) {
         numEl.addEventListener('input', function () {
           if (slider) {
-            slider.value = numEl.value;
+            // Clamp before assigning: an empty or out-of-range string makes the
+            // range input reset its thumb to min + (max - min) / 2, which
+            // silently rewrote the score. Mirrors HeroCalculator.astro.
+            slider.value = String(clamp(num(numEl.value), min, max));
             syncSliderProgress(slider);
           }
           refreshSteppers();
@@ -750,7 +831,10 @@ const stepDecimals = (input: { step?: number }) =>
         runCalculation();
         var region = root.querySelector('#result-region');
         if (region && typeof region.scrollIntoView === 'function') {
-          region.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          region.scrollIntoView({
+            behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+            block: 'nearest'
+          });
         }
       });
     }
@@ -872,9 +956,9 @@ const stepDecimals = (input: { step?: number }) =>
     }
 
     /* ------------------------------------------------------------------ *
-     * Initial paint.
+     * Initial paint (never announced: the page has just loaded).
      * ------------------------------------------------------------------ */
     refreshSteppers();
-    runCalculation();
+    runCalculation({ announce: false });
   })();
 </script>

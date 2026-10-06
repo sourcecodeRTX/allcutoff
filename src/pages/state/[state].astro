@@ -1,5 +1,9 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout, {
+  SITE_URL,
+  clampDescription,
+  pickDescription
+} from '../../layouts/Layout.astro';
 import CalculatorCard from '../../components/CalculatorCard.astro';
 import { CALCULATORS, STATES, getCalculatorsByState } from '../../data/calculators';
 
@@ -12,7 +16,7 @@ export function getStaticPaths() {
 
 const { state } = Astro.props as { state: (typeof STATES)[number] };
 
-const siteUrl = 'https://allcutoff.com';
+const siteUrl = SITE_URL;
 const websiteId = `${siteUrl}/#website`;
 const organizationId = `${siteUrl}/#organization`;
 
@@ -22,6 +26,9 @@ const pageId = `${canonical}#webpage`;
 
 const isNational = state.slug === 'all-india' || state.code === 'IN';
 const regionLabel = isNational ? 'India (national and central institutions)' : state.name;
+
+/** Real content-review date for this page's copy. Never the build clock. */
+const STATE_REVIEWED = '2026-10-06';
 
 const YEAR_LABEL = list[0]?.academicYear.replace(/\s*-\s*/g, '-') ?? '2025-2026';
 
@@ -37,15 +44,6 @@ const shortStateName = SHORT_STATE_NAME[state.slug] ?? state.name;
 
 const title = `${shortStateName} Admission Cutoff Calculators`;
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-const clamp = (value: string, max = 158) => {
-  if (value.length <= max) return value;
-  const cut = value.slice(0, max);
-  const boundary = cut.lastIndexOf(' ');
-  return `${(boundary > 40 ? cut.slice(0, boundary) : cut).replace(/[\s,;:.\-]+$/, '')}...`;
-};
-
 const shortNames = list.map((c) => c.shortName).join(', ');
 const authorities = Array.from(new Set(list.map((c) => c.conductingAuthority)));
 const categories = Array.from(new Set(list.map((c) => c.category)));
@@ -56,24 +54,41 @@ const scoreRange = (() => {
   const max = Math.max(...scores);
   return min === max ? String(max) : `${min}-${max}`;
 })();
-const boards = Array.from(new Set(list.map((c) => (c.exam.match(/(?:CBSE|ICSE|\bGSEB\b|2nd PUC|HSC|TN 12th|Intermediate|10\+2|Class 12|qualifying examination)/i) ?? ['Class 12 / qualifying examination'])[0])));
 
-const description = clamp(
-  isNational
-    ? `National and central entrance cutoff calculators for ${YEAR_LABEL}: ${shortNames}. Calculate your official merit score using rules published by ${authorities.join(' and ') || 'the national authorities'}.`
-    : `${plural(list.length, 'verified admission cutoff calculator')} for ${state.name} in ${YEAR_LABEL}: ${shortNames}. Reproduces the official formula, eligibility gate and tie-breaking order.`
+/**
+ * Boards named by the exams on this page. The catch-all phrase — and the
+ * equally generic "Class 12" — are dropped: the sentence below already says "or
+ * the equivalent Class 12 / qualifying examination", so keeping them produced
+ * "…printed by TN 12th, Class 12 / qualifying examination or the equivalent
+ * Class 12 / qualifying examination." on seven of eight pages.
+ */
+const BOARD_PATTERN = /(?:CBSE|ICSE|\bGSEB\b|2nd PUC|HSC|TN 12th|Intermediate|10\+2|Class 12|qualifying examination)/i;
+const GENERIC_BOARD = /^(?:Class 12|qualifying examination)$/i;
+const boards = Array.from(
+  new Set(
+    list
+      .map((c) => {
+        const hit = c.exam.match(BOARD_PATTERN)?.[0]?.trim();
+        return hit && !GENERIC_BOARD.test(hit) ? hit : null;
+      })
+      .filter((board): board is string => Boolean(board))
+  )
 );
 
-/** "EAPCET Cutoff" must not become "EAPCET Cutoff cutoff calculator". */
-const calcNoun = (name: string) => (/cutoff/i.test(name) ? `${name} calculator` : `${name} cutoff calculator`);
+const headline = isNational
+  ? 'National and central entrance cutoff calculators'
+  : `${state.name} admission cutoff calculators`;
 
-const keywords = Array.from(new Set([
-  `${state.name} cutoff calculator`,
-  ...list.map((c) => calcNoun(c.shortName)),
-  `${state.name} admission ${YEAR_LABEL}`,
-  ...categories.map((c) => `${c.toLowerCase()} cutoff in ${state.name}`),
-  'entrance exam merit list'
-])).filter((kw) => !kw.includes(',')).slice(0, 8).join(', ');
+const description = clampDescription(
+  pickDescription([
+    `${headline} for ${YEAR_LABEL}: ${shortNames}. Calculates your official merit score from the published formula, eligibility gate and tie-breaking order.`,
+    `${headline} for ${YEAR_LABEL}: ${shortNames}. Reproduces the official formula, eligibility gate and tie-breaking order.`,
+    `${headline} for ${YEAR_LABEL}: ${shortNames}. Get your official merit score instantly.`,
+    `${headline}. Calculates your official merit score from the published formula, eligibility gate and tie-breaking order.`,
+    `${headline}. Reproduces the official formula, eligibility gate and tie-breaking order.`,
+    `${headline}. Get your official merit score instantly, free and with no signup.`
+  ])
+);
 
 /**
  * `Layout` renders JSON-LD with `set:html`, which does not escape. Strip `<` from
@@ -123,40 +138,39 @@ const listSchema = {
   }))
 };
 
+/*
+ * One page entity per URL. `CollectionPage` is a `WebPage` subtype, so emitting
+ * both here shipped two nodes claiming the same page with the same @id — which
+ * schema.org treats as a duplicate and can void the whole graph.
+ */
 const collectionSchema = {
   '@type': 'CollectionPage',
-  '@id': `${canonical}#collection`,
-  url: canonical,
-  name: title,
-  description,
-  inLanguage: 'en-IN',
-  isPartOf: { '@id': websiteId },
-  publisher: { '@id': organizationId },
-  mainEntity: { '@id': `${canonical}#calculators` }
-};
-
-const webPageSchema = {
-  '@type': 'WebPage',
   '@id': pageId,
   url: canonical,
   name: title,
   description,
   inLanguage: 'en-IN',
+  dateModified: STATE_REVIEWED,
   isPartOf: { '@id': websiteId },
+  publisher: { '@id': organizationId },
   breadcrumb: { '@id': `${canonical}#breadcrumb` },
-  about: { '@id': `${canonical}#collection` }
+  mainEntity: { '@id': `${canonical}#calculators` }
 };
 
 const breadcrumbSchema = {
   '@type': 'BreadcrumbList',
   '@id': `${canonical}#breadcrumb`,
+  /* The three crumbs rendered below, same order and same labels. "Calculators"
+     points at the home page (its real URL) rather than at a `#calculators`
+     fragment of the current page. */
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/#website` },
-    { '@type': 'ListItem', position: 2, name: heading, item: pageId }
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+    { '@type': 'ListItem', position: 2, name: 'Calculators', item: `${siteUrl}/` },
+    { '@type': 'ListItem', position: 3, name: state.name, item: canonical }
   ]
 };
 
-const extraSchema = [breadcrumbSchema, webPageSchema, collectionSchema, listSchema].map(jsonSafe);
+const extraSchema = [breadcrumbSchema, collectionSchema, listSchema].map(jsonSafe);
 
 const otherStates = STATES.filter((s) => s.slug !== state.slug);
 const sameCategoryElsewhere = CALCULATORS.filter(
@@ -164,7 +178,13 @@ const sameCategoryElsewhere = CALCULATORS.filter(
 ).slice(0, 4);
 ---
 
-<Layout title={title} description={description} keywords={keywords} extraSchema={extraSchema}>
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={STATE_REVIEWED}
+  extraSchema={extraSchema}
+>
   <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
     <div class="mx-auto max-w-5xl px-4 sm:px-6">
       <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -177,11 +197,14 @@ const sameCategoryElsewhere = CALCULATORS.filter(
     </div>
   </nav>
 
-  <!-- Page header -->
-  <header class="border-b border-slate-200 bg-white py-10 sm:py-14">
+  <!-- Page header. A <div>, not a <header>: a bare <header> inside <main> is a
+       second `banner` landmark, and Header.astro already owns the real one.
+       global.css's print rules scope to `body > header`, so this block — which
+       holds the H1 — still prints. -->
+  <div class="border-b border-slate-200 bg-white py-10 sm:py-14">
     <div class="mx-auto max-w-5xl px-4 sm:px-6">
       <div class="flex flex-wrap items-center gap-3">
-        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+        <h1 class="text-[1.75rem] text-slate-900 sm:text-[2.125rem]">
           {heading}
         </h1>
         <span class="rounded-md bg-slate-900 px-2 py-1 font-mono text-xs font-semibold text-white">
@@ -217,7 +240,7 @@ const sameCategoryElsewhere = CALCULATORS.filter(
         </div>
       </dl>
     </div>
-  </header>
+  </div>
 
   <!-- Educational content -->
   <section id="authorities" aria-labelledby="authorities-heading" class="py-12 sm:py-14">
@@ -259,7 +282,7 @@ const sameCategoryElsewhere = CALCULATORS.filter(
         <p>
           {isNational
             ? 'National entrance scores are combined with your Class 12 board percentage. NTA publishes the normalised subject scores used for every participating university, and the board percentage you supply must be your printed Class 12 percentage.'
-            : `The rules on this page work off marks printed by ${boards.slice(0, 3).join(', ')} or the equivalent Class 12 / qualifying examination. If your board prints a subject out of 200 or 50 while the rule expects out of 100, normalise the value before entering it, because the calculator applies the published weighting exactly as written.`}
+            : `The rules on this page work off ${boards.length > 0 ? `marks printed by ${boards.slice(0, 3).join(', ')} or the equivalent Class 12 / qualifying examination` : 'your printed Class 12 / qualifying examination marks'}. If your board prints a subject out of 200 or 50 while the rule expects out of 100, normalise the value before entering it, because the calculator applies the published weighting exactly as written.`}
         </p>
 
         <h3 class="pt-2 text-lg font-semibold text-slate-900">How {isNational ? 'national' : `${state.name} counselling`} usually runs</h3>
@@ -360,8 +383,8 @@ const sameCategoryElsewhere = CALCULATORS.filter(
                   {calc.name}
                 </a>
                 <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{calc.summary}</p>
-                <p class="mt-2 font-mono text-xs text-slate-500">
-                  <code class="whitespace-pre">{calc.verifiedFormulaText}</code>
+                <p class="mt-2 text-xs leading-relaxed text-slate-600">
+                  <code class="break-words whitespace-pre-wrap font-mono">{calc.verifiedFormulaText}</code>
                 </p>
                 {calc.authorityUrl && (
                   <a

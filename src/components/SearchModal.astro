@@ -89,10 +89,14 @@ const QUICK_FILTERS = [
 ];
 ---
 
+<!-- The overlay itself is the scroll container: the padded wrapper below uses
+     `min-h-full`, so it can never be its own scroller. Without this the dialog
+     is unreachable below ~500px of viewport height (320x568, landscape phones). -->
 <div
   id="search-modal-backdrop"
-  class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-xs transition-opacity duration-150"
+  class="fixed inset-0 z-50 hidden overflow-y-auto overscroll-contain bg-slate-900/40"
   aria-hidden="true"
+  inert
 >
   <div class="flex min-h-full items-start justify-center p-4 pt-16 sm:pt-24">
     <div
@@ -100,7 +104,7 @@ const QUICK_FILTERS = [
       role="dialog"
       aria-modal="true"
       aria-label="Search cutoff calculators"
-      class="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all"
+      class="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
     >
       <!-- Search Input Bar -->
       <div class="flex items-center border-b border-slate-200 px-4 py-3">
@@ -111,12 +115,8 @@ const QUICK_FILTERS = [
 
         <input
           id="search-input"
-          type="text"
-          role="combobox"
-          aria-expanded="false"
+          type="search"
           aria-controls="search-results"
-          aria-autocomplete="list"
-          aria-activedescendant=""
           aria-label="Search by exam, course or state"
           placeholder="Search by exam (TNEA, KCET, NEET, EAPCET), course, or state..."
           class="ml-3 w-full border-none bg-transparent text-sm text-slate-900 placeholder-slate-500 outline-none"
@@ -139,21 +139,18 @@ const QUICK_FILTERS = [
             type="button"
             class="quick-filter-btn focus-ring rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50"
             data-quick-query={q.query}
+            aria-label={`Search calculators for ${q.label}`}
           >
             {q.label}
           </button>
         ))}
       </div>
 
-      <!-- Search Results Container -->
-      <div
-        id="search-results"
-        role="listbox"
-        aria-label="Cutoff calculator results"
-        class="max-h-[70vh] overflow-y-auto p-2"
-      >
+      <!-- Search Results: a plain results list of links. Not a listbox — these
+           rows navigate to pages, so there is nothing for an option to select. -->
+      <ul id="search-results" aria-label="Cutoff calculator results" class="overflow-y-auto p-2">
         <!-- Results injected dynamically via JS -->
-      </div>
+      </ul>
 
       <!-- Footer Info -->
       <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">
@@ -172,6 +169,23 @@ const QUICK_FILTERS = [
   </div>
 </div>
 
+<style>
+  /* Short viewports: cap the list so the input bar, chips, footer and ESC stay
+     on screen. 12rem ≈ the fixed chrome around the list plus the overlay
+     padding. The `dvh` cap is behind @supports because Safari < 15.4 cannot
+     parse `dvh` and drops the whole declaration — the unconditional `vh` cap
+     below is its fallback. */
+  #search-results {
+    max-height: min(70vh, calc(100vh - 12rem));
+  }
+
+  @supports (height: 100dvh) {
+    #search-results {
+      max-height: min(70dvh, calc(100dvh - 12rem));
+    }
+  }
+</style>
+
 <script define:vars={{ searchIndex }}>
   (function () {
     'use strict';
@@ -189,9 +203,11 @@ const QUICK_FILTERS = [
     /* `true` when the live hero widget exists on this page. */
     var hasHeroCalculator = !!document.getElementById('hero-calculator');
     var lastFocused = null;
-    var activeIndex = -1;
     var currentResults = [];
 
+    /* Duplicated pending a shared module: the same helper exists in
+       HeroCalculator.astro (esc) and CalculatorWidget.astro (esc). Keep all
+       three complete — a missing quote escape is a latent injection. */
     function escapeHtml(value) {
       return String(value == null ? '' : value)
         .replace(/&/g, '&amp;')
@@ -299,84 +315,75 @@ const QUICK_FILTERS = [
     /* ------------------------------------------------------------------ *
      * Rendering.
      * ------------------------------------------------------------------ */
-    function resultMarkup(item, index) {
-      var slug = encodeURIComponent(item.slug);
-      var href = '/calculator/' + slug;
+    function resultMarkup(item) {
+      var href = '/calculator/' + encodeURIComponent(item.slug);
 
       var secondaryLabel = hasHeroCalculator ? 'Load in Hero Calculator' : 'Use on home calculator';
       var secondaryHref = '/?calc=' + encodeURIComponent(item.id);
 
+      // One anchor owns the row's title and description, so "clicked the link"
+      // and "clicked the text" are the same action with no delegated guesswork.
+      // The hero shortcut is a separate sibling link — an anchor may not contain
+      // interactive descendants, which is also what ruled out the old
+      // role="option" wrapper.
       return (
-        '<div id="search-opt-' + index + '" role="option" aria-selected="false"' +
-        ' data-calc-id="' + escapeHtml(item.id) + '" data-calc-slug="' + escapeHtml(item.slug) + '"' +
-        ' class="rounded-xl border border-transparent p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50' +
-        ' aria-selected:bg-blue-50 aria-selected:border-blue-300">' +
-        '<div class="flex flex-wrap items-start justify-between gap-2">' +
-        '<div class="min-w-0">' +
+        '<li class="rounded-xl border border-transparent p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50">' +
+        '<a href="' + href + '" data-search-open class="block rounded-lg">' +
+        '<span class="flex flex-wrap items-start justify-between gap-2">' +
+        '<span class="min-w-0">' +
         '<span class="block text-sm font-semibold text-slate-900">' + escapeHtml(item.name) + '</span>' +
         '<span class="mt-0.5 block text-xs text-slate-600">' + escapeHtml(item.targetCourse) + ' &bull; ' + escapeHtml(item.state) + '</span>' +
         '<span class="mt-0.5 block text-xs text-slate-500">' + escapeHtml(item.category) + ' &bull; ' + escapeHtml(item.authority) + '</span>' +
-        '</div>' +
+        '</span>' +
         '<span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600">' + escapeHtml(item.state) + '</span>' +
-        '</div>' +
-        '<div class="mt-2.5 flex flex-wrap gap-2">' +
-        '<a href="' + href + '" data-search-open class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
-        '<a href="' + secondaryHref + '" data-search-load class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(secondaryLabel) + '</a>' +
-        '</div>' +
-        '</div>'
+        '</span>' +
+        '</a>' +
+        '<span class="mt-2.5 flex flex-wrap gap-2">' +
+        '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+        '<a href="' + secondaryHref + '" data-search-load data-calc-id="' + escapeHtml(item.id) +
+        '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(secondaryLabel) + '</a>' +
+        '</span>' +
+        '</li>'
       );
     }
 
     function renderResults(query) {
       currentResults = runSearch(query);
-      activeIndex = -1;
 
       if (currentResults.length === 0) {
         searchResults.innerHTML =
-          '<div class="p-6 text-center">' +
+          '<li class="p-6 text-center">' +
           '<p class="text-sm font-semibold text-slate-900">No calculators found for &ldquo;' + escapeHtml(query) + '&rdquo;</p>' +
           '<p class="mt-1 text-xs text-slate-600">Try TNEA, KCET, NEET, B.Pharm, Agriculture, or a state name like Tamil Nadu.</p>' +
-          '</div>';
-        searchInput.setAttribute('aria-activedescendant', '');
+          '</li>';
         return;
       }
 
       searchResults.innerHTML = currentResults.map(resultMarkup).join('');
-      searchInput.setAttribute('aria-activedescendant', '');
     }
 
     /* ------------------------------------------------------------------ *
-     * Keyboard: activedescendant highlight + focus trap.
+     * Keyboard: real focus on the result links (no synthetic active option).
      * ------------------------------------------------------------------ */
-    function optionNodes() {
-      return Array.prototype.slice.call(searchResults.querySelectorAll('[role="option"]'));
+    function rowLinks() {
+      return Array.prototype.slice.call(searchResults.querySelectorAll('[data-search-open]'));
     }
 
-    function setActive(next) {
-      var nodes = optionNodes();
-      if (!nodes.length) return;
+    /** Move focus through the result rows; wraps at both ends. */
+    function moveFocus(step) {
+      var links = rowLinks();
+      if (!links.length) return false;
 
-      activeIndex = Math.max(0, Math.min(next, nodes.length - 1));
+      var from = links.indexOf(document.activeElement);
+      var next = from < 0 ? (step > 0 ? 0 : links.length - 1) : (from + step + links.length) % links.length;
+      var target = links[next];
+      if (!target || typeof target.focus !== 'function') return false;
 
-      nodes.forEach(function (node, i) {
-        node.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
-      });
-
-      var current = nodes[activeIndex];
-      if (!current) return;
-
-      searchInput.setAttribute('aria-activedescendant', current.id);
-      if (typeof current.scrollIntoView === 'function') {
-        current.scrollIntoView({ block: 'nearest' });
+      target.focus();
+      if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ block: 'nearest' });
       }
-    }
-
-    function clearActive() {
-      activeIndex = -1;
-      optionNodes().forEach(function (node) {
-        node.setAttribute('aria-selected', 'false');
-      });
-      searchInput.setAttribute('aria-activedescendant', '');
+      return true;
     }
 
     function focusableInDialog() {
@@ -394,10 +401,12 @@ const QUICK_FILTERS = [
       if (!id) return;
 
       if (hasHeroCalculator) {
+        // Close first: the page behind is scroll-locked and inert while the
+        // modal is open, so the hero's scrollIntoView would be a no-op.
+        closeSearch();
         window.dispatchEvent(
           new CustomEvent('allcutoff:load-calculator', { detail: { id: id } })
         );
-        closeSearch();
         return;
       }
 
@@ -408,34 +417,66 @@ const QUICK_FILTERS = [
       var loadLink = event.target.closest('[data-search-load]');
       if (loadLink) {
         event.preventDefault();
-        event.stopPropagation();
-        var loadRow = loadLink.closest('[role="option"]');
-        loadCalculator(loadRow && loadRow.getAttribute('data-calc-id'));
-        return;
+        loadCalculator(loadLink.getAttribute('data-calc-id'));
       }
-
-      var openLink = event.target.closest('[data-search-open]');
-      if (openLink) {
-        event.preventDefault();
-        window.location.href = openLink.getAttribute('href');
-        return;
-      }
-
-      var row = event.target.closest('[role="option"]');
-      if (row) {
-        window.location.href = '/calculator/' + encodeURIComponent(row.getAttribute('data-calc-slug') || '');
-      }
+      // Plain `<a>` rows navigate natively — no delegated href assignment and
+      // no "the description text was outside the link" ambiguity.
     });
 
     /* ------------------------------------------------------------------ *
-     * Open / close + focus management.
+     * Page isolation + open / close + focus management.
      * ------------------------------------------------------------------ */
+    var bodyLock = { overflow: '', paddingRight: '' };
+
+    /** Lock the page behind the modal, compensating for the scrollbar so the
+        layout does not jump sideways. Every touch is defensive. */
+    function lockPage() {
+      var body = document.body;
+      if (!body) return;
+      try {
+        bodyLock = { overflow: body.style.overflow, paddingRight: body.style.paddingRight };
+        var gap = window.innerWidth - document.documentElement.clientWidth;
+        if (gap > 0) {
+          var current = parseInt(window.getComputedStyle(body).paddingRight, 10) || 0;
+          body.style.paddingRight = current + gap + 'px';
+        }
+        body.style.overflow = 'hidden';
+      } catch (err) {
+        /* Locking is cosmetic; never let it block the dialog. */
+      }
+    }
+
+    function unlockPage() {
+      var body = document.body;
+      if (!body) return;
+      try {
+        body.style.overflow = bodyLock.overflow;
+        body.style.paddingRight = bodyLock.paddingRight;
+      } catch (err) {
+        /* Nothing to restore. */
+      }
+    }
+
+    /** Make the page behind the dialog unreachable by pointer and keyboard. */
+    function setBackgroundInert(on) {
+      var regions = document.querySelectorAll('body > main, body > footer');
+      Array.prototype.forEach.call(regions, function (el) {
+        try {
+          el.toggleAttribute('inert', on);
+          // Older engines without `inert` still need the AT-only isolation.
+          el.setAttribute('aria-hidden', on ? 'true' : 'false');
+        } catch (err) {
+          /* Ignore a region we cannot mark. */
+        }
+      });
+    }
+
     function openSearch() {
       lastFocused = document.activeElement;
       backdrop.classList.remove('hidden');
+      backdrop.removeAttribute('inert');
       backdrop.setAttribute('aria-hidden', 'false');
       renderResults(searchInput.value);
-      searchInput.setAttribute('aria-expanded', 'true');
       searchInput.focus();
       var len = searchInput.value.length;
       try {
@@ -443,14 +484,18 @@ const QUICK_FILTERS = [
       } catch (err) {
         /* Some input types disallow the selection APIs. */
       }
+      // Focus is inside the dialog before the page behind it is hidden from AT.
+      lockPage();
+      setBackgroundInert(true);
     }
 
     function closeSearch() {
       backdrop.classList.add('hidden');
+      backdrop.setAttribute('inert', '');
       backdrop.setAttribute('aria-hidden', 'true');
-      searchInput.setAttribute('aria-expanded', 'false');
       searchInput.value = '';
-      clearActive();
+      setBackgroundInert(false);
+      unlockPage();
       if (lastFocused && typeof lastFocused.focus === 'function') {
         lastFocused.focus();
       }
@@ -461,7 +506,9 @@ const QUICK_FILTERS = [
     if (closeBtn) closeBtn.addEventListener('click', function () { closeSearch(); });
 
     backdrop.addEventListener('mousedown', function (event) {
-      if (event.target === backdrop) closeSearch();
+      // The padded wrapper fills the overlay, so test for "outside the dialog"
+      // rather than for the overlay element itself.
+      if (event.target === backdrop || !event.target.closest('#search-modal-dialog')) closeSearch();
     });
 
     quickBtns.forEach(function (btn) {
@@ -477,56 +524,79 @@ const QUICK_FILTERS = [
       renderResults(event.target.value);
     });
 
+    /* Arrow keys move real focus into and through the result rows; Enter then
+       activates the focused link natively. */
+    function handleResultKeys(event) {
+      var step = 0;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') step = 1;
+      else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') step = -1;
+      else if (event.key === 'Home' || event.key === 'End') {
+        var links = rowLinks();
+        if (links.length) {
+          event.preventDefault();
+          (event.key === 'Home' ? links[0] : links[links.length - 1]).focus();
+        }
+        return;
+      } else {
+        return;
+      }
+
+      if (moveFocus(step)) event.preventDefault();
+    }
+
     searchInput.addEventListener('keydown', function (event) {
-      if (event.key === 'ArrowDown') {
+      // Enter in the field opens the top hit, matching the "Select with Enter"
+      // hint in the dialog footer.
+      if (event.key === 'Enter') {
+        var top = rowLinks()[0];
+        if (top) {
+          event.preventDefault();
+          window.location.href = top.getAttribute('href');
+        }
+        return;
+      }
+      handleResultKeys(event);
+    });
+    searchResults.addEventListener('keydown', handleResultKeys);
+
+    window.addEventListener('keydown', function (event) {
+      var isOpen = !backdrop.classList.contains('hidden');
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setActive(activeIndex + 1);
-      } else if (event.key === 'ArrowUp') {
+        if (isOpen) closeSearch();
+        else openSearch();
+        return;
+      }
+
+      if (!isOpen) return;
+
+      if (event.key === 'Escape') {
         event.preventDefault();
-        setActive(activeIndex <= 0 ? 0 : activeIndex - 1);
-      } else if (event.key === 'Home') {
-        if (currentResults.length) {
-          event.preventDefault();
-          setActive(0);
-        }
-      } else if (event.key === 'End') {
-        if (currentResults.length) {
-          event.preventDefault();
-          setActive(currentResults.length - 1);
-        }
-      } else if (event.key === 'Enter') {
-        if (activeIndex >= 0 && currentResults[activeIndex]) {
-          event.preventDefault();
-          window.location.href = '/calculator/' + encodeURIComponent(currentResults[activeIndex].slug);
-        }
-      } else if (event.key === 'Tab') {
-        // Trap focus inside the dialog while it is open.
+        closeSearch();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        // Focus trap for the whole dialog subtree, not just the input: without
+        // this, Tab from the ESC button or a result link walks into the page
+        // behind the aria-modal overlay.
         var focusable = focusableInDialog();
         if (!focusable.length) return;
         var first = focusable[0];
         var last = focusable[focusable.length - 1];
+        var inside = dialog.contains(document.activeElement);
 
-        if (event.shiftKey && (document.activeElement === first || document.activeElement === searchInput)) {
+        if (!inside) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
           last.focus();
         } else if (!event.shiftKey && document.activeElement === last) {
           event.preventDefault();
           first.focus();
         }
-      }
-    });
-
-    window.addEventListener('keydown', function (event) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        if (backdrop.classList.contains('hidden')) openSearch();
-        else closeSearch();
-        return;
-      }
-
-      if (event.key === 'Escape' && !backdrop.classList.contains('hidden')) {
-        event.preventDefault();
-        closeSearch();
       }
     });
   })();

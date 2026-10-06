@@ -1,16 +1,53 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout, { SITE_URL, clampDescription, pickDescription } from '../layouts/Layout.astro';
 import CalculatorCard from '../components/CalculatorCard.astro';
 import HeroCalculator from '../components/HeroCalculator.astro';
 import { CALCULATORS, CATEGORIES, STATES } from '../data/calculators';
 
-const SITE_URL = 'https://allcutoff.com';
+const SITE = SITE_URL;
+const canonical = `${SITE}/`;
 
-const pageTitle = 'Cutoff Calculator for TNEA, KCET, NEET UG & More';
-const pageDesc =
-  'Free live cutoff calculators for TNEA, KCET, NEET UG, AP/TS EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET. Enter your marks, get the official weighted merit score instantly.';
-const pageKeywords =
-  'cutoff calculator, TNEA cutoff calculator, KCET cutoff calculator, NEET UG score calculator, AP TS EAPCET cutoff calculator, TNAU agriculture cutoff calculator, KEAM index calculator, GUJCET ACPC merit calculator, MHT CET score calculator, DU CUET merit calculator, TN paramedical cutoff, TANUVAS veterinary cutoff, TNGASA arts and science cutoff, entrance exam cutoff 2025-26, admission merit score calculator';
+/** Real content-review date for the home page. Never the build clock. */
+const HOME_REVIEWED = '2026-10-06';
+
+/**
+ * Single source of truth for the academic year: read it off the registry rather
+ * than hardcoding "2025 - 2026" again, so the badge, the FAQ and every meta tag
+ * move together when the cycle rolls over.
+ */
+const YEAR = CALCULATORS[0]?.academicYear ?? '2025 - 2026';
+const YEAR_LABEL = YEAR.replace(/\s*-\s*/g, '-');
+/** Display form with an en dash, e.g. "2025–2026". */
+const YEAR_DISPLAY = YEAR.replace(/\s*-\s*/g, '\u2013');
+
+/**
+ * The H1 used to hardcode "& 9 More Entrance Exams", which implied thirteen
+ * calculators on a page whose own counter and `ItemList.numberOfItems` both say
+ * twelve. The named exams are filtered against the registry and the remainder is
+ * derived from `CALCULATORS.length`, so the headline can never drift from the
+ * grid below it again.
+ */
+const HEADLINE_EXAMS = ['TNEA', 'KCET', 'NEET UG', 'EAPCET'];
+const namedExams = HEADLINE_EXAMS.filter((code) =>
+  CALCULATORS.some((c) => `${c.shortName} ${c.exam}`.toUpperCase().includes(code))
+);
+const unnamedCount = Math.max(0, CALCULATORS.length - namedExams.length);
+const heroHeadline =
+  `Cutoff Calculator for ${namedExams.join(', ')}` +
+  (unnamedCount > 0 ? ` & ${unnamedCount} More Entrance Exams` : '');
+
+/* 42 chars here + the layout's 14-char " | All Cut Off" = 56 rendered, inside
+   the 60-char SERP budget with room to spare. The previous "… & More" form ran
+   to 62 and, worse, implied a count the page could not back up. */
+const pageTitle = 'Cutoff Calculator for TNEA, KCET & NEET UG';
+const pageDesc = clampDescription(
+  pickDescription([
+    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET for ${YEAR_LABEL}. Calculates your official weighted merit score instantly, with no signup.`,
+    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET for ${YEAR_LABEL}. Get your official weighted merit score instantly.`,
+    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET for ${YEAR_LABEL}. Get your official merit score instantly.`,
+    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET and more for ${YEAR_LABEL}. Get your official weighted merit score instantly.`
+  ])
+);
 
 /* -------------------------------------------------------------------------
  * Homepage FAQ — single source of truth for the visible accordion and the
@@ -18,7 +55,7 @@ const pageKeywords =
  * ---------------------------------------------------------------------- */
 const HOME_FAQS = [
   {
-    question: 'Are these cutoff calculators updated for the 2025-26 admission season?',
+    question: `Are these cutoff calculators updated for the ${YEAR_LABEL} admission season?`,
     answer:
       'Yes. Every formula on All Cut Off is transcribed from the admission brochure, information bulletin or official notification of the conducting body for the current cycle — DoTE Tamil Nadu, KEA Karnataka, APSCHE and TGCHE, ACPC Gujarat, CEE Kerala, the Maharashtra CET Cell, TNAU, TANUVAS, DCE Tamil Nadu, the NTA and the University of Delhi. When a body amends its merit rule, the calculator is updated rather than silently kept.'
   },
@@ -149,7 +186,7 @@ const heroSearchIndex = [
  * ---------------------------------------------------------------------- */
 const faqSchema = {
   '@type': 'FAQPage',
-  '@id': `${SITE_URL}/#faq`,
+  '@id': `${SITE}/#faq`,
   mainEntity: HOME_FAQS.map((item) => ({
     '@type': 'Question',
     name: item.question,
@@ -157,36 +194,42 @@ const faqSchema = {
   }))
 };
 
-const websiteSchema = {
-  '@type': 'WebSite',
-  '@id': `${SITE_URL}/#website`,
-  url: `${SITE_URL}/`,
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/#calculators?q={search_term_string}` },
-    'query-input': 'required name=search_term_string'
-  }
-};
+/*
+ * No `WebSite` override and no `SearchAction` here. The layout already publishes
+ * the single `#website` node, and two nodes sharing one @id silently overwrite
+ * each other. Search is client state only — nothing reads `?q=` — and Google
+ * retired the sitelinks search box in November 2024, so advertising one was a
+ * claim the site cannot honour.
+ */
 
 const itemListSchema = {
   '@type': 'ItemList',
-  '@id': `${SITE_URL}/#calculator-directory`,
+  '@id': `${SITE}/#calculator-directory`,
   name: 'Admission cutoff calculators on All Cut Off',
   numberOfItems: CALCULATORS.length,
   itemListElement: CALCULATORS.map((c, i) => ({
     '@type': 'ListItem',
     position: i + 1,
     name: c.name,
-    url: `${SITE_URL}/calculator/${c.slug}`
+    url: `${SITE}/calculator/${c.slug}`
   }))
 };
 
-const extraSchema = [faqSchema, websiteSchema, itemListSchema];
+const extraSchema = [faqSchema, itemListSchema];
 ---
 
-<Layout title={pageTitle} description={pageDesc} keywords={pageKeywords} extraSchema={extraSchema}>
+<Layout
+  title={pageTitle}
+  description={pageDesc}  canonicalUrl={canonical}
+  dateModified={HOME_REVIEWED}
+  extraSchema={extraSchema}
+>
   <!-- ══════════════════════ HERO ══════════════════════ -->
-  <section class="relative overflow-hidden border-b border-slate-200 bg-slate-50 py-12 sm:py-16 lg:py-20">
+  <!-- No `overflow-hidden`: it was only ever there to clip the old mesh-gradient
+       bloom, and global.css has replaced that with a flat `inset-0` wash on the
+       glow div itself, which cannot bleed. Leaving it in clipped the search
+       dropdown, which is absolutely positioned below the fold of this box. -->
+  <section class="relative border-b border-slate-200 bg-slate-50 py-12 sm:py-16 lg:py-20">
     <div class="pointer-events-none absolute inset-0 mesh-gradient-glow opacity-70" aria-hidden="true"></div>
 
     <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
@@ -195,15 +238,15 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
         <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
           <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
           <span class="font-mono text-xs font-medium uppercase tracking-wide text-slate-900">
-            Official admission formulas &middot; 2025&ndash;2026
+            Official admission formulas &middot; {YEAR_DISPLAY}
           </span>
         </div>
 
-        <h1 class="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-          Cutoff Calculator for TNEA, KCET, NEET UG, EAPCET &amp; 9 More Entrance Exams
+        <h1 class="mt-5 text-[1.75rem] leading-[1.18] text-slate-900 sm:text-[2.125rem] lg:text-[2.375rem]">
+          {heroHeadline}
         </h1>
 
-        <p class="mt-4 max-w-xl text-base leading-relaxed text-slate-700">
+        <p class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7] text-slate-700">
           Enter your board and entrance marks. The widget on this page applies the exact weighting your
           counselling authority publishes &mdash; Maths at 100% for TNEA, the 50:50 board-plus-exam composite
           for KCET, the 75:25 split for AP and TS EAPCET, the 720-mark total for NEET UG &mdash; and shows
@@ -220,28 +263,39 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
                 <path d="m21 21-4.3-4.3"></path>
               </svg>
             </span>
+            <!--
+              A plain search field, NOT a combobox. The old markup claimed
+              `role="combobox"` + `aria-activedescendant` over `role="option"` rows
+              that each contained a link AND a button — invalid, because an option
+              may not be focusable and may not own interactive descendants. Focus
+              now moves to real links (see SearchModal for the same pattern).
+            -->
             <input
               id="hero-search-input"
-              type="text"
-              role="combobox"
+              type="search"
               aria-expanded="false"
               aria-controls="hero-search-dropdown"
-              aria-autocomplete="list"
-              aria-activedescendant=""
               autocomplete="off"
               placeholder="Search TNEA, KCET, NEET, B.Pharm, Tamil Nadu…"
               class="min-h-11 w-full min-w-0 border-none bg-transparent px-3 py-2 text-sm text-slate-900 placeholder-slate-500 outline-none"
             />
-            <a href="#calculators" class="btn-accent focus-ring min-h-11 shrink-0 px-4 py-2 text-xs sm:text-sm">
-              All Calculators
+            <!-- Icon-only below `sm`: at 320px the full "All Calculators" label
+                 plus the leading icon left the input ~138px, truncating the
+                 placeholder to ten characters. -->
+            <a href="#calculators" class="btn-accent focus-ring min-h-11 min-w-11 shrink-0 justify-center px-2 sm:min-w-0 sm:px-4 sm:text-xs">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 sm:hidden" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              </svg>
+              <span class="sr-only sm:not-sr-only">All Calculators</span>
             </a>
           </div>
 
           <div
             id="hero-search-dropdown"
-            role="listbox"
-            aria-label="Calculator search results"
-            class="absolute left-0 right-0 top-full z-30 mt-2 hidden max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
+            class="absolute left-0 right-0 top-full z-50 mt-2 hidden max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
           ></div>
 
           <p class="mt-2 text-xs text-slate-600">
@@ -253,21 +307,21 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
         </div>
 
         <!-- Trust badges -->
-        <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-600">
+        <div class="mt-6 grid grid-cols-2 items-center gap-x-4 gap-y-2 text-xs text-slate-600 sm:flex sm:flex-wrap">
           <span class="inline-flex items-center gap-1.5">
-            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
             Verified state &amp; university rules
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
             100% free, no sign-up
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
             Runs in your browser
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <svg class="text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
             Step-by-step tie-breakers
           </span>
         </div>
@@ -301,10 +355,10 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div class="min-w-0">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Calculator directory</span>
-          <h2 class="mt-1.5 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          <h2 class="mt-1.5 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
             Every Entrance and Admission Cutoff Calculator
           </h2>
-          <p class="mt-2 max-w-2xl text-sm text-slate-600">
+          <p class="mt-2 max-w-2xl text-[0.9375rem] text-slate-700">
             Each calculator applies the normalisation and weighting rules published by that exam&rsquo;s
             conducting authority &mdash; nothing generic, nothing invented.
           </p>
@@ -348,7 +402,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
         class="mt-12 hidden rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center"
       >
         <p class="text-sm font-medium text-slate-900">No calculators matched your filter</p>
-        <p class="mt-1 text-sm text-slate-600">
+        <p class="mt-1 text-[0.9375rem] text-slate-700">
           Try switching to &ldquo;All Calculators&rdquo; or search by exam code such as TNEA, KCET or NEET.
         </p>
       </div>
@@ -360,10 +414,10 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
       <div class="text-center">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Streamlined process</span>
-        <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
           How the Cutoff Engine Works
         </h2>
-        <p class="mx-auto mt-3 max-w-2xl text-sm text-slate-600">
+        <p class="mx-auto mt-3 max-w-2xl text-[0.9375rem] text-slate-700">
           No forms, no waiting, no emailed reports. Six short steps and you have the same merit score the
           counselling portal will compute.
         </p>
@@ -382,7 +436,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
               {i + 1}
             </span>
             <h3 class="mt-4 text-base font-semibold text-slate-900">{step.title}</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{step.body}</p>
+            <p class="mt-1.5 text-[0.9375rem] leading-[1.7] text-slate-700">{step.body}</p>
           </li>
         ))}
       </ol>
@@ -393,10 +447,10 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
   <section class="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
       <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Formula reference</span>
-      <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+      <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
         Cutoff Calculator by Exam: What Each One Actually Measures
       </h2>
-      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.7] text-slate-700">
         This is the single most common source of confusion for Indian aspirants. A cutoff of &ldquo;85&rdquo;
         means something completely different in KCET (a 100-point composite) and in TNEA (a 200-point raw
         weighted score). Before you compare your score with a number quoted in a newspaper or on a college
@@ -455,7 +509,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
     <div class="mx-auto max-w-5xl px-4 sm:px-6">
       <div class="surface-card p-6 sm:p-10">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Accuracy assurance</span>
-        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
           Why There Is No &ldquo;Universal&rdquo; Cutoff Formula in India
         </h2>
 
@@ -476,7 +530,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
             ].map((item) => (
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <span class="font-semibold text-slate-900">{item.k}</span>
-                <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{item.v}</p>
+                <p class="mt-1.5 text-[0.9375rem] leading-[1.7] text-slate-700">{item.v}</p>
               </div>
             ))}
           </div>
@@ -498,10 +552,10 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
   <section class="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
     <div class="mx-auto max-w-5xl px-4 sm:px-6">
       <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Practical guidance</span>
-      <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+      <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
         How to Use Your Cutoff Score Once You Have It
       </h2>
-      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
+      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.7] text-slate-700">
         A merit score is an input to counselling, not an outcome. These six habits turn a number into a
         decision you can actually act on.
       </p>
@@ -517,7 +571,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
         ].map((item) => (
           <div class="surface-card p-5">
             <h3 class="text-base font-semibold leading-snug text-slate-900">{item.t}</h3>
-            <p class="mt-2 text-sm leading-relaxed text-slate-600">{item.b}</p>
+            <p class="mt-2 text-[0.9375rem] leading-[1.7] text-slate-700">{item.b}</p>
           </div>
         ))}
       </div>
@@ -529,7 +583,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
     <div class="mx-auto max-w-4xl px-4 sm:px-6">
       <div class="text-center">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Student FAQ</span>
-        <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900">Frequently Asked Questions</h2>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900">Frequently Asked Questions</h2>
       </div>
 
       <div class="mt-10 space-y-4">
@@ -547,7 +601,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
                 <path d="m6 9 6 6 6-6"></path>
               </svg>
             </summary>
-            <p class="mt-3 text-sm leading-relaxed text-slate-600">{item.answer}</p>
+            <p class="mt-3 text-[0.9375rem] leading-[1.7] text-slate-700">{item.answer}</p>
           </details>
         ))}
       </div>
@@ -560,10 +614,10 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div class="lg:col-span-2">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">How we verify</span>
-          <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
             Every Formula Here Was Read From a Published Rule
           </h2>
-          <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-700">
+          <p class="mt-3 max-w-2xl text-[0.9375rem] leading-[1.7] text-slate-700">
             For each exam we start from the primary source: the information brochure, admission prospectus
             or official notification of the conducting body. We record the maximum score, the weighting of
             every component, the category-wise qualifying minimum, and the tie-breaking order in that exact
@@ -605,7 +659,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
 </Layout>
 
 <!-- ══════════════════════ DIRECTORY FILTERING ══════════════════════ -->
-<script>
+<script define:vars={{ REFILTER_EVENT: 'allcutoff:refilter-directory' }}>
   function initDirectoryFilters() {
     const categoryBtns = document.querySelectorAll('.category-filter-btn');
     // The hero search box doubles as the directory filter box. It also has its
@@ -659,6 +713,15 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
     });
 
     if (searchInput) searchInput.addEventListener('input', filterCards);
+
+    /*
+     * Re-filter hook. The hero search clears or rewrites its own input
+     * programmatically when a result is loaded into the hero calculator, and a
+     * programmatic assignment fires no `input` event — so the grid used to stay
+     * filtered on a stale query and `#calc-count` claimed the site only had one
+     * calculator. Anything that changes the box must ask for a re-filter.
+     */
+    window.addEventListener(REFILTER_EVENT, filterCards);
   }
 
   if (document.readyState === 'loading') {
@@ -669,7 +732,7 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
 </script>
 
 <!-- ══════════════════════ HERO INSTANT SEARCH ══════════════════════ -->
-<script define:vars={{ heroSearchIndex, CUSTOM_HERO_ID: HERO_CUSTOM_ENTRY.id }}>
+<script define:vars={{ heroSearchIndex, CUSTOM_HERO_ID: HERO_CUSTOM_ENTRY.id, REFILTER_EVENT: 'allcutoff:refilter-directory' }}>
   (function () {
     'use strict';
 
@@ -688,7 +751,6 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
       if (!input || !dropdown) return;
 
       var results = [];
-      var activeIndex = -1;
 
       function score(entry, query, tokens) {
         if (!tokens.length) return 1;
@@ -738,35 +800,38 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
         });
       }
 
-      function optionNodes() {
-        return Array.prototype.slice.call(dropdown.querySelectorAll('[role="option"]'));
+      function rowLinks() {
+        return Array.prototype.slice.call(dropdown.querySelectorAll('[data-hero-open]'));
       }
 
-      function clearActive() {
-        activeIndex = -1;
-        optionNodes().forEach(function (node) {
-          node.setAttribute('aria-selected', 'false');
-        });
-        input.setAttribute('aria-activedescendant', '');
-      }
-
-      function setActive(next) {
-        var nodes = optionNodes();
-        if (!nodes.length) return;
-        activeIndex = Math.max(0, Math.min(next, nodes.length - 1));
-        nodes.forEach(function (node, i) {
-          node.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
-        });
-        var current = nodes[activeIndex];
-        if (!current) return;
-        input.setAttribute('aria-activedescendant', current.id);
-        if (typeof current.scrollIntoView === 'function') current.scrollIntoView({ block: 'nearest' });
-      }
-
-      function hide() {
+      function hide(refocus) {
         dropdown.classList.add('hidden');
         input.setAttribute('aria-expanded', 'false');
-        clearActive();
+        if (refocus) input.focus();
+      }
+
+      /**
+       * One row, one target. The whole title + description block is a single
+       * anchor, and the "Load in Hero Calculator" action is a real sibling button.
+       * The old markup put both inside a `role="option"` div with a delegated
+       * `closest('[role="option"]') -> location.href` handler, so clicking the
+       * description paragraph navigated the page from outside the link.
+       */
+      function rowMarkup(entry, index) {
+        var href = escapeHtml(entry.href);
+        return (
+          '<li class="rounded-lg border border-transparent p-2.5 hover:bg-slate-50 focus-within:border-blue-300 focus-within:bg-blue-50">' +
+          '<a id="hero-search-row-' + index + '" href="' + href + '" data-hero-open class="block rounded-md">' +
+          '<span class="block text-sm font-semibold text-slate-900">' + escapeHtml(entry.name) + '</span>' +
+          '<span class="mt-0.5 block text-xs text-slate-600">' + escapeHtml(entry.meta) + '</span>' +
+          '</a>' +
+          '<span class="mt-2 flex flex-wrap gap-2">' +
+          '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+          '<button type="button" data-hero-load="' + escapeHtml(entry.id) +
+          '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">Load in Hero Calculator</button>' +
+          '</span>' +
+          '</li>'
+        );
       }
 
       function render(query) {
@@ -774,69 +839,86 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
 
         if (!results.length) {
           dropdown.innerHTML =
-            '<p class="px-3 py-4 text-center text-sm text-slate-600">No calculators matched &ldquo;' +
+            '<ul class="list-none"><li class="px-3 py-4 text-center text-[0.9375rem] text-slate-700">No calculators matched &ldquo;' +
             escapeHtml(query) +
-            '&rdquo;. Try TNEA, KCET, NEET, B.Pharm or Tamil Nadu.</p>';
+            '&rdquo;. Try TNEA, KCET, NEET, B.Pharm or Tamil Nadu.</li></ul>';
           dropdown.classList.remove('hidden');
           input.setAttribute('aria-expanded', 'true');
-          clearActive();
           return;
         }
 
-        dropdown.innerHTML = results
-          .slice(0, 6)
-          .map(function (entry, index) {
-            var href = entry.href;
-            return (
-              '<div id="hero-search-opt-' + index + '" role="option" aria-selected="false" data-hero-index="' + index +
-              '" data-calc-id="' + escapeHtml(entry.id) + '" data-calc-href="' + escapeHtml(href) + '"' +
-              ' class="rounded-lg border border-transparent px-2.5 py-2 hover:bg-slate-50 aria-selected:border-blue-300 aria-selected:bg-blue-50">' +
-              '<p class="text-sm font-semibold text-slate-900">' + escapeHtml(entry.name) + '</p>' +
-              '<p class="mt-0.5 text-xs text-slate-600">' + escapeHtml(entry.meta) + '</p>' +
-              '<div class="mt-2 flex flex-wrap gap-2">' +
-              '<a href="' + escapeHtml(href) + '" data-hero-open class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
-              '<button type="button" data-hero-load="' + escapeHtml(entry.id) +
-              '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">Load in Hero Calculator</button>' +
-              '</div></div>'
-            );
-          })
-          .join('');
+        var shown = results.slice(0, 6);
+        dropdown.innerHTML =
+          '<ul aria-label="Calculator search results" class="list-none">' +
+          shown.map(rowMarkup).join('') +
+          '</ul>';
 
         dropdown.classList.remove('hidden');
         input.setAttribute('aria-expanded', 'true');
-        clearActive();
+      }
+
+      /** Arrow keys move real focus between the result links; no ARIA state. */
+      function moveFocus(step) {
+        var links = rowLinks();
+        if (!links.length) return false;
+        var from = links.indexOf(document.activeElement);
+        var next = from < 0 ? (step > 0 ? 0 : links.length - 1) : (from + step + links.length) % links.length;
+        var target = links[next];
+        if (!target || typeof target.focus !== 'function') return false;
+        target.focus();
+        if (typeof target.scrollIntoView === 'function') {
+          target.scrollIntoView({ block: 'nearest' });
+        }
+        return true;
+      }
+
+      function handleRowKeys(event) {
+        var step = 0;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') step = 1;
+        else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') step = -1;
+        else if (event.key === 'Home' || event.key === 'End') {
+          var links = rowLinks();
+          if (links.length) {
+            event.preventDefault();
+            (event.key === 'Home' ? links[0] : links[links.length - 1]).focus();
+          }
+          return;
+        } else {
+          return;
+        }
+        if (moveFocus(step)) event.preventDefault();
+      }
+
+      /** Push a fresh filter pass downstream; the input may have been rewritten. */
+      function refilter() {
+        try {
+          window.dispatchEvent(new Event(REFILTER_EVENT));
+        } catch (err) {
+          /* The filter initialiser may not be on this page. */
+        }
       }
 
       function loadIntoHero(id) {
         if (!id) return;
-        hide();
+        hide(false);
         input.value = '';
+        refilter();
         window.dispatchEvent(new CustomEvent('allcutoff:load-calculator', { detail: { id: id } }));
       }
 
       dropdown.addEventListener('click', function (event) {
         var loadBtn = event.target.closest('[data-hero-load]');
-        if (loadBtn) {
-          event.preventDefault();
-          loadIntoHero(loadBtn.getAttribute('data-hero-load'));
-          return;
-        }
-
-        var openLink = event.target.closest('[data-hero-open]');
-        if (openLink) {
-          event.preventDefault();
-          window.location.href = openLink.getAttribute('href');
-          return;
-        }
-
-        var row = event.target.closest('[data-hero-index]');
-        if (row) window.location.href = row.getAttribute('data-calc-href');
+        if (!loadBtn) return;
+        event.preventDefault();
+        loadIntoHero(loadBtn.getAttribute('data-hero-load'));
       });
+
+      dropdown.addEventListener('keydown', handleRowKeys);
 
       input.addEventListener('input', function (event) {
         var value = event.target.value;
         if (!value.trim()) {
-          hide();
+          hide(false);
           return;
         }
         render(value);
@@ -848,23 +930,28 @@ const extraSchema = [faqSchema, websiteSchema, itemListSchema];
 
       input.addEventListener('keydown', function (event) {
         if (event.key === 'ArrowDown') {
-          event.preventDefault();
-          setActive(activeIndex + 1);
+          if (moveFocus(1)) event.preventDefault();
         } else if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          setActive(activeIndex <= 0 ? 0 : activeIndex - 1);
+          if (moveFocus(-1)) event.preventDefault();
         } else if (event.key === 'Escape') {
-          hide();
+          // Cancel the search outright: the box is emptied, so the directory
+          // filter must be re-run or the grid stays narrowed with no visible
+          // reason for it.
+          hide(false);
+          input.value = '';
+          refilter();
         } else if (event.key === 'Enter') {
-          if (activeIndex >= 0 && results[activeIndex]) {
+          // Enter in the field opens the top hit, matching the Ctrl+K dialog.
+          var top = rowLinks()[0];
+          if (top) {
             event.preventDefault();
-            window.location.href = results[activeIndex].href;
+            window.location.href = top.getAttribute('href');
           }
         }
       });
 
       document.addEventListener('click', function (event) {
-        if (!dropdown.contains(event.target) && !input.contains(event.target)) hide();
+        if (!dropdown.contains(event.target) && !input.contains(event.target)) hide(false);
       });
     }
 

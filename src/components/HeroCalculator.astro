@@ -213,7 +213,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       {EXAM_LABELS[DEFAULT_ID]}
     </h2>
 
-    <!-- ── Exam selector: native select (always) + pill tabs (sm+) ────── -->
+    <!-- ── Exam selector: native select (always) + pill filters (sm+) ──── -->
     <div class="mt-4">
       <label for="hero-calc-select" class="block text-xs font-semibold text-slate-700">Choose your exam or admission</label>
       <div class="relative mt-1.5">
@@ -238,21 +238,24 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
         </svg>
       </div>
 
+      <!-- Filter buttons, not tabs: they swap the input grid inside the same
+           region instead of switching between panels, so there is no tabpanel
+           to point at. `aria-pressed` + `aria-controls` is the honest pattern
+           and leaves every pill in the normal tab order. -->
       <div
         id="hero-calc-tabs"
         class="mt-3 hidden gap-2 overflow-x-auto pb-1 sm:flex"
-        role="tablist"
-        aria-label="Pick an entrance exam to calculate"
+        role="group"
+        aria-label="Filter by entrance exam"
       >
         {tabs.map((tab) => (
           <button
             type="button"
-            role="tab"
             id={`hero-tab-${tab.id}`}
             data-hero-tab={tab.id}
             class="btn-category-pill focus-ring shrink-0"
-            aria-selected={tab.id === DEFAULT_ID ? 'true' : 'false'}
-            tabindex={tab.id === DEFAULT_ID ? 0 : -1}
+            aria-pressed={tab.id === DEFAULT_ID ? 'true' : 'false'}
+            aria-controls="hero-calc-inputs"
           >
             {tab.label}
           </button>
@@ -264,12 +267,19 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
     <div id="hero-calc-inputs" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
 
     <!-- ── Result ─────────────────────────────────────────────────────── -->
-    <section class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-labelledby="hero-result-label">
+    <!-- aria-live on the section makes the whole result (score, percent, gauge,
+         remarks and status pill) one polite announcement — no second live
+         region. -->
+    <section
+      class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4"
+      aria-labelledby="hero-result-label"
+      aria-live="polite"
+    >
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div class="min-w-0">
           <span id="hero-result-label" class="font-mono-eyebrow block text-xs text-slate-500">Calculated Cutoff Score</span>
           <div class="mt-1 flex flex-wrap items-baseline gap-x-2">
-            <span id="hero-total" class="text-3xl font-extrabold tracking-tight tabular-nums text-slate-900 sm:text-4xl">—</span>
+            <span id="hero-total" class="text-[2rem] leading-none tabular-nums text-slate-900 sm:text-[2.25rem]">—</span>
             <span id="hero-unit" class="text-xs font-semibold text-slate-600">{defaultCalc.scoreUnit}</span>
           </div>
         </div>
@@ -290,7 +300,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
 
       <p id="hero-remarks" class="mt-3 text-sm leading-relaxed text-slate-700"></p>
 
-      <div id="hero-status" class="status-pill-green mt-3" role="status" aria-live="polite">
+      <div id="hero-status" class="status-pill-green mt-3">
         <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true"></span>
         <span class="min-w-0">
           <span id="hero-status-label" class="block text-sm font-semibold">Calculating…</span>
@@ -352,18 +362,40 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
     </p>
   </form>
 
-  <div id="hero-calc-flash" class="pointer-events-none -mt-2 rounded-xl border border-blue-300 bg-blue-50/70 px-3 py-2 text-center text-xs font-semibold text-blue-900 opacity-0 transition-opacity duration-300"></div>
+  <!-- Out of flow while empty (the JS owns `hidden`), so an idle widget never
+       reserves the ~34px strip or paints an empty blue box. -->
+  <div id="hero-calc-flash" class="pointer-events-none -mt-2 hidden rounded-xl border border-blue-300 bg-blue-50/70 px-3 py-2 text-center text-xs font-semibold text-blue-900 transition-opacity duration-300 motion-reduce:transition-none"></div>
 </div>
 
 <style>
-  #hero-calculator [id^='hero-tab-'][aria-selected='true'] {
+  #hero-calculator [data-hero-tab][aria-pressed='true'] {
     background-color: var(--color-ink);
     border-color: var(--color-ink);
     color: var(--color-canvas-elevated);
   }
 
-  #hero-calculator [role='tab'] {
+  #hero-calculator [data-hero-tab] {
     white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  /* The pill strip is a horizontal scroller: hide the native bar and snap pill
+     to pill. No edge mask — it faded the first pill's own rounded edge and read
+     as a stray shadow beside the selected pill. */
+  #hero-calc-tabs {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x proximity;
+  }
+
+  #hero-calc-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #hero-calc-tabs {
+      scroll-snap-type: none;
+    }
   }
 </style>
 
@@ -422,6 +454,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
     if (!select || !inputsWrap || !totalEl) return;
 
     var activeId = DEFAULT_ID;
+    var flashTimer = null;
     var isCustom = function (id) {
       return id === CUSTOM_ID;
     };
@@ -452,6 +485,15 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       return Math.round(num(value) * factor) / factor;
     }
 
+    /** `global.css` only neutralises CSS transitions, not scripted scrolling. */
+    function scrollBehavior() {
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      return reduced ? 'auto' : 'smooth';
+    }
+
+    /* Duplicated pending a shared module: the same helper exists in
+       CalculatorWidget.astro (esc) and SearchModal.astro (escapeHtml). Keep all
+       three complete — a missing quote escape is a latent injection. */
     function esc(value) {
       return String(value == null ? '' : value)
         .replace(/&/g, '&amp;')
@@ -564,13 +606,20 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       safeInputs(calc).forEach(function (input) {
         var el = numInput(input.id);
         var step = input.step == null ? 1 : input.step;
-        var raw = el && el.value !== '' ? num(el.value) : num(input.defaultValue);
+        // An explicitly cleared field reads as 0 (then clamps to the min). Never
+        // silently fall back to defaultValue — a mark the user deleted is not a
+        // mark they typed. Kept byte-identical with CalculatorWidget.readValues.
+        var raw = el ? num(el.value) : num(input.defaultValue);
         values[input.id] = roundToStep(clamp(raw, num(input.min), num(input.max)), step);
       });
       return values;
     }
 
     /* ---------------- banding + render --------------------------------- */
+    /* Status banding: green / amber / red. The amber token list below is
+       duplicated verbatim in CalculatorWidget.astro (resolveBand) — keep the
+       two in sync. `moderate` is a mid-confidence state, so it is amber and
+       never green. */
     function resolveBand(result, ratio) {
       var status = result && result.qualifyingStatus;
       if (!status) return ratio >= 0.8 ? 'amber' : 'red';
@@ -608,8 +657,9 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       var inputs = safeInputs(calc);
       var pctEl = numInput('percentage');
       var targetEl = numInput('target');
-      var pct = pctEl && pctEl.value !== '' ? num(pctEl.value) : num(inputs[0] && inputs[0].defaultValue);
-      var target = targetEl && targetEl.value !== '' ? num(targetEl.value) : num(inputs[1] && inputs[1].defaultValue);
+      // Same cleared-field rule as readValues: an empty box is 0, not a default.
+      var pct = pctEl ? num(pctEl.value) : num(inputs[0] && inputs[0].defaultValue);
+      var target = targetEl ? num(targetEl.value) : num(inputs[1] && inputs[1].defaultValue);
       var gap = pct - target;
       var sign = gap >= 0 ? '+' : '−';
 
@@ -702,13 +752,11 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       }
     }
 
-    /* ---------------- header / links / tabs ---------------------------- */
-    function syncTabs(id) {
+    /* ---------------- header / links / exam filter ------------------------ */
+    function syncFilters(id) {
       if (!tabsWrap) return;
       Array.prototype.forEach.call(tabsWrap.querySelectorAll('[data-hero-tab]'), function (btn) {
-        var active = btn.getAttribute('data-hero-tab') === id;
-        btn.setAttribute('aria-selected', active ? 'true' : 'false');
-        btn.setAttribute('tabindex', active ? '0' : '-1');
+        btn.setAttribute('aria-pressed', btn.getAttribute('data-hero-tab') === id ? 'true' : 'false');
       });
     }
 
@@ -755,7 +803,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       var opts = options || {};
 
       if (select && select.value !== id) select.value = id;
-      syncTabs(id);
+      syncFilters(id);
       updateChrome(calc);
       buildInputs(calc);
       refreshSteppers();
@@ -763,17 +811,27 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       run();
 
       if (opts.flash && flashEl) {
+        // `hidden` keeps the idle widget from reserving a strip of dead space;
+        // the opacity transition on the way out gives the reveal a fade.
+        if (flashTimer) window.clearTimeout(flashTimer);
         flashEl.textContent = 'Loaded: ' + (calc.name || '');
+        flashEl.classList.remove('hidden');
+        flashEl.classList.add('opacity-0');
+        // Force a layout frame so the fade-in has a 0-opacity origin to run from.
+        void flashEl.offsetWidth;
         flashEl.classList.remove('opacity-0');
-        window.setTimeout(function () {
+        flashTimer = window.setTimeout(function () {
           flashEl.classList.add('opacity-0');
+          flashTimer = window.setTimeout(function () {
+            flashEl.classList.add('hidden');
+          }, 300);
         }, 1800);
       }
 
       if (opts.focusResult) {
         var region = root.querySelector('section[aria-labelledby="hero-result-label"]');
         if (region && typeof region.scrollIntoView === 'function') {
-          region.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          region.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
         }
       }
 
@@ -806,25 +864,8 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
         choose(btn.getAttribute('data-hero-tab'));
       });
 
-      tabsWrap.addEventListener('keydown', function (event) {
-        var btns = Array.prototype.slice.call(tabsWrap.querySelectorAll('[data-hero-tab]'));
-        var index = btns.findIndex(function (b) {
-          return b.getAttribute('data-hero-tab') === activeId;
-        });
-        if (index < 0) index = 0;
-
-        var next = null;
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % btns.length;
-        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + btns.length) % btns.length;
-        else if (event.key === 'Home') next = 0;
-        else if (event.key === 'End') next = btns.length - 1;
-
-        if (next === null) return;
-        event.preventDefault();
-        var target = btns[next];
-        target.focus();
-        choose(target.getAttribute('data-hero-tab'));
-      });
+      /* No arrow-key roving tabindex: these are toggle buttons, not tabs, so
+         every pill stays a normal tab stop and Tab/Shift+Tab order them. */
     }
 
     inputsWrap.addEventListener('click', function (event) {
@@ -927,7 +968,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
 
       // `scroll-mt-24` on the root keeps the sticky header from covering it.
       try {
-        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        root.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       } catch (err) {
         window.scrollTo(0, 0);
       }
