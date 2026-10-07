@@ -1,6 +1,5 @@
 ---
 import type { CutoffCalculator } from '../data/calculators';
-import { CALCULATORS } from '../data/calculators';
 
 interface Props {
   calculator: CutoffCalculator;
@@ -9,13 +8,34 @@ interface Props {
 const { calculator } = Astro.props;
 
 /**
- * Client-safe registry: every calculator's *real* `calculate()` function is
- * serialised to source text and rebuilt in the browser. This keeps the maths in
- * exactly one place (`src/data/calculators.ts`) instead of duplicating it here.
+ * Client payload: ONLY this calculator, with its real `calculate()` serialised
+ * to source text and rebuilt in the browser.
+ *
+ * The maths stays in exactly one place (`src/data/calculators.ts`) so there is
+ * no second copy to drift, but the previous build shipped the whole twelve-entry
+ * registry to every one of the twelve pages — ~88 KB of inline JSON per page to
+ * read a single entry. Nothing on this widget ever switched calculator, so the
+ * other eleven were dead weight. This page is now ~7 KB of payload.
  */
-const registry = Object.fromEntries(
-  CALCULATORS.map((c) => [c.id, { ...c, calculate: undefined, fn: c.calculate.toString() }])
-);
+/**
+ * Client payload: only what the widget script below actually reads.
+ *
+ * Audited property-by-property: `slug`, `name`, `academicYear`, `maxScore`,
+ * `scoreUnit`, `inputs`, plus `fn` (the real `calculate()` source, rebuilt in
+ * the browser). The previous build passed the whole registry object —
+ * every `formulaSteps`, `faqs`, `officialRules` and `tieBreakingRules` array,
+ * which the server already renders as visible HTML. That was ~26 KB of prose
+ * duplicated inside a `<script>` on all twelve pages.
+ */
+const payload = {
+  slug: calculator.slug,
+  name: calculator.name,
+  academicYear: calculator.academicYear,
+  maxScore: calculator.maxScore,
+  scoreUnit: calculator.scoreUnit,
+  inputs: calculator.inputs,
+  fn: calculator.calculate.toString()
+};
 
 const maxScore = calculator.maxScore;
 const stepDecimals = (input: { step?: number }) =>
@@ -164,7 +184,7 @@ const stepDecimals = (input: { step?: number }) =>
         <span class="font-mono-eyebrow block text-xs text-slate-500">Calculated Cutoff Score</span>
         <div class="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span id="display-total-cutoff" class="text-[2.25rem] leading-none text-slate-900 tabular-nums sm:text-[2.5rem]">&mdash;</span>
-          <span id="display-score-unit" class="text-sm font-semibold text-slate-500">{calculator.scoreUnit}</span>
+          <span class="text-sm font-semibold text-slate-500">{calculator.scoreUnit}</span>
         </div>
       </div>
 
@@ -237,7 +257,7 @@ const stepDecimals = (input: { step?: number }) =>
   </div>
 
   <!-- Collapsible formula walkthrough -->
-  <details id="breakdown-details" class="group mt-6 rounded-xl border border-slate-200 bg-white">
+  <details class="group mt-6 rounded-xl border border-slate-200 bg-white">
     <summary class="focus-ring flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-900">
       <span>Formula &amp; Step-by-Step Breakdown</span>
       <svg
@@ -376,7 +396,7 @@ const stepDecimals = (input: { step?: number }) =>
   </aside>
 </div>
 
-<script define:vars={{ calculator, registry }}>
+<script define:vars={{ payload }}>
   (function () {
     'use strict';
 
@@ -391,29 +411,16 @@ const stepDecimals = (input: { step?: number }) =>
     if (!root) return;
 
     /* ------------------------------------------------------------------ *
-     * Rebuild the real calculate() functions from calculators.ts.
+     * Rebuild the real calculate() function from calculators.ts.
      * ------------------------------------------------------------------ */
-    var calculators;
+    var calculate;
     var buildFailed = false;
 
     try {
-      calculators = Object.fromEntries(
-        Object.entries(registry).map(function (pair) {
-          var id = pair[0];
-          var source = pair[1];
-          var rebuilt = {};
-          Object.keys(source).forEach(function (key) {
-            if (key !== 'fn') rebuilt[key] = source[key];
-          });
-          rebuilt.calculate = new Function('values', 'return (' + source.fn + ')(values);');
-          return [id, rebuilt];
-        })
-      );
+      calculate = new Function('values', 'return (' + payload.fn + ')(values);');
     } catch (err) {
       buildFailed = true;
     }
-
-    var active = !buildFailed ? calculators[calculator.id] : null;
 
     /* ------------------------------------------------------------------ *
      * Element lookups (scoped to this widget).
@@ -525,7 +532,7 @@ const stepDecimals = (input: { step?: number }) =>
 
     function readValues() {
       var values = {};
-      calculator.inputs.forEach(function (input) {
+      payload.inputs.forEach(function (input) {
         var el = numberInput(input.id);
         var step = input.step == null ? 1 : input.step;
         // An explicitly cleared field reads as 0 (then clamps to the min). Never
@@ -614,7 +621,7 @@ const stepDecimals = (input: { step?: number }) =>
       var sumMax = breakdown.reduce(function (sum, row) {
         return sum + num(row.max);
       }, 0);
-      var denom = sumMax > 0 ? Math.min(sumMax, num(calculator.maxScore) || sumMax) : num(calculator.maxScore) || 1;
+      var denom = sumMax > 0 ? Math.min(sumMax, num(payload.maxScore) || sumMax) : num(payload.maxScore) || 1;
       var pct = denom > 0 ? clamp((total / denom) * 100, 0, 100) : 0;
       var ratio = denom > 0 ? total / denom : 0;
 
@@ -647,7 +654,7 @@ const stepDecimals = (input: { step?: number }) =>
       if (remarks) remarks.textContent = result.remarks || '';
 
       if (formulaApplied) {
-        var given = calculator.inputs
+        var given = payload.inputs
           .map(function (input) {
             return input.shortLabel + ' ' + fmt(values[input.id]);
           })
@@ -671,7 +678,7 @@ const stepDecimals = (input: { step?: number }) =>
           })
           .join(' + ');
         formulaApplied.textContent =
-          given + ' \u2192 ' + (terms || fmt(total)) + ' = ' + fmt(total) + ' ' + (calculator.scoreUnit || '');
+          given + ' \u2192 ' + (terms || fmt(total)) + ' = ' + fmt(total) + ' ' + (payload.scoreUnit || '');
       }
 
       breakdownTbody.innerHTML = breakdown
@@ -732,7 +739,7 @@ const stepDecimals = (input: { step?: number }) =>
     }
 
     function runCalculation(opts) {
-      if (!active) {
+      if (buildFailed) {
         showError(null);
         return;
       }
@@ -740,7 +747,7 @@ const stepDecimals = (input: { step?: number }) =>
       var values = readValues();
 
       try {
-        render(active.calculate(values), values, opts && opts.announce);
+        render(calculate(values), values, opts && opts.announce);
       } catch (err) {
         showError(err);
       }
@@ -770,7 +777,7 @@ const stepDecimals = (input: { step?: number }) =>
       runCalculation();
     }
 
-    calculator.inputs.forEach(function (input) {
+    payload.inputs.forEach(function (input) {
       var numEl = numberInput(input.id);
       var slider = rangeInput(input.id);
       var min = num(input.min);
@@ -841,7 +848,7 @@ const stepDecimals = (input: { step?: number }) =>
 
     if (resetBtn) {
       resetBtn.addEventListener('click', function () {
-        calculator.inputs.forEach(function (input) {
+        payload.inputs.forEach(function (input) {
           var numEl = numberInput(input.id);
           var slider = rangeInput(input.id);
           if (numEl) numEl.value = String(input.defaultValue);
@@ -896,13 +903,13 @@ const stepDecimals = (input: { step?: number }) =>
 
     function buildResultText() {
       if (!lastState) {
-        return calculator.name + '\n\nCalculated on ' + BRAND + ' — ' + SITE;
+        return payload.name + '\n\nCalculated on ' + BRAND + ' — ' + SITE;
       }
 
       var lines = [
-        calculator.name + ' (' + calculator.academicYear + ')',
+        payload.name + ' (' + payload.academicYear + ')',
         '',
-        'Calculated Cutoff: ' + lastState.total + ' ' + (calculator.scoreUnit || ''),
+        'Calculated Cutoff: ' + lastState.total + ' ' + (payload.scoreUnit || ''),
         'Score band: ' + lastState.pct.toFixed(1) + '% of ' + lastState.denom
       ];
 
@@ -937,9 +944,9 @@ const stepDecimals = (input: { step?: number }) =>
         if (typeof navigator.share === 'function') {
           navigator
             .share({
-              title: calculator.name,
+              title: payload.name,
               text: text,
-              url: SITE + '/calculator/' + calculator.slug
+              url: SITE + '/calculator/' + payload.slug
             })
             .then(function () {
               flash('Shared');

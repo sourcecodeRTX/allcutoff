@@ -2,7 +2,7 @@
 import Layout, { SITE_URL, clampDescription, pickDescription } from '../layouts/Layout.astro';
 import CalculatorCard from '../components/CalculatorCard.astro';
 import HeroCalculator from '../components/HeroCalculator.astro';
-import { CALCULATORS, CATEGORIES, STATES } from '../data/calculators';
+import { ACADEMIC_YEAR, CALCULATORS, CATEGORIES, STATES } from '../data/calculators';
 
 const SITE = SITE_URL;
 const canonical = `${SITE}/`;
@@ -15,7 +15,7 @@ const HOME_REVIEWED = '2026-10-06';
  * than hardcoding "2025 - 2026" again, so the badge, the FAQ and every meta tag
  * move together when the cycle rolls over.
  */
-const YEAR = CALCULATORS[0]?.academicYear ?? '2025 - 2026';
+const YEAR = CALCULATORS[0]?.academicYear ?? ACADEMIC_YEAR;
 const YEAR_LABEL = YEAR.replace(/\s*-\s*/g, '-');
 /** Display form with an en dash, e.g. "2025–2026". */
 const YEAR_DISPLAY = YEAR.replace(/\s*-\s*/g, '\u2013');
@@ -33,19 +33,223 @@ const namedExams = HEADLINE_EXAMS.filter((code) =>
 );
 const unnamedCount = Math.max(0, CALCULATORS.length - namedExams.length);
 const heroHeadline =
-  `Cutoff Calculator for ${namedExams.join(', ')}` +
+  `Cut Off Calculator for ${namedExams.join(', ')}` +
   (unnamedCount > 0 ? ` & ${unnamedCount} More Entrance Exams` : '');
 
-/* 42 chars here + the layout's 14-char " | All Cut Off" = 56 rendered, inside
-   the 60-char SERP budget with room to spare. The previous "… & More" form ran
-   to 62 and, worse, implied a count the page could not back up. */
-const pageTitle = 'Cutoff Calculator for TNEA, KCET & NEET UG';
+/*
+ * Hero stat strip counts. `AUTHORITY_COUNT` counts DISTINCT conducting bodies,
+ * not calculators: several bodies run more than one exam, and quoting "12
+ * authorities" would be a false claim on the most credibility-sensitive part of
+ * the page. Both numbers are derived so they track the registry automatically.
+ */
+const AUTHORITY_COUNT = new Set(CALCULATORS.map((c) => c.conductingAuthority)).size;
+const STATE_COUNT = STATES.length;
+
+/**
+ * Keyword map: every supporting phrase the brief asks for, bound to the one
+ * page that actually answers it. Rendered as a visible chooser (so it is real
+ * navigation for a reader, not a stuffed block of text) and reused by the
+ * in-page jump nav, which is why each entry carries its own `href`.
+ */
+type FinderCard = { term: string; title: string; body: string; href: string; tag: string };
+
+const url = (id: string): string => {
+  const hit = CALCULATORS.find((c) => c.id === id);
+  return hit ? `/calculator/${hit.slug}` : '/#calculators';
+};
+
+const FIND_YOUR_CALCULATOR: FinderCard[] = [
+  {
+    tag: 'Most used',
+    term: 'cut off calculator',
+    title: 'Cut off calculator for every Indian entrance exam',
+    body:
+      'The starting point. Pick the exam you actually sat, enter the marks exactly as your scorecard prints them, and the tool applies that authority’s published weighting — nothing averaged, nothing guessed.',
+    href: '/#calculators'
+  },
+  {
+    tag: 'Engineering',
+    term: 'cut off calculator for engineering',
+    title: 'Engineering cut off calculator for every state',
+    body:
+      'Covers TNEA, MHT CET, KCET, KEAM, GUJCET and EAPCET engineering seats. Each state weights Mathematics, Physics and Chemistry differently, so the same three marks produce six different merit scores. Search for an engineering cut off calculator by your state, not by a generic formula.',
+    href: '/category/engineering'
+  },
+  {
+    tag: 'Tamil Nadu',
+    term: 'tnea cut off calculator',
+    title: 'TNEA engineering cut off calculator',
+    body:
+      'The Anna University 200-mark formula: Mathematics in full, Physics and Chemistry halved. Also the fastest way to see why a Tamil Nadu engineering aspirant cannot ignore Maths.',
+    href: url('tnea-engineering')
+  },
+  {
+    tag: '12th board',
+    term: '12th cut off calculator',
+    title: '12th cut off calculator for board marks',
+    body:
+      'Turns your Class 12 PCM or PCB percentages into the merit score your state actually ranks on. If you searched for a 12 cut off calculator, read this first: the answer depends entirely on the state you are applying in, and each authority weights your 12th marks differently.',
+    href: '/#twelfth-board'
+  },
+  {
+    tag: '12th marks',
+    term: '12th mark cut off calculator',
+    title: '12th mark cut off calculator with worked examples',
+    body:
+      'A step-by-step version with real numbers — 88, 76 and 81 in PCM carried all the way through the TNEA, KCET and EAPCET formulas so you can check the arithmetic line by line.',
+    href: '/#twelfth-board'
+  },
+  {
+    tag: 'Medical',
+    term: 'medical cut off calculator',
+    title: 'Medical cut off calculator for NEET UG',
+    body:
+      'Totals Physics, Chemistry and Biology out of 720 and checks the published qualifying-percentile band for your category, which is where most NEET score myths come from. A medical cut off calculator is also the fastest sanity check on a coaching institute’s number.',
+    href: url('neet-ug-medical')
+  },
+  {
+    tag: 'Biology',
+    term: 'biology cut off calculator',
+    title: 'Biology cut off calculator for paramedical and veterinary',
+    body:
+      'A biology cut off calculator is the right tool for courses where Biology carries real weight: Tamil Nadu paramedical and TANUVAS veterinary both score Biology at 100 of 200, against NEET UG where Biology is 360 of 720. A biology cut off calculator will not help an engineering seat at all, because those formulas ignore Biology entirely.',
+    href: url('tn-paramedical')
+  },
+  {
+    tag: 'Tamil Nadu',
+    term: 'cut off calculator for medical tamilnadu',
+    title: 'Medical cut off calculator for Tamil Nadu',
+    body:
+      'Tamil Nadu’s paramedical and veterinary merit rules are separate from NEET. Biology at full weight plus the Physics–Chemistry average is the rule both of them use.',
+    href: url('tn-paramedical')
+  },
+  {
+    tag: 'Agriculture',
+    term: 'cut off calculator for agriculture',
+    title: 'Agriculture cut off calculator for TNAU',
+    body:
+      'B.Sc. (Hons.) Agriculture and allied degrees in Tamil Nadu use a four-subject halved formula out of 200 — Physics, Chemistry, Biology and Maths or Computer Science.',
+    href: url('tnau-agriculture')
+  },
+  {
+    tag: 'By state',
+    term: 'state level cut off calculator',
+    title: 'State level cut off calculators',
+    body:
+      'Admission arithmetic is decided state by state. This page collects the calculators for Tamil Nadu, Karnataka, Kerala, Gujarat, Maharashtra, Delhi and the AP–TS corridor.',
+    href: '/#by-state'
+  },
+  {
+    tag: 'Any exam',
+    term: 'online cut off calculator',
+    title: 'Online cut off calculator that runs offline',
+    body:
+      'No account, no OTP, no emailed report and no mark ever leaving your device — the calculation runs in your browser, so it works on a low-end phone or a patchy college network.',
+    href: '/#how-it-works'
+  },
+  {
+    tag: 'All exams',
+    term: 'cut off calculator for 12th',
+    title: 'Cut off calculator for 12th standard students',
+    body:
+      'One place to see how your 12th percentage is used differently by TNEA, KCET, KEAM, GUJCET, EAPCET and the arts and science route — plus which of them need an entrance score too.',
+    href: '/#formula-reference'
+  }
+];
+
+/* -------------------------------------------------------------------------
+ * 12th-board worked examples.
+ *
+ * Data-driven so the prose and the arithmetic table can never drift apart, and
+ * laid out as ONE column: prose at a readable measure, line items as a full
+ * width strip underneath. The previous two-column version put prose and an
+ * 18rem aside side by side, which squeezed the measure to ~62 characters on a
+ * 1440px screen — fine on mobile, unreadable on desktop.
+ * ---------------------------------------------------------------------- */
+type WorkedExample = {
+  exam: string;
+  scale: string;
+  body: string[];
+  equation: string;
+  result: string;
+  rows: { label: string; value: string }[];
+  note: string;
+};
+
+const WORKED_EXAMPLES: WorkedExample[] = [
+  {
+    exam: 'Tamil Nadu engineering (TNEA)',
+    scale: '200 marks',
+    body: [
+      `Tamil Nadu is the simplest formula on this site and the one most people get wrong by halving the wrong subjects. Mathematics is counted in full at 100 marks; Physics and Chemistry are each halved to 50. The reason is that Tamil Nadu admits on academic ability as much as on entrance score, so the subject most predictive of an engineering student&rsquo;s first-year performance keeps its maximum weight. A candidate cannot pass a weak Mathematics mark with a strong Physics score.`,
+      `Your aggregate PCM percentage is checked separately. Below 40% you are not eligible at all; between 40% and 45% you are eligible only under the reserved categories in Tamil Nadu (BC, MBC, SC, ST); 45% and above clears the general condition. That gate is an eligibility filter, not part of the 200-mark score, which is why two candidates with identical totals can have different outcomes.`
+    ],
+    equation: '88 + (76 ÷ 2) + (81 ÷ 2) = 88 + 38 + 40.5',
+    result: '166.5 / 200',
+    rows: [
+      { label: 'Maths', value: '88 / 100' },
+      { label: 'Physics ÷ 2', value: '38 / 50' },
+      { label: 'Chemistry ÷ 2', value: '40.5 / 50' }
+    ],
+    note: 'PCM average 81.67% — clears the 45% general eligibility gate.'
+  },
+  {
+    exam: 'Karnataka engineering (KCET)',
+    scale: '100 marks',
+    body: [
+      `Karnataka splits the weight exactly in half between your 12th board PCM total and your KCET entrance score. Your board marks are converted to a percentage out of 100 and then scaled to 50 marks; your entrance score out of 180 is scaled to 50 marks; the two are added. This structure was the point of the 2018 Karnataka High Court ruling that ended board-mark-only ranking, and it is why the same candidate who scored 166.5 in TNEA cannot simply carry that number into KCET.`,
+      `Assume the same student scored 118 out of 180 in the KCET entrance paper. Board PCM total is 88 + 76 + 81 = 245 out of 300, which is 81.67%. Scaled to 50 that is 40.83. The entrance score scaled to 50 is 32.78. Karnataka also requires a board aggregate of at least 45% for the general category and 40% for reserved categories, so the gate is checked here as well.`
+    ],
+    equation: '(245 ÷ 300 × 50) + (118 ÷ 180 × 50) = 40.83 + 32.78',
+    result: '73.61 / 100',
+    rows: [
+      { label: 'Board PCM', value: '245 / 300' },
+      { label: 'Board → 50', value: '40.83 / 50' },
+      { label: 'KCET → 50', value: '32.78 / 50' }
+    ],
+    note: 'The board half contributed 40.83 of the 73.61 composite and the entrance half 32.78. Each is capped at 50, so neither half can be ignored — which is the whole point of a 50:50 rule.'
+  },
+  {
+    exam: 'Andhra Pradesh & Telangana (EAPCET)',
+    scale: '100 marks',
+    body: [
+      `EAPCET is the most entrance-weighted rule on this site: the 160-mark entrance paper carries 75% of the composite and the Intermediate group percentage carries 25%. A 160-mark paper is unusual in scale, which is where most hand calculations go wrong — candidates divide by 200 out of habit and end up with a score roughly a fifth too low. Telangana has in recent sessions waived the Intermediate component, so check the current brochure before relying on the 25% figure.`,
+      `There is also a hard qualifying floor that has nothing to do with the composite: OC and BC candidates must score at least 40 out of 160, which is 25%. Below that, the composite is irrelevant because the candidate is not ranked at all. SC and ST candidates are exempt from the minimum. With an entrance score of 96 and an Intermediate group percentage of 81:`
+    ],
+    equation: '(96 ÷ 160 × 75) + (81 ÷ 100 × 25) = 45 + 20.25',
+    result: '65.25 / 100',
+    rows: [
+      { label: 'Entrance raw', value: '96 / 160' },
+      { label: 'Entrance × 75%', value: '45.00 / 75' },
+      { label: 'Inter × 25%', value: '20.25 / 25' }
+    ],
+    note: 'Qualifying floor for OC and BC candidates: 40 out of 160. A score of 96 clears it comfortably.'
+  },
+  {
+    exam: 'Kerala engineering (KEAM)',
+    scale: '600 index marks',
+    body: [
+      `Kerala produces an index out of 600 rather than a percentage, and the board component is split 5:3:2 across Mathematics, Physics and Chemistry — the same 3:2:1 family you meet in CBSE PCM. The entrance paper out of 600 is scaled to 300, and the three board subjects are scaled to 150, 90 and 60 respectively, so the board half also totals 300. Kerala additionally normalises board marks across regions and boards before this arithmetic, which is a statistical step only the CEE can perform; use the published standardised percentage, never a raw total.`,
+      `With an entrance score of 410 out of 600 and board marks of 88, 76 and 81, the index works out as follows. A minimum normalised entrance score of 10 is required just to enter the engineering rank list. It is a low bar that catches only blank or near-blank papers, but it is absolute: no index mark counts without it.`
+    ],
+    equation: '(410 ÷ 600 × 300) + (88 × 1.5) + (76 × 0.9) + (81 × 0.6)',
+    result: '454 / 600',
+    rows: [
+      { label: 'Entrance', value: '205 / 300' },
+      { label: 'Maths × 1.5', value: '132 / 150' },
+      { label: 'Physics × 0.9', value: '68.4 / 90' },
+      { label: 'Chemistry × 0.6', value: '48.6 / 60' }
+    ],
+    note: '205 + 132 + 68.4 + 48.6 = 454. Entrance 410 clears the minimum normalised score of 10 comfortably.'
+  }
+];
+
+const pageTitle = 'Cut Off Calculator for TNEA, KCET & NEET UG';
 const pageDesc = clampDescription(
   pickDescription([
-    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET for ${YEAR_LABEL}. Calculates your official weighted merit score instantly, with no signup.`,
-    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET for ${YEAR_LABEL}. Get your official weighted merit score instantly.`,
-    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET for ${YEAR_LABEL}. Get your official merit score instantly.`,
-    `Free cutoff calculators for TNEA, KCET, NEET UG, EAPCET and more for ${YEAR_LABEL}. Get your official weighted merit score instantly.`
+    `Free cut off calculator for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET and 12th board marks. Get your official weighted merit score instantly, no signup.`,
+    `Free cut off calculator for TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET and 12th board marks. Get your official merit score instantly.`,
+    `Free online cut off calculator for TNEA, KCET, NEET UG, EAPCET, MHT CET and 12th board marks. Instant weighted merit score, no signup.`
   ])
 );
 
@@ -83,6 +287,46 @@ const HOME_FAQS = [
     question: 'Is the result guaranteed admission?',
     answer:
       'No, and we will not pretend otherwise. A calculator reproduces the published arithmetic, which is the part most students get wrong by hand. Seat availability, category reservation, choice freezing, tie-breakers on identical scores, and the order of rounds all sit above that arithmetic and are decided by the conducting authority. Always treat our number as your merit score and the official counselling portal as the decision.'
+  },
+  {
+    question: 'What is a cut off calculator, in plain words?',
+    answer:
+      'A cut off calculator converts the marks printed on your 12th board scorecard and your entrance scorecard into the single merit number your counselling authority ranks on. For most engineering seats that number is not your percentage and not your entrance rank — it is a weighted figure produced by a formula the state publishes, such as Maths in full plus Physics and Chemistry halved for TNEA, or a 50:50 board-plus-exam composite for KCET. The calculator applies that formula exactly, so your score can be checked by hand.'
+  },
+  {
+    question: 'How do I calculate my cut off from 12th board marks?',
+    answer:
+      'It depends on the state. In Tamil Nadu engineering, add your Mathematics mark to half your Physics mark plus half your Chemistry mark: 88 Maths, 76 Physics and 81 Chemistry gives 88 + 38 + 40.5 = 166.5 out of 200. In Karnataka, your 12th PCM total out of 300 is scaled to 50 marks and added to your KCET score scaled to 50, so board marks alone never decide the rank. In Kerala the 12th marks enter on a 5:3:2 ratio for Maths, Physics and Chemistry alongside the entrance score. This page has the worked arithmetic for each.'
+  },
+  {
+    question: 'My 12th board marks are out of 200 for one subject. What do I enter?',
+    answer:
+      'Convert to a percentage out of 100 before entering it, because every calculator here reads each subject on a 100-point scale. A subject score of 184 out of 200 becomes 92, and 162 out of 200 becomes 81. If your board prints a CGPA instead of marks, multiply it by 10 — a 9.2 CGPA is 92%. Where a state applies its own statistical normalisation, such as Kerala, use the standardised figure published by the conducting authority, because a raw total will not match their index.'
+  },
+  {
+    question: 'What is the difference between a cut off score, a closing mark and a qualifying mark?',
+    answer:
+      'A qualifying mark is the minimum you must score just to appear in the merit list, such as 50% of HSC PCM marks for MHT CET or the 40 marks out of 160 that OC and BC candidates need in EAPCET. A cut off score is your own weighted merit figure. A closing mark is the last score at which a seat was actually filled in the previous round, which is a historical outcome rather than a rule. Your calculator produces the middle number; the other two decide whether you get called.'
+  },
+  {
+    question: 'Do these calculators work for CBSE, ICSE and other boards?',
+    answer:
+      'Yes. The formulas are published by the admitting authority, not by your Class 12 board, so a CBSE candidate sitting TNEA and a Tamil Nadu board candidate sitting TNEA are ranked on identical arithmetic. The only requirement is that you enter each subject as a mark out of 100. Students of other boards that print subject totals out of 50 or out of 200 should convert to a percentage first, and students with a CGPA should multiply by 10.'
+  },
+  {
+    question: 'Can I use one cut off calculator for every state?',
+    answer:
+      'No, and using one is the single most common reason a student misreads their own merit list. Tamil Nadu halves Physics and Chemistry; Karnataka splits the weight equally between board and entrance; Andhra Pradesh and Telangana weight the entrance at 75% against 25% of Intermediate marks; Kerala uses a 5:3:2 subject ratio with a scaled entrance score; Gujarat uses 60:40 board theory against the entrance. Each of those is on this site as its own calculator, because they genuinely produce different numbers from the same marks.'
+  },
+  {
+    question: 'Why does my calculator score not match the cutoff quoted by a coaching institute?',
+    answer:
+      'Almost always because two different numbers are being compared. Institutes usually quote a previous year’s closing mark, which is a historical figure decided by seat availability and category reservation, while a calculator produces the live merit score from your own marks. A second cause is a coaching formula that drops an eligibility gate, such as the HSC percentage condition in MHT CET or the minimum normalised entrance score in KEAM, which changes the label but not the score. Check both numbers on the same scale before concluding either one is wrong.'
+  },
+  {
+    question: 'Is my data safe? Do you store my marks?',
+    answer:
+      'There is nothing to store, because there are no accounts on this site. Every formula is executed client-side in your own browser, the marks you type never travel to a server, and we hold no register, no login and no contact list. That also means the tools keep working on a slow connection or completely offline once the page has loaded.'
   }
 ];
 
@@ -234,7 +478,14 @@ const extraSchema = [faqSchema, itemListSchema];
 
     <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
       <!-- ── LEFT: value proposition ──────────────────────────────── -->
-      <div class="min-w-0">
+      <!--
+        `lg:sticky` on the copy column: the calculator is ~1300px tall on desktop,
+        so a static left column left ~500px of blank page beside it. Sticking the
+        copy keeps the headline, search and stats in view for the whole scroll of
+        the calculator instead. Single column on mobile, where there is no
+        side-by-side to keep aligned.
+      -->
+      <div class="min-w-0 lg:sticky lg:top-24">
         <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
           <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
           <span class="font-mono text-xs font-medium uppercase tracking-wide text-slate-900">
@@ -247,10 +498,12 @@ const extraSchema = [faqSchema, itemListSchema];
         </h1>
 
         <p class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7] text-slate-700">
-          Enter your board and entrance marks. The widget on this page applies the exact weighting your
-          counselling authority publishes &mdash; Maths at 100% for TNEA, the 50:50 board-plus-exam composite
-          for KCET, the 75:25 split for AP and TS EAPCET, the 720-mark total for NEET UG &mdash; and shows
-          your merit score as you type.
+          A cut off calculator turns the marks on your 12th board and entrance scorecards into the one
+          number your counselling authority actually ranks on. This is a free online cut off calculator for
+          TNEA, KCET, NEET UG, AP and TS EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET: enter your marks
+          and the widget applies the exact weighting your authority publishes &mdash; Maths at 100% for
+          TNEA, the 50:50 board-plus-exam composite for KCET, the 75:25 split for EAPCET, the 720-mark
+          total for NEET UG &mdash; and updates your merit score as you type.
         </p>
 
         <!-- Hero search bar with instant results -->
@@ -325,6 +578,27 @@ const extraSchema = [faqSchema, itemListSchema];
             Step-by-step tie-breakers
           </span>
         </div>
+
+        <!--
+          At-a-glance strip. The calculator column is far taller than the copy
+          column on desktop, which left ~500px of dead white space beside it.
+          This fills that space with facts a student actually wants, and every
+          number is derived from the registry rather than typed, so it cannot
+          drift when a calculator is added.
+        -->
+        <dl class="mt-8 grid max-w-xl grid-cols-2 gap-x-4 gap-y-5 border-t border-slate-200 pt-6 sm:grid-cols-4">
+          {[
+            { k: `${CALCULATORS.length}`, v: 'calculators' },
+            { k: `${AUTHORITY_COUNT}`, v: 'authorities' },
+            { k: `${STATE_COUNT}`, v: 'states & regions' },
+            { k: '0', v: 'sign-ups required' }
+          ].map((stat) => (
+            <div class="min-w-0">
+              <dt class="text-xl font-bold tabular-nums tracking-tight text-slate-900">{stat.k}</dt>
+              <dd class="mt-0.5 text-xs leading-snug text-slate-600">{stat.v}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
       <!-- ── RIGHT: the live calculator ──────────────────────────── -->
@@ -334,18 +608,176 @@ const extraSchema = [faqSchema, itemListSchema];
     </div>
   </section>
 
+  <!-- ══════════════════════ JUMP NAV ══════════════════════ -->
+  <!-- Dashed chips rather than solid cards: this is navigation, and the page
+       below it is the content. A boxed nav strip would compete with the hero
+       calculator it sits under. -->
+  <nav aria-label="Sections on this page" class="border-b border-slate-200 bg-white py-3.5">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 sm:px-6">
+      <span class="mr-1 font-mono text-xs uppercase tracking-wider text-slate-500">On this page:</span>
+      {[
+        { href: '#what-is', label: 'What a cutoff is' },
+        { href: '#find-calculator', label: 'Find your calculator' },
+        { href: '#calculators', label: 'All 12 calculators' },
+        { href: '#twelfth-board', label: '12th board worked examples' },
+        { href: '#formula-reference', label: 'Formula reference table' },
+        { href: '#how-it-works', label: 'How it works' },
+        { href: '#mistakes', label: 'Common mistakes' },
+        { href: '#faq', label: 'FAQ' }
+      ].map((item) => (
+        <a href={item.href} class="dashed-chip focus-ring">{item.label}</a>
+      ))}
+    </div>
+  </nav>
+
   <!-- ══════════════════════ STATE STRIP ══════════════════════ -->
-  <section class="border-b border-slate-200 bg-white py-4">
+  <section id="by-state" class="scroll-mt-20 border-b border-slate-200 bg-white py-4">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 text-xs sm:px-6">
       <span class="mr-2 font-mono uppercase tracking-wider text-slate-500">Browse by state:</span>
       {STATES.map((state) => (
         <a
           href={`/state/${state.slug}`}
-          class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-900"
+          class="inline-flex min-h-9 items-center rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-900"
         >
           {state.name} ({state.count})
         </a>
       ))}
+    </div>
+  </section>
+
+  <!-- ══════════════════════ WHAT IS A CUT OFF CALCULATOR ══════════════════════ -->
+  <section id="what-is" class="scroll-mt-20 border-b border-slate-200 bg-white py-14 sm:py-18">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Start here</span>
+      <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        What Is a Cut Off Calculator, and Why Does the Answer Change With Every State?
+      </h2>
+      <p class="mt-4 max-w-[68ch] text-[1.0625rem] leading-[1.75] text-slate-700">
+        A <strong class="font-semibold text-slate-900">cut off calculator</strong> is a tool that converts the
+        raw marks printed on your Class 12 board marksheet and your entrance scorecard into the single merit
+        figure that a state counselling authority ranks on. That figure is rarely your percentage and almost
+        never your entrance rank. It is a weighted number, and the weights are published in an admission
+        brochure that differs from state to state and sometimes from course to course within the same state.
+        A student with 88 in Mathematics, 76 in Physics and 81 in Chemistry produces a 166.5 out of 200 merit
+        score in Tamil Nadu, a completely different composite in Karnataka, and a third number again in Kerala
+        &mdash; from the identical three marks. This is why a cut off calculator that offers one generic
+        formula for all of India is worse than no calculator at all: it produces a confident number that no
+        counselling portal will ever accept.
+      </p>
+
+      <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Three numbers that are not the same thing</h3>
+          <p class="mt-2.5 text-[0.9375rem] leading-[1.75] text-slate-700">
+            Students routinely confuse these three, and the confusion is where most bad advice online begins.
+            Your <strong class="font-semibold text-slate-900">percentage</strong> is your total divided by the
+            maximum, and it tells you almost nothing about merit because it treats every subject as equal. Your
+            <strong class="font-semibold text-slate-900">entrance score</strong> is what one test measured out
+            of its own maximum. Your <strong class="font-semibold text-slate-900">merit or cut off score</strong>
+            is the weighted blend of the two that the authority actually sorts the merit list on. A calculator
+            gives you the third number, and only the third number is what gets you a seat called.
+          </p>
+          <p class="mt-3 text-[0.9375rem] leading-[1.75] text-slate-700">
+            On top of that sits the <strong class="font-semibold text-slate-900">closing mark</strong>, the last
+            score at which a seat was filled in a previous round. A closing mark is a historical outcome, shaped
+            by seat availability and category reservation, not a rule you can apply to yourself. Comparing your
+            live merit score against a previous year&rsquo;s closing mark is the single most common arithmetic
+            mistake in Indian admission planning, and it is why two calculators on two sites can both be
+            correct and still disagree with each other.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-base font-bold text-slate-900">What every calculator here actually does</h3>
+          <ul class="mt-2.5 space-y-3 text-[0.9375rem] leading-[1.75] text-slate-700">
+            <li class="flex gap-2.5">
+              <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+              <span>
+                <strong class="font-semibold text-slate-900">Applies the published weighting exactly.</strong>
+                Subject halving, board-plus-exam ratios, percentile cut-offs and entrance scaling are
+                transcribed clause by clause from the brochure, then shown as a line-by-line breakdown you can
+                audit by hand.
+              </span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+              <span>
+                <strong class="font-semibold text-slate-900">Separates the merit score from the eligibility gate.</strong>
+                Many states also impose a minimum, such as 50% of HSC PCM marks for MHT CET or the 40 marks
+                out of 160 that OC and BC candidates need in EAPCET. Missing that gate blocks the seat no matter
+                how high the merit score is, so the tool checks it separately.
+              </span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+              <span>
+                <strong class="font-semibold text-slate-900">Names the tie-breaker that will decide your rank.</strong>
+                Where hundreds of candidates finish on an identical composite, the published tie-breaking order
+                is what separates them. On most exams the first tie-breaker is Biology, then Chemistry, then
+                Physics.
+              </span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+              <span>
+                <strong class="font-semibold text-slate-900">Never invents a cutoff.</strong> There is no
+                predicted cutoff on this site dressed up as an official one. If a number is not in a published
+                rule, it is not claimed as one.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="dashed-callout mt-8 max-w-[72ch] text-[0.9375rem] leading-[1.75] text-slate-700">
+        <strong class="font-semibold text-slate-900">The one rule that protects you:</strong> always identify
+        the conducting authority before you calculate anything. Tamil Nadu engineering is run by DoTE, Karnataka
+        by KEA, Kerala by CEE, Gujarat by ACPC, Maharashtra by the State CET Cell, NEET by the NTA under NMC
+        rules. Find that name on your scorecard, then use only the calculator published by that body&rsquo;s
+        rule. Anything else is arithmetic on the wrong scale.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ FIND YOUR CALCULATOR ══════════════════════ -->
+  <section id="find-calculator" class="scroll-mt-20 py-14 sm:py-18">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="max-w-3xl">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Choose by what you want to know</span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Which Cut Off Calculator Should You Actually Use?
+        </h2>
+        <p class="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-slate-700">
+          Twelve calculators cover nine separate authorities, and picking the wrong one gives you a
+          mathematically correct answer to the wrong question. Start from your goal rather than from the exam
+          name, because most students search by course and end up reading a rule for a different course.
+        </p>
+      </div>
+
+      <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {FIND_YOUR_CALCULATOR.map((card) => (
+          <article class="surface-dashed-card flex flex-col p-5 transition-colors duration-200">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-md border border-dashed border-slate-300 px-2 py-0.5 font-mono text-[0.75rem] uppercase tracking-wider text-slate-500">
+                {card.tag}
+              </span>
+              <span class="text-xs text-slate-500">&ldquo;{card.term}&rdquo;</span>
+            </div>
+            <h3 class="mt-2.5 text-base font-bold leading-snug text-slate-900">{card.title}</h3>
+            <p class="mt-2 text-[0.9375rem] leading-[1.7] text-slate-700">{card.body}</p>
+            <a
+              href={card.href}
+              class="focus-ring mt-3 inline-flex min-h-9 items-center gap-1.5 self-start rounded-md border border-transparent px-1 text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
+            >
+              Open
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
+            </a>
+          </article>
+        ))}
+      </div>
     </div>
   </section>
 
@@ -381,7 +813,7 @@ const extraSchema = [faqSchema, itemListSchema];
         ))}
       </div>
 
-      <div id="calculators-grid" class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {CALCULATORS.map((calc) => (
           <div
             class="calc-card-item"
@@ -410,7 +842,7 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ HOW IT WORKS ══════════════════════ -->
-  <section class="border-t border-slate-200 bg-white py-16 sm:py-20">
+  <section id="how-it-works" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
       <div class="text-center">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Streamlined process</span>
@@ -435,7 +867,7 @@ const extraSchema = [faqSchema, itemListSchema];
             <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 font-mono text-sm font-bold text-white">
               {i + 1}
             </span>
-            <h3 class="mt-4 text-base font-semibold text-slate-900">{step.title}</h3>
+            <h3 class="mt-4 text-base font-bold text-slate-900">{step.title}</h3>
             <p class="mt-1.5 text-[0.9375rem] leading-[1.7] text-slate-700">{step.body}</p>
           </li>
         ))}
@@ -443,8 +875,86 @@ const extraSchema = [faqSchema, itemListSchema];
     </div>
   </section>
 
+  <!-- ══════════════════════ 12TH BOARD WORKED EXAMPLES ══════════════════════ -->
+  <section id="twelfth-board" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <div class="max-w-3xl">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">12th board cut off calculator</span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          How to Calculate Your Cut Off From 12th Board Marks: Worked Examples
+        </h2>
+        <p class="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-slate-700">
+          Most students search for a 12th cut off calculator expecting a single answer. There is no single
+          answer &mdash; there is one answer per state. The four sections below take the same three marks,
+          <strong class="font-semibold text-slate-900">88 in Mathematics, 76 in Physics and 81 in Chemistry</strong>,
+          through four published formulas so you can see exactly where each state&rsquo;s number comes from.
+          Read your own state&rsquo;s row, then enter the same marks in that calculator to confirm.
+        </p>
+      </div>
+
+      <!--
+        One column on every breakpoint. Prose keeps a comfortable ~68-character
+        measure; the arithmetic sits in a full-width dashed strip below it, so
+        nothing is ever pinched beside a narrow aside on a wide screen.
+      -->
+      {WORKED_EXAMPLES.map((ex, i) => (
+        <article class="mt-12">
+          <h3 class="text-lg font-bold tracking-tight text-slate-900">
+            <span class="font-mono text-slate-400">{i + 1}.</span> {ex.exam}
+            <span class="font-sans text-sm font-medium text-slate-500">&mdash; {ex.scale}</span>
+          </h3>
+
+          <div class="mt-3 max-w-[68ch] space-y-3 text-[0.9375rem] leading-[1.75] text-slate-700">
+            {ex.body.map((para) => <p>{para}</p>)}
+          </div>
+
+          <p class="dashed-callout mt-4 font-mono text-sm leading-relaxed text-slate-700">
+            {ex.equation} = <strong class="text-slate-900">{ex.result}</strong>
+          </p>
+
+          <!--
+            Arithmetic strip.
+
+            Flex-wrap, not a fixed `grid-cols-4`: KEAM has four line items and the
+            other three exams have three, so a fixed 4-column grid left a bare
+            grey cell in the corner of every non-KEAM example. With wrap and a
+            percentage basis the cells simply fill whatever space they need and
+            there is never an empty slot to render.
+
+            The merit score is a separate full-width bar rather than a fifth
+            cell: it is the answer the whole section exists to produce, so it
+            gets the emphasis instead of being one item among four.
+          -->
+          <dl class="mt-4 flex flex-wrap">
+            {ex.rows.map((row) => (
+              <div class="surface-dashed-card w-1/2 flex-1 basis-[9rem] px-3.5 py-2.5 not-first:ml-2 first:ml-0">
+                <dt class="font-mono text-[0.75rem] uppercase tracking-wider text-slate-500">{row.label}</dt>
+                <dd class="mt-0.5 font-mono text-sm tabular-nums text-slate-900">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <p class="dashed-callout mt-3 flex flex-wrap items-baseline gap-x-2 font-mono text-sm leading-relaxed text-slate-700">
+            <span class="font-sans text-[0.75rem] uppercase tracking-wider text-slate-500">Merit score</span>
+            <strong class="text-base text-slate-900">{ex.result}</strong>
+          </p>
+
+          <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-600">{ex.note}</p>
+        </article>
+      ))}
+
+      <p class="dashed-callout mt-12 max-w-[72ch] text-[0.9375rem] leading-[1.75] text-slate-700">
+        <strong class="font-semibold text-slate-900">Read across the four examples and the pattern is obvious:</strong>
+        identical board marks produced 166.5, 73.61, 65.25 and 454 across four states. None of those numbers is
+        wrong. They are measured on four different scales, and only one of them belongs to your admission.
+        That is the entire argument for using a state level cut off calculator instead of a generic one, and
+        for checking the conducting authority on your scorecard before you calculate anything.
+      </p>
+    </div>
+  </section>
+
   <!-- ══════════════════════ COMPARISON TABLE ══════════════════════ -->
-  <section class="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
+  <section id="formula-reference" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
       <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Formula reference</span>
       <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
@@ -496,7 +1006,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </table>
       </div>
 
-      <p class="mt-4 text-xs text-slate-600">
+      <p class="mt-4 max-w-[92ch] text-xs text-slate-600">
         Custom / General % Mode is a comparison helper, not an admission formula. It exists because a growing
         number of private colleges and coaching institutes now quote a plain percentage requirement; use it
         once the official calculator is not applicable to that institution.
@@ -514,7 +1024,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </h2>
 
         <div class="mt-4 space-y-4 leading-relaxed text-slate-700">
-          <p>
+          <p class="max-w-[68ch]">
             Admission arithmetic in India is decentralised. Each state examination board or university
             publishes its own merit construction, and those documents rarely agree with each other. That is
             not an inconsistency to be smoothed over with an average &mdash; it is a design decision, because
@@ -535,7 +1045,7 @@ const extraSchema = [faqSchema, itemListSchema];
             ))}
           </div>
 
-          <p>
+          <p class="max-w-[68ch]">
             <strong class="font-semibold text-slate-900">All Cut Off (allcutoff.com)</strong> does not invent
             formulas. Every calculator here is a faithful transcription of a published government or
             university rule, and every calculator links you to the authority&rsquo;s own website so you can
@@ -545,6 +1055,65 @@ const extraSchema = [faqSchema, itemListSchema];
           </p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
+  <section id="mistakes" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <div class="max-w-3xl">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Before you calculate</span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Seven Mistakes That Produce a Wrong Cut Off Number
+        </h2>
+        <p class="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-slate-700">
+          Every one of these is common, every one of them changes the answer, and every one of them is easy to
+          check. If your score looks wrong, start here before assuming the calculator is.
+        </p>
+      </div>
+
+      <ol class="mt-10 space-y-5">
+        {[
+          {
+            t: 'Using the wrong scale for the subject mark',
+            b: 'A subject evaluated out of 200 entered as 184 produces a cutoff far above the maximum. Convert to a percentage out of 100 first: 184 out of 200 is 92. If the board prints a CGPA instead of marks, multiply by 10 — a 9.2 CGPA is 92%.'
+          },
+          {
+            t: 'Adding your entrance marks to your board marks directly',
+            b: 'Almost no state ranks on a raw sum. TNEA never looks at your entrance paper at all, KCET scales both halves to 50 before adding them, and KEAM scales the entrance to 300 and the board to a 5:3:2 ratio of 300. The arithmetic must follow the scale, not intuition.'
+          },
+          {
+            t: 'Halving the wrong subjects in TNEA and TNAU',
+            b: 'For Tamil Nadu engineering it is Physics and Chemistry that are halved and Mathematics that is kept whole. Swap them on the worked example above — 44 + 76 + 81 instead of 88 + 38 + 40.5 — and the score reads 201 out of 200, which is not a cutoff, it is an arithmetic error. TNAU halves all four subjects rather than two, so the same slip there inflates the total a different way.'
+          },
+          {
+            t: 'Dividing an EAPCET score by 200 out of habit',
+            b: 'The AP and TS EAPCET paper is out of 160, not 200. Dividing by 200 scales the entrance component down by a fifth and roughly a sixth off the final composite. Enter the raw score out of 160 and let the calculator do the 75% weighting.'
+          },
+          {
+            t: 'Ignoring the eligibility gate',
+            b: 'MHT CET requires at least 150 out of 300 in HSC PCM for the open category and 120 out of 300 for reserved, EWS and PwD candidates of Maharashtra State. EAPCET requires 40 out of 160 for OC and BC. A high merit score does not override a failed gate.'
+          },
+          {
+            t: 'Comparing your live merit score to a previous closing mark',
+            b: 'These are different quantities. Your merit score is calculated from your marks; a closing mark is the last score that filled a seat last year, shaped by seat count and category reservation. Convert both to a percentage before drawing any conclusion from the gap between them.'
+          },
+          {
+            t: 'Applying raw board marks where a state normalises them',
+            b: 'Kerala standardises board marks across regions and boards before building the index, and some states apply normalisation in other exams too. Only the conducting authority can perform that statistical step, so enter the published standardised percentage. A raw total will be wrong from the first line of the calculation.'
+          }
+        ].map((item, i) => (
+          <li class="surface-dashed-card flex gap-4 p-5">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 font-mono text-sm font-bold text-slate-600">
+              {i + 1}
+            </span>
+            <div class="min-w-0 max-w-[72ch]">
+              <h3 class="text-base font-bold leading-snug text-slate-900">{item.t}</h3>
+              <p class="mt-1.5 text-[0.9375rem] leading-[1.7] text-slate-700">{item.b}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   </section>
 
@@ -570,7 +1139,7 @@ const extraSchema = [faqSchema, itemListSchema];
           { t: 'Re-check when a new brochure drops', b: 'Merit rules do change. Re-run your score in the calculator the moment your state publishes its next information bulletin, and compare against the previous figure rather than assuming continuity.' }
         ].map((item) => (
           <div class="surface-card p-5">
-            <h3 class="text-base font-semibold leading-snug text-slate-900">{item.t}</h3>
+            <h3 class="text-base font-bold leading-snug text-slate-900">{item.t}</h3>
             <p class="mt-2 text-[0.9375rem] leading-[1.7] text-slate-700">{item.b}</p>
           </div>
         ))}
@@ -579,7 +1148,7 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ FAQ ══════════════════════ -->
-  <section class="border-t border-slate-200 bg-white py-16 sm:py-20">
+  <section id="faq" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
     <div class="mx-auto max-w-4xl px-4 sm:px-6">
       <div class="text-center">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Student FAQ</span>
@@ -590,7 +1159,7 @@ const extraSchema = [faqSchema, itemListSchema];
         {HOME_FAQS.map((item) => (
           <details class="surface-card group p-4 sm:p-5">
             <summary
-              class="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden"
+              class="focus-ring flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-md py-1 text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden"
             >
               <span>{item.question}</span>
               <svg
@@ -601,7 +1170,7 @@ const extraSchema = [faqSchema, itemListSchema];
                 <path d="m6 9 6 6 6-6"></path>
               </svg>
             </summary>
-            <p class="mt-3 text-[0.9375rem] leading-[1.7] text-slate-700">{item.answer}</p>
+            <p class="mt-3 max-w-[72ch] text-[0.9375rem] leading-[1.7] text-slate-700">{item.answer}</p>
           </details>
         ))}
       </div>
@@ -617,7 +1186,7 @@ const extraSchema = [faqSchema, itemListSchema];
           <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
             Every Formula Here Was Read From a Published Rule
           </h2>
-          <p class="mt-3 max-w-2xl text-[0.9375rem] leading-[1.7] text-slate-700">
+          <p class="mt-3 max-w-[68ch] text-[0.9375rem] leading-[1.7] text-slate-700">
             For each exam we start from the primary source: the information brochure, admission prospectus
             or official notification of the conducting body. We record the maximum score, the weighting of
             every component, the category-wise qualifying minimum, and the tie-breaking order in that exact
@@ -638,17 +1207,17 @@ const extraSchema = [faqSchema, itemListSchema];
               { href: '/contact', label: 'Contact & correction requests', note: 'Report a wrong formula, get it fixed' }
             ].map((link) => (
               <li>
-                <a href={link.href} class="focus-ring font-semibold text-blue-700 hover:text-blue-900 hover:underline">
+                <a href={link.href} class="focus-ring inline-block rounded-sm py-1 font-semibold text-blue-700 hover:text-blue-900 hover:underline sm:py-0">
                   {link.label}
                 </a>
-                <span class="block text-xs text-slate-600">{link.note}</span>
+                <span class="block text-xs leading-snug text-slate-600">{link.note}</span>
               </li>
             ))}
           </ul>
         </div>
       </div>
 
-      <p class="mt-10 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
+      <p class="mt-10 max-w-[92ch] border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
         All Cut Off is an independent, student-run reference tool. It is not affiliated with, endorsed by, or
         operated by the National Testing Agency, any state examination board, or any university listed on
         this site. Calculated scores reproduce published arithmetic only and carry no guarantee of admission.
@@ -664,8 +1233,7 @@ const extraSchema = [faqSchema, itemListSchema];
     const categoryBtns = document.querySelectorAll('.category-filter-btn');
     // The hero search box doubles as the directory filter box. It also has its
     // own instant-results dropdown, which is why both listeners live here.
-    const searchInput =
-      document.getElementById('hero-search-input') || document.getElementById('home-search-input');
+    const searchInput = document.getElementById('hero-search-input');
     const cards = document.querySelectorAll('.calc-card-item');
     const noResultsMsg = document.getElementById('no-results-msg');
     const countDisplay = document.getElementById('calc-count');
@@ -804,10 +1372,13 @@ const extraSchema = [faqSchema, itemListSchema];
         return Array.prototype.slice.call(dropdown.querySelectorAll('[data-hero-open]'));
       }
 
-      function hide(refocus) {
+      /* No `refocus` argument: every one of the four call sites passed `false`, so
+         the branch below was unreachable and the parameter was misleading. The
+         input keeps focus on close in every real path, which is what a search
+         field wants anyway. */
+      function hide() {
         dropdown.classList.add('hidden');
         input.setAttribute('aria-expanded', 'false');
-        if (refocus) input.focus();
       }
 
       /**
@@ -893,14 +1464,14 @@ const extraSchema = [faqSchema, itemListSchema];
       function refilter() {
         try {
           window.dispatchEvent(new Event(REFILTER_EVENT));
-        } catch (err) {
+        } catch {
           /* The filter initialiser may not be on this page. */
         }
       }
 
       function loadIntoHero(id) {
         if (!id) return;
-        hide(false);
+        hide();
         input.value = '';
         refilter();
         window.dispatchEvent(new CustomEvent('allcutoff:load-calculator', { detail: { id: id } }));
@@ -918,7 +1489,7 @@ const extraSchema = [faqSchema, itemListSchema];
       input.addEventListener('input', function (event) {
         var value = event.target.value;
         if (!value.trim()) {
-          hide(false);
+          hide();
           return;
         }
         render(value);
@@ -937,7 +1508,7 @@ const extraSchema = [faqSchema, itemListSchema];
           // Cancel the search outright: the box is emptied, so the directory
           // filter must be re-run or the grid stays narrowed with no visible
           // reason for it.
-          hide(false);
+          hide();
           input.value = '';
           refilter();
         } else if (event.key === 'Enter') {
@@ -951,7 +1522,7 @@ const extraSchema = [faqSchema, itemListSchema];
       });
 
       document.addEventListener('click', function (event) {
-        if (!dropdown.contains(event.target) && !input.contains(event.target)) hide(false);
+        if (!dropdown.contains(event.target) && !input.contains(event.target)) hide();
       });
     }
 

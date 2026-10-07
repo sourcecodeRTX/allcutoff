@@ -284,11 +284,11 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         {calculator.name} &mdash; {YEAR_LABEL}
       </h1>
 
-      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-700 sm:text-base">
+      <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700 sm:text-base">
         {calculator.summary}
       </p>
 
-      <p class="mt-4 max-w-3xl text-sm leading-relaxed text-slate-700">
+      <p class="mt-4 max-w-[68ch] text-sm leading-relaxed text-slate-700">
         This page is a free, instant <strong class="font-semibold text-slate-900">{calculator.name}</strong> for
         <strong class="font-semibold text-slate-900">{calculator.targetCourse}</strong> in
         <strong class="font-semibold text-slate-900">{calculator.state}</strong>. Everything runs inside your browser using the
@@ -327,7 +327,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
       <h2 id="what-it-means-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         What this cutoff score means
       </h2>
-      <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+      <div class="mt-3 max-w-[68ch] space-y-3 text-sm leading-relaxed text-slate-700 sm:text-base">
         <p>
           The number this calculator produces is your <strong class="font-semibold text-slate-900">merit or cutoff score</strong>,
           measured {calculator.scoreUnit === '% / 100' ? 'out of 100 as a percentage-equivalent' : `out of ${calculator.maxScore}`}.
@@ -361,7 +361,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
       <h2 id="inputs-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         What you need to enter
       </h2>
-      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+      <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700 sm:text-base">
         {authorityLabel} builds this cutoff from the following {calculator.inputs.length === 1 ? 'value' : 'values'}.
         Take the numbers from your own Class 12 marksheet or entrance scorecard &mdash; do not round or estimate them.
       </p>
@@ -428,10 +428,10 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         </div>
       )}
 
-      <h3 id="steps-heading" class="mt-8 text-lg font-semibold text-slate-900">
+      <h3 class="mt-8 text-lg font-bold text-slate-900">
         Step-by-step calculation
       </h3>
-      <p class="mt-2 text-sm leading-relaxed text-slate-700">
+      <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-slate-700">
         Work through these {calculator.formulaSteps.length} steps in order and you will arrive at the same score this page
         calculates for you. Each step is the published rule, not an approximation.
       </p>
@@ -461,7 +461,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
       <h2 id="rules-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         Official rules &amp; eligibility
       </h2>
-      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+      <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700 sm:text-base">
         These are the conditions published by {authorityLabel}. A strong cutoff score does not help if you fail any of them.
       </p>
 
@@ -500,7 +500,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
       <h2 id="tie-breakers-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         Tie-breaking order
       </h2>
-      <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+      <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700 sm:text-base">
         When two or more applicants land on exactly the same cutoff score, {authorityLabel} resolves the rank position
         using the following hierarchy, in order:
       </p>
@@ -525,7 +525,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         <h2 id="faqs-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           {calculator.shortName} questions answered
         </h2>
-        <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700 sm:text-base">
           The questions students ask most about this specific admission rule.
         </p>
         <div class="mt-5 space-y-3">
@@ -552,7 +552,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         <h2 id="compare-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           How {calculator.shortName} compares to other entrance exams
         </h2>
-        <p class="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+        <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700 sm:text-base">
           Cutoff scores are not comparable across exams because each authority normalises differently. What you can compare is
           the structure of each rule: the maximum score, how many inputs it takes, and how the components are weighted.
         </p>
@@ -580,7 +580,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
               {comparisonCalculators.map((other) => (
                 <tr>
                   <th scope="row" class="px-4 py-3 align-top font-semibold text-slate-900">
-                    <a href={`/calculator/${other.slug}`} class="underline decoration-slate-300 underline-offset-2 hover:text-blue-600 hover:decoration-blue-600">
+                    <a href={`/calculator/${other.slug}`} class="inline-block py-0.5 underline decoration-slate-300 underline-offset-2 hover:text-blue-600 hover:decoration-blue-600 sm:py-0">
                       {other.shortName}
                     </a>
                   </th>
@@ -655,7 +655,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
             <h2 id="related-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Related admission cutoff calculators
             </h2>
-            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-700">
+            <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-slate-700">
               Other published rules from {calculator.state === 'All India' ? 'the same exam family' : `${calculator.state} or the same course family`}.
               {sameExamFamily > 1 && ` There ${sameExamFamily === 2 ? 'is' : 'are'} ${sameExamFamily} verified calculators in the ${categoryBase.toLowerCase()} family, and ${sameStateCount} for ${calculator.state}.`}
             </p>
@@ -693,7 +693,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         <h2 id="other-states-heading" class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Looking at a different state?
         </h2>
-        <p class="mt-2 text-sm leading-relaxed text-slate-700">
+        <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-slate-700">
           If you are also applying outside {calculator.state}, these admission rules are governed by different authorities with
           different weightage formulas, so their cutoff scores are not directly comparable with yours.
         </p>
@@ -715,7 +715,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
           {STATES.filter((s) => s.slug !== calculator.stateSlug)
             .map((s, i, arr) => (
               <>
-                <a href={`/state/${s.slug}`} class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">{s.name}</a>
+                <a href={`/state/${s.slug}`} class="inline-block py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 sm:py-0">{s.name}</a>
                 {i < arr.length - 1 ? <span>, </span> : null}
               </>
             ))}
@@ -729,7 +729,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
         <h2 id="verify-heading" class="text-lg font-bold text-slate-900">
           Verify on the official website
         </h2>
-        <p class="mt-2 text-sm leading-relaxed text-slate-700">
+        <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-slate-700">
           This calculator reproduces the published rule. It is not an official service and it cannot allot you a seat.
           Before you pay any fee or submit a counselling application, confirm the rule and the current admission schedule
           directly with {authorityLabel}.

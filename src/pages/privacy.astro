@@ -1,6 +1,6 @@
 ---
 import Layout, { SITE_URL } from '../layouts/Layout.astro';
-import { CALCULATORS } from '../data/calculators';
+import { ACADEMIC_YEAR, CALCULATORS } from '../data/calculators';
 
 const siteUrl = SITE_URL;
 const canonical = `${siteUrl}/privacy`;
@@ -8,7 +8,7 @@ const canonical = `${siteUrl}/privacy`;
 /** Real content-review date for this policy. Never the build clock. */
 const lastUpdated = '2026-10-06';
 
-const YEAR_LABEL = (CALCULATORS[0]?.academicYear ?? '2025 - 2026').replace(/\s*-\s*/g, '-');
+const YEAR_LABEL = (CALCULATORS[0]?.academicYear ?? ACADEMIC_YEAR).replace(/\s*-\s*/g, '-');
 
 const title = "Privacy Policy - Student Data Protection";
 const description = "All Cut Off privacy policy: no registration required, all calculations run client-side, and no personal marks are stored or transmitted.";

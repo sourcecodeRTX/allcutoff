@@ -10,13 +10,18 @@ const SITE = 'https://allcutoff.com';
 const CANONICAL_HOST = 'allcutoff.com';
 
 /**
- * Mirror of `normalizeUrl()` in src/layouts/Layout.astro.
+ * Force the ONE canonical URL shape this site publishes:
+ * `https://allcutoff.com` + a clean, slash-free path.
  *
  * `@astrojs/sitemap` wrote `https://allcutoff.com/about/` while `rel=canonical`
  * wrote `https://allcutoff.com/about`. With `trailingSlash: 'ignore'` both
  * returned 200 with no redirect, so the two self-cancelled and advertised a
  * duplicate-URL pair. `trailingSlash: 'never'` below fixes the build-side half;
  * this finishes the job so the sitemap can never drift from the canonical again.
+ *
+ * Note this is NOT a mirror of `normalizeUrl()` in src/layouts/Layout.astro —
+ * that one also forces `https:` and strips query + fragment, which a sitemap URL
+ * never carries in the first place. This is the smaller, sitemap-specific rule.
  */
 const toCanonical = (href) => {
   let parsed;

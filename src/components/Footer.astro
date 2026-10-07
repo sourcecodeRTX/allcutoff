@@ -1,10 +1,22 @@
 ---
-import { CATEGORIES, STATES } from '../data/calculators';
+import { ACADEMIC_YEAR, CATEGORIES, STATES } from '../data/calculators';
 import InstallApp from './InstallApp.astro';
 
 const year = new Date().getFullYear();
-const footerLink = 'text-sm text-slate-600 hover:text-blue-600 transition-colors';
+
+/* Read the cycle off the registry, never a second hardcoded year string here. */
+const YEAR_DISPLAY = ACADEMIC_YEAR.replace(/\s*-\s*/g, '\u2013');
+
+/*
+ * `inline-block` + `py-1` is deliberate: a bare inline anchor is only as tall as
+ * its line box (~18px), which is a hard tap for a thumb. These give every
+ * footer link a 34px hit area, and `sm:` drops the extra padding on desktop
+ * where a mouse does not need it.
+ */
+const footerLink =
+  'inline-block rounded-sm py-1 text-sm text-slate-600 transition-colors hover:text-blue-600 focus-visible:text-blue-600 sm:py-0';
 const footerHeading = 'text-sm font-semibold uppercase tracking-wider text-slate-900';
+const footerList = 'mt-3 space-y-0.5 sm:space-y-2';
 ---
 
 <footer class="border-t border-slate-200 bg-slate-50 pt-16 pb-12 text-slate-700">
@@ -28,7 +40,7 @@ const footerHeading = 'text-sm font-semibold uppercase tracking-wider text-slate
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
-            Verified 2025&ndash;2026 Formulas
+            Verified {YEAR_DISPLAY} Formulas
           </span>
           <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-mono text-slate-600">
             allcutoff.com
@@ -42,7 +54,7 @@ const footerHeading = 'text-sm font-semibold uppercase tracking-wider text-slate
       <!-- Col 2: Categories -->
       <nav aria-label="Footer categories">
         <h2 class={footerHeading}>Categories</h2>
-        <ul class="mt-3.5 space-y-2">
+        <ul class={footerList}>
           {CATEGORIES.map(cat => (
             <li>
               <a href={`/category/${cat.slug}`} class={footerLink}>
@@ -56,7 +68,7 @@ const footerHeading = 'text-sm font-semibold uppercase tracking-wider text-slate
       <!-- Col 3: States Covered -->
       <nav aria-label="Footer states and regions">
         <h2 class={footerHeading}>By State / Region</h2>
-        <ul class="mt-3.5 space-y-2">
+        <ul class={footerList}>
           {STATES.map(st => (
             <li>
               <a href={`/state/${st.slug}`} class={footerLink}>
@@ -70,7 +82,7 @@ const footerHeading = 'text-sm font-semibold uppercase tracking-wider text-slate
       <!-- Col 4: Platform & Compliance -->
       <nav aria-label="Footer transparency and legal pages">
         <h2 class={footerHeading}>Transparency</h2>
-        <ul class="mt-3.5 space-y-2">
+        <ul class={footerList}>
           <li>
             <a href="/about" class={footerLink}>
               How Formulas Are Verified

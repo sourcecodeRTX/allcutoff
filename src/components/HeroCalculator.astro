@@ -128,28 +128,27 @@ const grouped = GROUP_ORDER.map((category) => ({
   ].map((c) => ({ id: c.id, label: EXAM_LABELS[c.id] ?? c.name }))
 })).filter((g) => g.items.length > 0);
 
-/* Slim payload: only the fields the hero UI reads, plus `fn` (source text). */
+/*
+ * Slim payload: ONLY the fields the hero UI reads, plus `fn` (source text).
+ *
+ * Derived from an actual audit of property reads in the script below — the
+ * title bar, the exam filter and the authority link are the only consumers.
+ * `shortName`, `category`, `categorySlug`, `exam`, `stateSlug`, `targetCourse`,
+ * `academicYear`, `summary`, `officialRules` and `tieBreakingRules` were all
+ * shipped here but never read; `officialRules` and `summary` alone were ~9 KB of
+ * prose per page. If a field is needed again, add it here AND to CUSTOM_CONFIG.
+ */
 const SLIM_FIELDS = [
   'id',
   'slug',
   'name',
-  'shortName',
-  'category',
-  'categorySlug',
-  'exam',
   'state',
-  'stateSlug',
-  'targetCourse',
-  'academicYear',
   'conductingAuthority',
   'authorityUrl',
   'maxScore',
   'scoreUnit',
-  'summary',
   'inputs',
-  'verifiedFormulaText',
-  'officialRules',
-  'tieBreakingRules'
+  'verifiedFormulaText'
 ] as const;
 
 function slim(c: (typeof CALCULATORS)[number]) {
@@ -161,28 +160,12 @@ function slim(c: (typeof CALCULATORS)[number]) {
 
 const registry: Record<string, Record<string, unknown>> = {
   ...Object.fromEntries(CALCULATORS.map((c) => [c.id, slim(c)])),
-  [CUSTOM_CONFIG.id]: {
-    id: CUSTOM_CONFIG.id,
-    slug: CUSTOM_CONFIG.slug,
-    name: CUSTOM_CONFIG.name,
-    shortName: CUSTOM_CONFIG.shortName,
-    category: CUSTOM_CONFIG.category,
-    categorySlug: CUSTOM_CONFIG.categorySlug,
-    exam: CUSTOM_CONFIG.exam,
-    state: CUSTOM_CONFIG.state,
-    stateSlug: CUSTOM_CONFIG.stateSlug,
-    targetCourse: CUSTOM_CONFIG.targetCourse,
-    academicYear: CUSTOM_CONFIG.academicYear,
-    conductingAuthority: CUSTOM_CONFIG.conductingAuthority,
-    maxScore: CUSTOM_CONFIG.maxScore,
-    scoreUnit: CUSTOM_CONFIG.scoreUnit,
-    summary: CUSTOM_CONFIG.summary,
-    inputs: CUSTOM_CONFIG.inputs,
-    verifiedFormulaText: CUSTOM_CONFIG.verifiedFormulaText,
-    officialRules: CUSTOM_CONFIG.officialRules,
-    tieBreakingRules: CUSTOM_CONFIG.tieBreakingRules,
-    fn: CUSTOM_CONFIG.calculate.toString()
-  }
+  /* Same SLIM_FIELDS shape as every real calculator, built by projection rather
+     than by hand so the two can never disagree. */
+  [CUSTOM_CONFIG.id]: Object.fromEntries([
+    ...SLIM_FIELDS.map((key) => [key, (CUSTOM_CONFIG as Record<string, unknown>)[key]]),
+    ['fn', CUSTOM_CONFIG.calculate.toString()]
+  ])
 };
 
 const tabs = ORDERED_IDS.map((id) => ({
@@ -194,7 +177,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
 ---
 
 <div id="hero-calculator" data-default-id={DEFAULT_ID} class="scroll-mt-24">
-  <form class="surface-card overflow-hidden p-4 sm:p-6" id="hero-calc-form" onsubmit="return false;">
+  <form class="surface-raised overflow-hidden p-4 sm:p-6" id="hero-calc-form" onsubmit="return false;">
     <!-- ── Header ─────────────────────────────────────────────────────── -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
@@ -271,7 +254,7 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
          remarks and status pill) one polite announcement — no second live
          region. -->
     <section
-      class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4"
+      class="surface-inset mt-5 p-4"
       aria-labelledby="hero-result-label"
       aria-live="polite"
     >
@@ -386,6 +369,19 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-snap-type: x proximity;
+    /* The scrollbar is hidden, so the strip needs another "there is more here"
+       signal. A right-edge fade only (never left) — a left fade clipped the
+       rounded edge of the selected pill and read as a stray shadow beside it. */
+    -webkit-mask-image: linear-gradient(to right, #000 0 calc(100% - 2.5rem), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0 calc(100% - 2.5rem), transparent 100%);
+  }
+
+  /* Below `sm` the strip is `display: none`, so a mask on it is pure cost. */
+  @media (max-width: 639px) {
+    #hero-calc-tabs {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
   }
 
   #hero-calc-tabs::-webkit-scrollbar {

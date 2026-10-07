@@ -10,7 +10,7 @@ export interface CalculatorInput {
   hint?: string;
 }
 
-export interface FormulaStep {
+interface FormulaStep {
   stepNumber: number;
   title: string;
   description: string;

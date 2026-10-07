@@ -1,6 +1,6 @@
 ---
 import Layout, { SITE_URL } from '../layouts/Layout.astro';
-import { CALCULATORS } from '../data/calculators';
+import { ACADEMIC_YEAR, CALCULATORS } from '../data/calculators';
 
 const siteUrl = SITE_URL;
 const canonical = `${siteUrl}/disclaimer`;
@@ -8,7 +8,8 @@ const canonical = `${siteUrl}/disclaimer`;
 /** Real content-review date for this policy. Never the build clock. */
 const lastUpdated = '2026-10-06';
 
-const YEAR = CALCULATORS[0]?.academicYear ?? '2025 - 2026';
+/* Fall back to the registry constant, never a second hardcoded year string. */
+const YEAR = CALCULATORS[0]?.academicYear ?? ACADEMIC_YEAR;
 const YEAR_DISPLAY = YEAR.replace(/\s*-\s*/g, '\u2013');
 
 const title = "Official Disclaimer & Transparency Policy";

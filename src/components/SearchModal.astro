@@ -65,14 +65,18 @@ const searchIndex = CALCULATORS.map((c) => {
     )
   );
 
+  /*
+   * Only what the client actually reads (`item.*` in the script below).
+   * `shortName` and `exam` were shipped here but never read: both are already
+   * folded into `searchAliases` by `tokens(...)` above, so they were pure
+   * duplicate bytes inflating the payload on all 30 pages.
+   */
   return {
     id: c.id,
     slug: c.slug,
     name: c.name,
-    shortName: c.shortName,
     category: c.category,
     state: c.state,
-    exam: c.exam,
     targetCourse: c.targetCourse,
     authority: c.conductingAuthority,
     identityTokens: identity,

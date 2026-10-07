@@ -14,23 +14,39 @@ import SearchModal from '../components/SearchModal.astro';
    ========================================================================== */
 
 export const SITE_URL = 'https://allcutoff.com';
-export const BRAND_NAME = 'All Cut Off';
-export const BRAND_SUFFIX = ` | ${BRAND_NAME}`;
+const BRAND_NAME = 'All Cut Off';
+
+/*
+ * `BRAND_SUFFIX` is exported, so Astro hoists it above every other declaration
+ * in this module. It must therefore not reference `BRAND_NAME` (which lands
+ * lower down, renamed by the compiler): at module-evaluation time that is a
+ * temporal-dead-zone read and the whole prerender crashes with
+ * "BRAND_NAME is not defined". The literal is duplicated on purpose.
+ */
+export const BRAND_SUFFIX = ' | All Cut Off';
 
 /** SERP budgets, in characters. Titles truncate around 60, snippets at ~158. */
 export const TITLE_MAX = 60;
-export const DESCRIPTION_MAX = 158;
-export const DESCRIPTION_MIN = 120;
+
+/*
+ * The snippet window is 120-158 characters.
+ *
+ * NOTE: these are declared as literals inside `clampDescription` /`pickDescription`
+ * rather than as module constants, because both functions are exported and Astro
+ * hoists exported declarations above the rest of the module — a default parameter
+ * referencing a non-exported const is a temporal-dead-zone read that crashes the
+ * prerender with "DESCRIPTION_MAX is not defined". Do not reintroduce the consts.
+ */
 
 /**
  * The site-level description. It describes the SITE, so it must never be
  * overwritten by a page prop: 30 pages each shipping their own `WebSite`
  * description is how you end up with 30 self-contradicting site definitions.
  */
-export const SITE_DESCRIPTION =
+const SITE_DESCRIPTION =
   'Free Indian college admission cutoff calculators for TNEA, KCET, NEET UG, AP & TS EAPCET, MHT CET, KEAM, GUJCET, DU CSAS, TNAU, TNGASA, TANUVAS and paramedical courses. Official published formulas, instant results.';
 
-export const CANONICAL_HOST = 'allcutoff.com';
+const CANONICAL_HOST = 'allcutoff.com';
 
 /**
  * Collapse any URL — absolute, relative, protocol-relative or the site's own
@@ -41,7 +57,7 @@ export const CANONICAL_HOST = 'allcutoff.com';
  * `?calc=<id>` into the address bar, so every deep-linked variant of one page
  * would otherwise advertise itself as a separate canonical.
  */
-export const normalizeUrl = (url: string): string => {
+const normalizeUrl = (url: string): string => {
   let parsed: URL;
   try {
     parsed = new URL(url, `${SITE_URL}/`);
@@ -58,14 +74,6 @@ export const normalizeUrl = (url: string): string => {
   return `${parsed.origin}${path || '/'}`;
 };
 
-/** Escape a value for use inside a double-quoted HTML attribute. */
-export const escapeAttr = (value: string): string =>
-  String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
 /**
  * Fit a description to the SERP snippet window.
  *
@@ -75,9 +83,20 @@ export const escapeAttr = (value: string): string =>
  * boundary and never appends an ellipsis: an ellipsised description reads as
  * broken and costs clicks, so the templates are written short enough that this
  * cut path is a safety net rather than a routine.
+ *
+ * The `&`/`<`/`>`/`"` escaping is inlined rather than calling a helper because
+ * this function is exported: Astro hoists exported declarations above the rest of
+ * the module, and a reference to a module-level helper declared below it fails at
+ * prerender with "helper is not defined". Inlining has no real cost — it runs
+ * once per page at build time, never at runtime.
  */
-export const clampDescription = (value: string, max = DESCRIPTION_MAX): string => {
-  const escaped = escapeAttr(value);
+export const clampDescription = (value: string, max = 158): string => {
+  const escaped = String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
   if (escaped.length <= max) return escaped;
 
   const cut = escaped.slice(0, max);
@@ -101,8 +120,11 @@ export const clampDescription = (value: string, max = DESCRIPTION_MAX): string =
  */
 export const pickDescription = (
   candidates: string[],
-  min = DESCRIPTION_MIN,
-  max = DESCRIPTION_MAX
+  /* Literals, not the `DESCRIPTION_*` consts: this function is exported, so
+     Astro hoists it above them and a default parameter referencing them is a
+     temporal-dead-zone read at module scope. See `BRAND_SUFFIX` above. */
+  min = 120,
+  max = 158
 ): string => {
   const inWindow = candidates.find((c) => c.length >= min && c.length <= max);
   if (inWindow) return inWindow;
@@ -363,7 +385,6 @@ const jsonLd = {
         bar.className = 'no-print';
         bar.setAttribute('role', 'status');
         bar.setAttribute('aria-live', 'polite');
-        bar.setAttribute('data-sw-toast', '');
         bar.style.cssText = [
           'position:fixed',
           'left:50%',

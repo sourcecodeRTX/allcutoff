@@ -34,13 +34,12 @@
   --color-link-deep: #1d4ed8;
   --color-link-soft: #eff6ff;
 
-  /* Status */
+  /* Status. The `*-soft` washes are mixed in at the point of use
+     (`color-mix(... 10%, canvas-elevated)` in the status pills), so only the
+     base hue is needed as a token. */
   --color-success: #059669;
-  --color-success-soft: #ecfdf5;
   --color-warning: #d97706;
-  --color-warning-soft: #fffbeb;
   --color-error: #dc2626;
-  --color-error-soft: #fef2f2;
 
   /* Elevation + focus */
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -209,16 +208,87 @@
     box-shadow: var(--shadow-card-hover);
   }
 
-  .hairline-inset {
-    background-color: var(--color-canvas);
-    border: 1px solid var(--color-hairline);
-  }
+  
 
   .surface-card {
     background-color: var(--color-canvas-elevated);
     border: 1px solid var(--color-hairline);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
+  }
+
+  /*
+   * A panel that sits ABOVE other content rather than beside it — currently the
+   * live calculator in the hero. It needs a defined edge, because a 1px hairline
+   * on a white card over a tinted section reads as the same surface as the page
+   * behind it and the widget looks like loose text with no container. The
+   * hairline is blended 50% toward `mute` so the border darkens without going
+   * grey-heavy, and the shadow is a touch deeper than `--shadow-card`.
+   */
+  .surface-raised {
+    background-color: var(--color-canvas-elevated);
+    border: 1px solid color-mix(in oklab, var(--color-hairline) 50%, var(--color-mute));
+    border-radius: var(--radius-card);
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      0 4px 16px -8px rgba(15, 23, 42, 0.14);
+  }
+
+  /* Same edge, one step further, for a panel nested inside `.surface-raised`
+     (the result region inside the hero calculator). */
+  .surface-inset {
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-input);
+  }
+
+  /* A deliberately weaker surface: same canvas and radius as `.surface-card`,
+     but a dashed hairline and no shadow. Used sparingly for reference material
+     — worked examples, definitions, chooser lists — so the page keeps a clear
+     hierarchy instead of turning every block into an equal-weight box. */
+  .surface-dashed-card {
+    background-color: var(--color-canvas-elevated);
+    border: 1px dashed color-mix(in oklab, var(--color-hairline) 80%, var(--color-mute));
+    border-radius: var(--radius-card);
+  }
+
+  .surface-dashed-card:hover {
+    border-color: color-mix(in oklab, var(--color-link) 35%, var(--color-hairline));
+  }
+
+  /* Dashed pill for the in-page jump navigation and inline reference chips.
+     `min-h-9` (36px) is the tap floor here — these are short secondary
+     navigation targets, and 44px rows would make the strip taller than the
+     calculator card it sits under. */
+  .dashed-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px dashed var(--color-hairline);
+    border-radius: var(--radius-input);
+    background-color: var(--color-canvas-elevated);
+    color: var(--color-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .dashed-chip:hover {
+    border-color: color-mix(in oklab, var(--color-link) 40%, var(--color-hairline));
+    background-color: var(--color-link-soft);
+    color: var(--color-link-deep);
+  }
+
+  /* Dashed callout: one line of emphasis on a topic, no box competition. */
+  .dashed-callout {
+    border-left: 2px dashed color-mix(in oklab, var(--color-link) 45%, var(--color-hairline));
+    background-color: color-mix(in oklab, var(--color-link) 4%, var(--color-canvas-elevated));
+    border-radius: 0 var(--radius-input) var(--radius-input) 0;
+    padding: 0.875rem 1rem;
   }
 
   /* ---- Focus ---------------------------------------------------------- */
@@ -293,68 +363,21 @@
     transform: translateY(0);
   }
 
-  .btn-pill-secondary {
+.btn-category-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    min-height: 44px;
-    background-color: var(--color-canvas-elevated);
-    color: var(--color-ink);
-    border: 1px solid var(--color-hairline);
-    border-radius: 9999px;
-    padding: 10px 24px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-    text-decoration: none;
-  }
-
-  .btn-pill-secondary:hover {
-    background-color: var(--color-hairline-soft);
-    border-color: color-mix(in oklab, var(--color-hairline) 55%, var(--color-mute));
-    color: var(--color-ink);
-  }
-
-  .btn-sm-square {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    min-height: 40px;
-    background-color: var(--color-canvas-elevated);
-    color: var(--color-body);
-    border: 1px solid var(--color-hairline);
-    border-radius: var(--radius-input);
-    padding: 8px 14px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-
-  .btn-sm-square:hover {
-    background-color: var(--color-hairline-soft);
-    border-color: color-mix(in oklab, var(--color-hairline) 55%, var(--color-mute));
-    color: var(--color-ink);
-  }
-
-  .btn-category-pill {
-    display: inline-flex;
-    align-items: center;
     gap: 6px;
-    min-height: 40px;
+    min-height: 44px;
+    padding: 8px 16px;
     background-color: var(--color-canvas-elevated);
     color: var(--color-body);
     border: 1px solid var(--color-hairline);
     border-radius: 9999px;
-    padding: 6px 16px;
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
 
   .btn-category-pill:hover,
@@ -630,22 +653,7 @@
     color: var(--color-mute);
   }
 
-  /* ---- Micro animations ----------------------------------------------- */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
-
-  .animate-fade-in {
-    animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-}
 
 /* ==========================================================================
    Reduced motion — honour the OS setting everywhere.
@@ -665,23 +673,15 @@
     transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
-
-  .animate-fade-in {
-    animation: none !important;
-  }
 }
 
 /* ==========================================================================
    Print — clean, black-on-white score summary.
    ========================================================================== */
 
-/* Screen-only / paper-only helpers (declared first so @media print wins). */
+/* Screen-only helper (declared first so @media print wins). */
 .no-print {
   display: none !important;
-}
-
-.print-only {
-  display: none;
 }
 
 @media print {
@@ -700,13 +700,12 @@
   /* Site chrome we never want on paper.
      Scoped to the top-level elements only — a bare `header` selector also
      matched the in-page <header> that wraps each page's H1 and intro
-     summary, so calculator/category/state pages printed with no title. */
+     summary, so calculator/category/state pages printed with no title.
+     `header nav` / `footer nav` are deliberately absent: `body > header` and
+     `body > footer` already hide everything inside them. */
   body > header,
   body > footer,
   body > nav,
-  header nav,
-  footer nav,
-  [data-print='hide'],
   .no-print,
   #cutoff-form,
   #hero-calc-form,
@@ -720,8 +719,6 @@
   .btn-accent,
   .btn-ghost-soft,
   .btn-pill-primary,
-  .btn-pill-secondary,
-  .btn-sm-square,
   .btn-category-pill {
     display: none !important;
   }
@@ -772,8 +769,12 @@
   /* Flatten every surface. */
   #calculator-container,
   .surface-card,
+  .surface-raised,
+  .surface-inset,
+  .surface-dashed-card,
+  .dashed-chip,
+  .dashed-callout,
   .hairline-card,
-  .hairline-inset,
   .info-pill,
   .status-pill-green,
   .status-pill-amber,
@@ -806,10 +807,6 @@
   a {
     color: #000000 !important;
     text-decoration: underline;
-  }
-
-  .print-only {
-    display: revert !important;
   }
 
   .score-gauge-fill {
