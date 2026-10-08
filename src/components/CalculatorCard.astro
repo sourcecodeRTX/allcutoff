@@ -116,8 +116,15 @@ const inputLabels = ellipsize(
 const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
 ---
 
+<!-- The category colour drives the card's 3px top rule through
+     `--card-accent-color`, which `.card-accent` reads. Inline is the
+     established pattern in this file — the pills below do the same — and it
+     keeps a data-driven colour out of global.css, where it does not belong.
+     `h-full` only resolves because `.calc-card-item` declares a height for the
+     whole chain down to this element. -->
 <article
-  class="surface-card group relative flex h-full flex-col p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg motion-reduce:transition-none"
+  class="surface-card card-accent group relative flex h-full flex-col p-5"
+  style={`--card-accent-color:${categoryColor};`}
 >
   <div class="flex flex-wrap items-center gap-2">
     <span
@@ -132,7 +139,11 @@ const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
     </span>
   </div>
 
-  <h3 class="mt-3 text-base font-semibold leading-snug text-slate-900">
+  <!-- `min-h-11` is exactly two lines of `text-base`/`leading-snug`. The grid
+       stretches every card in a row to the same height, but without a reserved
+       height here a one-line title left the block below it a whole line higher
+       than its neighbours and the rows of pills stopped lining up. -->
+  <h3 class="mt-3 min-h-11 text-base font-semibold leading-snug text-slate-900">
     <!-- No aria-label: the visible name already ends in "Calculator", so a
          label like "Open the X calculator" both read badly and break WCAG 2.5.3
          (the accessible name must contain the visible label text). -->
@@ -144,7 +155,10 @@ const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
     </a>
   </h3>
 
-  <p class="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">
+  <!-- Same idea for the summary: `min-h-12` covers two lines of
+       `text-sm`/`leading-relaxed` (2.84rem), so the block below starts at the
+       same offset whether the summary is one line or two. -->
+  <p class="mt-2 line-clamp-2 min-h-12 text-sm leading-relaxed text-slate-600">
     {calculator.summary}
   </p>
 
@@ -189,6 +203,9 @@ const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
     <span class="mt-1 block text-xs text-slate-500">Academic Year {calculator.academicYear}</span>
   </div>
 
+  <!-- `mt-auto` absorbs whatever height the card has left over once the grid has
+       equalised the row, so every CTA lands on the same baseline. `pt-5` is the
+       fixed minimum gap above it — without it a tall card touches the button. -->
   <div class="mt-auto pt-5">
     <span class="btn-accent w-full" aria-hidden="true">
       Open Calculator
@@ -199,23 +216,3 @@ const authorityLabel = ellipsize(calculator.conductingAuthority, 34);
     </span>
   </div>
 </article>
-
-<style>
-  /* Stretched link: the whole card is clickable, but the accessible name stays
-     on the single real <a> around the title. */
-  .stretched-link::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-  }
-
-  .surface-card:focus-within {
-    border-color: var(--color-link);
-    box-shadow: 0 0 0 3px var(--color-link-soft);
-  }
-
-  /* Keep the outline hugging the title text rather than the overlay box. */
-  .stretched-link:focus-visible {
-    outline-offset: 3px;
-  }
-</style>

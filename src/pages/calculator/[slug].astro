@@ -140,6 +140,9 @@ const featureList = [
   // category-wise marks block below only renders when `eligibilityCriteria`
   // exists, which today is one calculator out of twelve.
   ...(hasEligibility ? ['Category-wise eligibility check'] : []),
+  // Still true without the removed print button: the widget no longer calls
+  // window.print(), but Ctrl+P renders a clean score summary via global.css's
+  // `@media print` rules, and the share button copies the same figures as text.
   'Shareable and printable score summary'
 ];
 
@@ -246,7 +249,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
   extraSchema={extraSchema}
 >
   <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
         <li><a href="/" class="rounded transition-colors hover:text-blue-600">Home</a></li>
         <li aria-hidden="true">/</li>
@@ -257,7 +260,7 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
     </div>
   </nav>
 
-  <article class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+  <article class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
     <!-- Page header. A <div>, not a <header>: a bare <header> inside <main> is a
          second `banner` landmark, and the site already has one in Header.astro.
          global.css's print rules scope to `body > header`, so this stays visible
@@ -638,11 +641,13 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
           </p>
         </li>
         <li class="rounded-xl border border-slate-200 bg-white p-4">
-          <h3 class="text-sm font-semibold text-slate-900">6. Save or print your result</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-600">
-            Use the print or copy button above to keep a record of the score and the inputs you used. It helps when filling the
-            counselling form and when checking with a mentor.
-          </p>
+            <h3 class="text-sm font-semibold text-slate-900">6. Save or share your result</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">
+              Use the share or copy button above to keep a record of the score and the inputs you used &mdash; it hands
+              you text you can paste anywhere. Printing still works from the browser's own Ctrl&nbsp;+&nbsp;P, which
+              leaves out the controls and keeps the score, the breakdown and the formula. Both help when filling the
+              counselling form and when checking with a mentor.
+            </p>
         </li>
       </ol>
     </section>

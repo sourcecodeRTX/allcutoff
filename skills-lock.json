@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "astro.js": {
+      "source": "ajelinek/skills-stash",
+      "sourceType": "github",
+      "skillPath": "astro.js/SKILL.md",
+      "computedHash": "7015286a1bd7f2ebf57e4e80ae0b314b05f8a3525e2e6e714c9591c9ac32f2b1"
+    },
     "tailwind-4-docs": {
       "source": "lombiq/tailwind-agent-skills",
       "sourceType": "github",

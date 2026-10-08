@@ -13,8 +13,10 @@
    `var(--color-*)` reference for hand-written markup across the project.
    ========================================================================== */
 :root {
-  /* Surfaces — the canvas is only a shade off white so a 1px hairline is
-     enough to read a card as a box. Depth comes from the border, not a shadow. */
+  /* Surfaces — the canvas is only a shade off white, so an edge has to be
+     defined deliberately: the card hairline is blended a little toward `mute`
+     and depth is carried by the shadow layers below, not by darkening the
+     canvas and pretending that is depth. */
   --color-canvas: #f6f7f9;
   --color-canvas-elevated: #ffffff;
 
@@ -45,6 +47,39 @@
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-card-hover: 0 2px 4px rgba(15, 23, 42, 0.06);
   --ring-focus: 0 0 0 3px color-mix(in oklab, var(--color-link) 24%, transparent);
+
+  /* ---- Card depth ------------------------------------------------------
+     One shared language for every elevated surface, so a card never reads as
+     an arbitrary flat white box. Three rules, applied by `.surface-card`,
+     `.surface-raised` and `.surface-dashed-card` alike:
+
+       1. TOP LIGHT — a few percent of a tone mixed into the top of the card
+          and faded to pure white by ~70%. Almost subliminal; it just tells the
+          eye which face of the box is up.
+       2. A DEFINED HAIRLINE — `--color-hairline` alone is too close to the
+          canvas to read as an edge at all, so the card border is blended a
+          little toward `mute`.
+       3. TWO-LAYER SHADOW — a 1px contact shadow (this is the layer that
+          actually separates white from near-white) plus a wide, very soft
+          ambient lift. Contact for the edge, ambient for the mass.
+
+     `--surface-tint-strength` is a percentage, not a colour, so each surface
+     can share the gradient direction while sitting at a different depth. */
+  --surface-tint-tone: var(--color-link);
+  --surface-tint-strength: 3%;
+  --border-surface: color-mix(in oklab, var(--color-hairline) 72%, var(--color-mute));
+  --border-surface-hover: color-mix(in oklab, var(--color-hairline) 22%, var(--color-mute));
+  --shadow-surface:
+    0 1px 2px -1px color-mix(in oklab, var(--color-ink) 12%, transparent),
+    0 6px 20px -12px color-mix(in oklab, var(--color-ink) 24%, transparent);
+  --shadow-surface-hover:
+    0 2px 4px -2px color-mix(in oklab, var(--color-ink) 16%, transparent),
+    0 16px 36px -18px color-mix(in oklab, var(--color-ink) 32%, transparent);
+  /* Lighter cousin of `--shadow-surface` for surfaces that must stay visually
+     subordinate (dashed reference cards). Same light direction, no ambient
+     lift, so the box has an edge without gaining weight. */
+  --shadow-surface-quiet:
+    0 1px 2px -1px color-mix(in oklab, var(--color-ink) 8%, transparent);
 
   /* Radii — restrained. Boxes, not pills. */
   --radius-card: 0.75rem;
@@ -208,52 +243,281 @@
     box-shadow: var(--shadow-card-hover);
   }
 
-  
+  /* ---- One depth language ----------------------------------------------
+     The three surfaces below used to be three unrelated treatments — a flat
+     white box with one shadow, a flat white box with a different shadow, and a
+     dashed box with none — which is exactly what made a screen full of cards
+     look like generated output: same weight, same flatness, no hierarchy.
+     They now share the light direction, hairline and shadow language from the
+     "Card depth" tokens, and differ only in how loud they are allowed to be. */
 
+  /*
+   * The default card. Barely-there top tint, a hairline that is actually
+   * visible against the canvas, and the two-layer shadow. It must still read
+   * as a calm reference surface — if you can clearly see the gradient, it is
+   * too strong.
+   */
   .surface-card {
     background-color: var(--color-canvas-elevated);
-    border: 1px solid var(--color-hairline);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--surface-tint-tone) var(--surface-tint-strength), var(--color-canvas-elevated)) 0%,
+      var(--color-canvas-elevated) 70%
+    );
+    border: 1px solid var(--border-surface);
     border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-surface);
+    transition:
+      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.2s ease,
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* A 2px lift, not a 6px one. Enough to feel like the card comes off the
+     canvas; any more and a grid of these starts to look like a pile of
+     stickers. The hairline darkening does as much work as the shadow. */
+  .surface-card:hover {
+    border-color: var(--border-surface-hover);
+    box-shadow: var(--shadow-surface-hover);
+    transform: translateY(-2px);
   }
 
   /*
    * A panel that sits ABOVE other content rather than beside it — currently the
-   * live calculator in the hero. It needs a defined edge, because a 1px hairline
-   * on a white card over a tinted section reads as the same surface as the page
-   * behind it and the widget looks like loose text with no container. The
-   * hairline is blended 50% toward `mute` so the border darkens without going
-   * grey-heavy, and the shadow is a touch deeper than `--shadow-card`.
+   * live calculator in the hero. Same depth language as `.surface-card`, one
+   * step louder: a stronger tint and the full ambient shadow, because a panel
+   * floating over a tinted section has to hold its own against the section
+   * behind it.
    */
   .surface-raised {
     background-color: var(--color-canvas-elevated);
-    border: 1px solid color-mix(in oklab, var(--color-hairline) 50%, var(--color-mute));
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--surface-tint-tone) 5%, var(--color-canvas-elevated)) 0%,
+      var(--color-canvas-elevated) 72%
+    );
+    border: 1px solid var(--border-surface);
     border-radius: var(--radius-card);
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.05),
-      0 4px 16px -8px rgba(15, 23, 42, 0.14);
+    box-shadow: var(--shadow-surface);
   }
 
   /* Same edge, one step further, for a panel nested inside `.surface-raised`
-     (the result region inside the hero calculator). */
+     (the result region inside the hero calculator). The gradient runs the same
+     way as its parent but in neutral grey rather than brand blue — a recessed
+     field wants to read as "below", and a coloured wash inside a panel just
+     reads as a second card. */
   .surface-inset {
     background-color: var(--color-canvas);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-mute) 3%, var(--color-canvas)) 0%,
+      var(--color-canvas) 68%
+    );
     border: 1px solid var(--color-hairline);
     border-radius: var(--radius-input);
   }
 
-  /* A deliberately weaker surface: same canvas and radius as `.surface-card`,
-     but a dashed hairline and no shadow. Used sparingly for reference material
-     — worked examples, definitions, chooser lists — so the page keeps a clear
-     hierarchy instead of turning every block into an equal-weight box. */
+  /* A deliberately weaker surface: same light direction and same hairline as
+     `.surface-card`, but a dashed edge, a whisper of contact shadow and no
+     ambient lift. Used sparingly for reference material — worked examples,
+     definitions, chooser lists — so the page keeps a clear hierarchy instead
+     of turning every block into an equal-weight box. */
   .surface-dashed-card {
     background-color: var(--color-canvas-elevated);
-    border: 1px dashed color-mix(in oklab, var(--color-hairline) 80%, var(--color-mute));
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--surface-tint-tone) 2%, var(--color-canvas-elevated)) 0%,
+      var(--color-canvas-elevated) 70%
+    );
+    border: 1px dashed color-mix(in oklab, var(--border-surface) 60%, var(--color-canvas-elevated));
     border-radius: var(--radius-card);
+    box-shadow: var(--shadow-surface-quiet);
+    transition:
+      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.2s ease,
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .surface-dashed-card:hover {
     border-color: color-mix(in oklab, var(--color-link) 35%, var(--color-hairline));
+    box-shadow: var(--shadow-surface);
+    transform: translateY(-2px);
+  }
+
+  /*
+   * The quietest surface in the system, and the one that sits BELOW a white
+   * card in the hierarchy instead of beside it. A flat neutral slate wash with
+   * no shadow and a barely-there edge — for low-priority reference blocks
+   * (footnotes, glossary rows, "how we count" asides) that would otherwise
+   * add yet another equal-weight white box to the page.
+   */
+  .surface-tinted {
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-hairline-soft);
+    border-radius: var(--radius-card);
+  }
+
+  /*
+   * Optional 3px top rule, drawn by the pseudo-element so it composes with any
+   * card surface instead of asking the card to reserve space for it. The
+   * colour comes from `--card-accent-color`, which a component sets from its
+   * own data (the calculator's category colour); the fallback keeps a card
+   * from ever ending up with an invisible or mismatched bar.
+   *
+   * Subtle by construction: the 3px rule fades to 45% opacity over its own
+   * height, so it reads as a catch of light along the top edge rather than a
+   * coloured stripe, and it is rounded to match the card instead of relying on
+   * an `overflow` clip that would then swallow focus rings inside the card.
+   */
+  .card-accent {
+    position: relative;
+  }
+
+  .card-accent::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    border-start-start-radius: var(--card-accent-radius, var(--radius-card));
+    border-start-end-radius: var(--card-accent-radius, var(--radius-card));
+    background-image: linear-gradient(
+      to bottom,
+      var(--card-accent-color, var(--color-link)) 0%,
+      color-mix(in oklab, var(--card-accent-color, var(--color-link)) 45%, transparent) 100%
+    );
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .card-accent:hover::before {
+    opacity: 1;
+  }
+
+  /* ---- Whole-card links ------------------------------------------------
+     Migrated out of a component-scoped `<style>` block: the pattern belongs to
+     the card system, not to one card, and a scoped block would have re-declared
+     it (and fought the surface hover above) on every page that repeats it. */
+
+  /* Stretched link: the whole card is clickable, but the accessible name stays
+     on the single real <a> around the title. */
+  .stretched-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Keep the outline hugging the title text rather than the overlay box. */
+  .stretched-link:focus-visible {
+    outline-offset: 3px;
+  }
+
+  /* Keyboard focus on any part of the card surfaces the whole card, so the
+     visible focus target matches what activating it would do. */
+  .surface-card:focus-within {
+    border-color: var(--color-link);
+    box-shadow: var(--shadow-surface), var(--ring-focus);
+  }
+
+  /* ---- Equal-height grid cards -----------------------------------------
+     `align-self: stretch` already makes every grid item as tall as its row, but
+     the card inside was sized by its own content, so a row of cards ended in a
+     ragged bottom edge with the CTAs floating at different heights. Declaring
+     the height all the way down the wrapper — the wrapper included, because a
+     percentage height has to resolve against something — pins every card to
+     the row height and lets `mt-auto` drop the CTA onto a common baseline.
+
+     `> *` rather than `.surface-card` so the rule keeps working if a grid cell
+     ever holds something other than a card. */
+  .calc-card-item {
+    height: 100%;
+  }
+
+  .calc-card-item > * {
+    height: 100%;
+  }
+
+  /* ---- Green note cards -------------------------------------------------
+     A light "worth knowing" panel: reassurance, a caveat, a footnote that
+     matters. Deliberately quieter than a status pill (which reports a computed
+     result) and greener than anything else on the page, so the eye separates
+     "this is a note" from "this is a measurement".
+
+     Contrast, measured rather than eyeballed — the 7% emerald wash lands at
+     roughly rgb(241 248 244), so the deep-emerald eyebrow below computes to
+     ~6.4:1 and the body slate to ~9.5:1. Both clear AA with room to spare, and
+     they still would if the wash were deepened, which is the direction this
+     token gets pushed when a brand colour gets louder. */
+  .note-card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.875rem 1rem;
+    border: 1px solid color-mix(in oklab, var(--color-success) 26%, var(--color-canvas-elevated));
+    border-radius: var(--radius-card);
+    background-color: color-mix(in oklab, var(--color-success) 7%, var(--color-canvas-elevated));
+    /* Same top-lit gradient as the card surfaces, at a strength that only just
+       survives the wash underneath it. */
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-success) 9%, var(--color-canvas-elevated)) 0%,
+      color-mix(in oklab, var(--color-success) 7%, var(--color-canvas-elevated)) 70%
+    );
+    box-shadow: var(--shadow-surface-quiet);
+  }
+
+  /* Fixed-size icon well so a 16px glyph and a 24px one still align the text
+     baselines on either side of it. */
+  .note-card-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--color-success) 12%, var(--color-canvas-elevated));
+    color: color-mix(in oklab, var(--color-success) 62%, var(--color-ink));
+  }
+
+  /* Without this a long unbroken course name inside a flex row refuses to
+     shrink and pushes the panel wider than its column. */
+  .note-card-body {
+    min-width: 0;
+  }
+
+  /* Repeats `.font-mono-eyebrow` rather than depending on it, so a note keeps
+     its shape if it is ever written without the utility class alongside. */
+  .note-card-title {
+    font-family: var(--font-geist-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: color-mix(in oklab, var(--color-success) 62%, var(--color-ink));
+  }
+
+  .note-card-text {
+    color: var(--color-body);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  /* The left-edge variant, for a one-liner wedged between two blocks of copy
+     where a full panel would break the column. Vertically centred rather than
+     top-aligned because at one line there is nothing to misalign. */
+  .note-card-accent {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid color-mix(in oklab, var(--color-success) 26%, var(--color-canvas-elevated));
+    border-left: 3px solid var(--color-success);
+    border-radius: var(--radius-card);
+    background-color: color-mix(in oklab, var(--color-success) 7%, var(--color-canvas-elevated));
+    color: var(--color-body);
+    box-shadow: var(--shadow-surface-quiet);
   }
 
   /* Dashed pill for the in-page jump navigation and inline reference chips.
@@ -299,6 +563,16 @@
 
   .focus-ring:focus-visible {
     outline-color: var(--color-link);
+  }
+
+  /* ---- Vertical Table of Contents ------------------------------------- */
+  [data-toc-link] {
+    border-left: 3px solid transparent;
+  }
+
+  [data-toc-link][aria-current='true'] {
+    border-left-color: var(--color-link) !important;
+    background-color: var(--color-link-soft) !important;
   }
 
   /* ---- Inputs --------------------------------------------------------- */
@@ -653,7 +927,44 @@
     color: var(--color-mute);
   }
 
+  /* ---- Scroll reveal (progressive enhancement) -------------------------
+     Sections ease up into place as they enter the viewport. This is the one
+     effect on the site that can leave content permanently unreadable if it goes
+     wrong, so it is gated hard:
+
+     the hidden state lives under `html.js-reveal`, a class the observer script
+     puts on <html> as its very first act. No script, a blocked script, a script
+     that throws before it gets there — the selector simply never matches and
+     every element renders as ordinary static markup. There is no code path that
+     leaves a page's content stuck at opacity 0.
+
+     `--reveal-delay` is the only knob: an inline `style="--reveal-delay: 80ms"`
+     staggers siblings. Keep it at or under 240ms — past that the last item in a
+     group feels broken rather than choreographed, and the effect stops reading
+     as a reveal and starts reading as lag. */
+  .reveal {
+    --reveal-delay: 0ms;
+    transition:
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay),
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay);
   }
+
+  html.js-reveal .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  /* Promote only while the element is still waiting to appear. Leaving this on
+     for the whole page would pin a compositor layer to every section. */
+  html.js-reveal .reveal:not(.is-visible) {
+    will-change: opacity, transform;
+  }
+
+  html.js-reveal .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
 
 /* ==========================================================================
    Reduced motion — honour the OS setting everywhere.
@@ -661,6 +972,23 @@
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;
+  }
+
+  /* The reveal is motion, and so is the lift — both come off. Content keeps its
+     final state either way; nothing on the page depends on seeing an animation
+     to find out that it exists. */
+  html.js-reveal .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Hover feedback stays — the border and shadow shift is colour, not motion —
+     but the card no longer slides. A transition is already ~0ms here (the
+     blanket rule below), so without this the card would jump 2px instantly,
+     which is more jarring than not moving at all. */
+  .surface-card:hover,
+  .surface-dashed-card:hover {
+    transform: none;
   }
 
   *,
@@ -772,6 +1100,9 @@
   .surface-raised,
   .surface-inset,
   .surface-dashed-card,
+  .surface-tinted,
+  .note-card,
+  .note-card-accent,
   .dashed-chip,
   .dashed-callout,
   .hairline-card,
@@ -785,6 +1116,23 @@
     border-color: #999999 !important;
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* The 3px category rule is screen furniture: it costs ink on paper and carries
+     no information once the page is flattened. The top-lit gradients go with the
+     `background` shorthand above, which resets `background-image` on its own. */
+  .card-accent::before {
+    display: none !important;
+  }
+
+  /* `.note-card-text` and `.note-card-title` are usually a <p>/<span> and get
+     flattened by the element rules below, but they can be a <div>, and a child's
+     own colour beats an inherited one no matter how the parent was set. */
+  .note-card-title,
+  .note-card-text,
+  .note-card-body,
+  .note-card-icon {
+    color: #000000 !important;
   }
 
   h1,

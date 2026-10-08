@@ -68,20 +68,26 @@ const catLink = (slug: string) => (currentCategory === slug ? navLinkActive : na
 
     <!-- Header Actions -->
     <div class="flex shrink-0 items-center gap-2">
-      <!-- Search Trigger Button. Label + shortcut only appear from xl, where
-           the row has the room for them. -->
+      <!-- Search Trigger Button.
+           No `Ctrl K` chip any more: the shortcut hint was a keyboard-only
+           affordance sitting in a row that had to fit five category labels plus
+           this control, and the label + chip together only appeared from xl.
+           The shortcut itself still works (SearchModal binds it on `window`) —
+           it is just no longer advertised. The hero search field carries a
+           dedicated magnifier button that opens this same dialog for pointer
+           users, so nothing is lost discoverably. -->
       <button
         id="search-btn"
         type="button"
         class="flex h-11 min-h-11 w-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 cursor-pointer sm:w-auto sm:px-3"
         aria-label="Search Cutoff Calculators"
+        aria-keyshortcuts="Control+K Meta+K"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-slate-500" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <path d="m21 21-4.3-4.3"></path>
         </svg>
         <span class="hidden xl:inline">Search calculators...</span>
-        <kbd class="hidden xl:inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-500">Ctrl K</kbd>
       </button>
 
       <a

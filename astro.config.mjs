@@ -76,6 +76,22 @@ export default defineConfig({
   site: SITE,
   // One canonical, one sitemap URL, one dev-server behaviour per page.
   trailingSlash: 'never',
+  /*
+   * `compressHTML` is OFF, deliberately.
+   *
+   * Astro's compressor strips the newline between an inline element and the
+   * text that follows it, which welded words together in the shipped HTML:
+   * `...every subject as equal. Your\n<strong>entrance score</strong> is what`
+   * rendered as `equal. Your<strong>entrance score</strong>is what`. It hit
+   * every prose paragraph that wrapped a `<strong>`/`<em>`/`<span>` onto its own
+   * source line — 33 occurrences across 5 pages, and it is invisible in review
+   * because the `.astro` source still reads correctly.
+   *
+   * The whole page is hand-authored prose, so the bytes saved by collapsing the
+   * indentation are worth less than readable, correctly-spaced output. Gzip on
+   * the CDN removes most of that difference anyway.
+   */
+  compressHTML: false,
   integrations: [
     captureOutDir,
     sitemap({

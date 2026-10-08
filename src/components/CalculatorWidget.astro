@@ -42,9 +42,12 @@ const stepDecimals = (input: { step?: number }) =>
   (String(input.step ?? 1).split('.')[1] ?? '').length;
 ---
 
-<div id="calculator-container" data-calc-id={calculator.id} class="surface-card p-5 sm:p-7">
+<!-- `card-accent` puts the top rule on the same depth language as the rest of
+     the site's cards. Padding is the site scale (`p-4 sm:p-6`), not the one-off
+     `p-5 sm:p-7` this root used to carry. -->
+<div id="calculator-container" data-calc-id={calculator.id} class="surface-card card-accent p-4 sm:p-6">
   <!-- Context header (a div, not <header>, so print rules keep the title) -->
-  <div class="border-b border-slate-200 pb-5">
+  <div class="border-b border-slate-200 pb-4">
     <div class="flex flex-wrap items-center gap-2">
       <span class="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
         {calculator.category}
@@ -71,8 +74,10 @@ const stepDecimals = (input: { step?: number }) =>
     </p>
   </div>
 
-  <!-- Inputs -->
-  <form id="cutoff-form" class="mt-6" onsubmit="return false;">
+  <!-- Inputs. Every direct child of the widget root is separated by `mt-5` (one
+       value, not the previous mt-4/5/6/7 mix) so the vertical rhythm reads as a
+       single scale from the header down to the note card. -->
+  <form id="cutoff-form" class="mt-5" onsubmit="return false;">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {calculator.inputs.map((input) => {
         const step = input.step ?? 1;
@@ -151,7 +156,9 @@ const stepDecimals = (input: { step?: number }) =>
       })}
     </div>
 
-    <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5">
+    <!-- `pt-4` (was `pt-5`) so the divider sits on the same inset as the card's
+         own `p-4` gutter instead of floating half a step further out. -->
+    <div class="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-4">
       <button type="button" id="btn-calculate" class="btn-accent focus-ring">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect width="18" height="18" x="3" y="3" rx="2"></rect>
@@ -177,8 +184,13 @@ const stepDecimals = (input: { step?: number }) =>
        cannot spam a screen reader and the result is never announced twice. -->
   <p id="calc-live" class="sr-only" aria-live="polite" aria-atomic="true"></p>
 
-  <!-- Result region (visible; not a live region itself) -->
-  <section id="result-region" class="mt-7 rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+  <!-- Result region (visible; not a live region itself).
+       `rounded-xl` is exactly `--radius-card` (0.75rem), which is the radius the
+       breakdown wrapper and the formula <details> below also use — all three
+       nested panels match. Padding steps down from the card's own `p-4 sm:p-6`
+       to `p-4 sm:p-5` so an inset panel never looks equal in weight to the card
+       that holds it. -->
+  <section id="result-region" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div class="min-w-0">
         <span class="font-mono-eyebrow block text-xs text-slate-500">Calculated Cutoff Score</span>
@@ -194,7 +206,7 @@ const stepDecimals = (input: { step?: number }) =>
       </div>
     </div>
 
-    <div class="mt-5">
+    <div class="mt-4">
       <div
         id="score-gauge"
         class="score-gauge-track"
@@ -215,7 +227,11 @@ const stepDecimals = (input: { step?: number }) =>
     <p id="calculation-remarks" class="mt-4 text-sm leading-relaxed text-slate-600"></p>
   </section>
 
-  <!-- Qualifying status (visual only; announced via #calc-live) -->
+  <!-- Qualifying status (visual only; announced via #calc-live).
+       Deliberately `mt-4`, one step tighter than the `mt-5` top-level rhythm:
+       this pill belongs to the result region directly above it. The class list
+       here is written wholesale by the script (`status-pill-<band> mt-4`), so
+       the literal is duplicated there — change both or neither. -->
   <div id="qualifying-status" class="status-pill-green mt-4">
     <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-current" aria-hidden="true"></span>
     <span class="min-w-0">
@@ -235,8 +251,14 @@ const stepDecimals = (input: { step?: number }) =>
   </p>
 
   <!-- Component breakdown -->
-  <div class="mt-6">
+  <div class="mt-5">
     <h3 class="font-mono-eyebrow text-xs text-slate-500">Component Breakdown</h3>
+    <!-- `overflow-x-auto` + `min-w-[36rem]` on the table is what keeps this
+         readable at 320px: the wrapper stays a block box the width of the card
+         and scrolls internally, so the min-width never widens the card. The
+         wrapper is deliberately NOT a flex/grid item — an item with an automatic
+         minimum size would refuse to shrink below the table and push the whole
+         page into a horizontal scroll. -->
     <div class="mt-2.5 overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table class="w-full min-w-[36rem] text-left text-sm">
         <caption class="sr-only">
@@ -257,7 +279,7 @@ const stepDecimals = (input: { step?: number }) =>
   </div>
 
   <!-- Collapsible formula walkthrough -->
-  <details class="group mt-6 rounded-xl border border-slate-200 bg-white">
+  <details class="group mt-5 rounded-xl border border-slate-200 bg-white">
     <summary class="focus-ring flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-900">
       <span>Formula &amp; Step-by-Step Breakdown</span>
       <svg
@@ -328,70 +350,93 @@ const stepDecimals = (input: { step?: number }) =>
     </div>
   </details>
 
-  <!-- Result actions -->
-  <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-    <button type="button" id="btn-print-result" class="btn-accent focus-ring w-full sm:w-auto">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M6 9V3h12v6"></path>
-        <path d="M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"></path>
-        <rect width="12" height="8" x="6" y="14"></rect>
-      </svg>
-      Download / Print Score Summary
-    </button>
+  <!-- Result actions — now a single button, so the wrapper flex row is gone
+       entirely: with one child it bought nothing but a `gap-3` that reserved
+       space for the button that is no longer there.
 
-    <button type="button" id="btn-share-result" class="btn-ghost-soft focus-ring w-full sm:w-auto">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="18" cy="5" r="3"></circle>
-        <circle cx="6" cy="12" r="3"></circle>
-        <circle cx="18" cy="19" r="3"></circle>
-        <line x1="8.6" x2="15.4" y1="10.5" y2="6.5"></line>
-        <line x1="8.6" x2="15.4" y1="13.5" y2="17.5"></line>
-      </svg>
-      <span id="share-btn-text">Share / Copy Result</span>
-    </button>
-  </div>
+       The "Download / Print Score Summary" button and its `window.print()`
+       handler were removed. That button advertised a "download" that never
+       downloaded anything — `window.print()` opens the browser's own dialog,
+       and the resulting sheet was the page minus its controls. Share stays as
+       the one primary action because it produces something portable (a text
+       result through `navigator.share`, or the clipboard) instead of a
+       screenshot, and it is the only action that survives on a phone.
 
-  <p class="mt-2.5 text-xs text-slate-500">
+       Ctrl+P is unaffected on purpose: the `@media print` block in global.css is
+       scoped to the page itself, not to this button. Browser-initiated printing
+       still drops `#cutoff-form`, the buttons and the site chrome while keeping
+       the calculator title, result region, breakdown table and the whole
+       formula walkthrough (global.css expands every closed <details> on paper).
+       That stylesheet was intentionally left in place. -->
+  <button type="button" id="btn-share-result" class="btn-accent focus-ring mt-5 w-full sm:w-auto">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="18" cy="5" r="3"></circle>
+      <circle cx="6" cy="12" r="3"></circle>
+      <circle cx="18" cy="19" r="3"></circle>
+      <line x1="8.6" x2="15.4" y1="10.5" y2="6.5"></line>
+      <line x1="8.6" x2="15.4" y1="13.5" y2="17.5"></line>
+    </svg>
+    <span id="share-btn-text">Share / Copy Result</span>
+  </button>
+
+  <!-- `mt-2` (was `mt-2.5`) so the attribution hugs the button it credits
+       instead of floating in the middle of the card's bottom padding. -->
+  <p class="mt-2 text-xs text-slate-500">
     Calculated on <span class="font-semibold text-slate-700">All Cut Off</span> &mdash; allcutoff.com
   </p>
 
-  <!-- Official rules reminder -->
-  <aside class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-    <div class="flex items-start gap-3">
-      <svg class="mt-0.5 shrink-0 text-amber-600" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- Official rules reminder.
+
+       Converted from an ad-hoc `border-amber-200 bg-amber-50` box to
+       `.note-card`. This block is guidance, not a warning about what the user
+       typed, and amber was already spent on the qualifying-status pill directly
+       above it — a second amber panel read as "something is wrong with your
+       score". The list semantics and the authority link are unchanged; only the
+       surface and its palette changed. The heading became a `<span>` because
+       `.note-card-title` owns the type, and this panel is no longer a document
+       section — the `<h2>` calculator name above is the widget's only heading.
+
+       `text-xs leading-relaxed` sits on the `<li>`, not the `<ul>`: global.css's
+       base layer declares `li { font-size: 1rem }` directly, so a utility on the
+       parent is overridden on the child and the bullets rendered at 16px. -->
+  <aside class="note-card mt-5" aria-labelledby="official-rules-note">
+    <span class="note-card-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 9v4"></path>
         <path d="M12 17h.01"></path>
         <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
       </svg>
+    </span>
 
-      <div class="min-w-0">
-        <h3 class="text-sm font-semibold text-amber-900">Always confirm against the official rules</h3>
-        <ul class="mt-2 space-y-1.5 text-xs leading-relaxed text-amber-900">
-          {calculator.officialRules.slice(0, 2).map((rule) => (
-            <li class="flex gap-2">
-              <span aria-hidden="true">&bull;</span>
-              <span class="min-w-0">{rule}</span>
-            </li>
-          ))}
-        </ul>
+    <div class="note-card-body">
+      <!-- `.note-card-title` only sets the colour, so the type scale and the
+           weight it used to carry as an `<h3>` are restored here. -->
+      <span class="note-card-title block text-sm font-semibold" id="official-rules-note">Always confirm against the official rules</span>
+      <ul class="mt-1.5 space-y-1.5">
+        {calculator.officialRules.slice(0, 2).map((rule) => (
+          <li class="flex gap-2 text-xs leading-relaxed">
+            <span aria-hidden="true">&bull;</span>
+            <span class="min-w-0">{rule}</span>
+          </li>
+        ))}
+      </ul>
 
-        {calculator.authorityUrl && (
-          <a
-            href={calculator.authorityUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="focus-ring mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100"
-            aria-label={`Open the official ${calculator.conductingAuthority} website in a new tab`}
-          >
-            Open the official authority website
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M15 3h6v6"></path>
-              <path d="M10 14 21 3"></path>
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            </svg>
-          </a>
-        )}
-      </div>
+      {calculator.authorityUrl && (
+        <a
+          href={calculator.authorityUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="focus-ring mt-3 inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50"
+          aria-label={`Open the official ${calculator.conductingAuthority} website in a new tab`}
+        >
+          Open the official authority website
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h6v6"></path>
+            <path d="M10 14 21 3"></path>
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          </svg>
+        </a>
+      )}
     </div>
   </aside>
 </div>
@@ -424,10 +469,14 @@ const stepDecimals = (input: { step?: number }) =>
 
     /* ------------------------------------------------------------------ *
      * Element lookups (scoped to this widget).
+     *
+     * The print/download button was removed from the widget, so there is no
+     * `printBtn` lookup here and nothing in this file calls `window.print()`
+     * any more. Printing is browser-initiated (Ctrl+P) and styled entirely by
+     * global.css's `@media print` block.
      * ------------------------------------------------------------------ */
     var calculateBtn = root.querySelector('#btn-calculate');
     var resetBtn = root.querySelector('#btn-reset');
-    var printBtn = root.querySelector('#btn-print-result');
     var shareBtn = root.querySelector('#btn-share-result');
     var shareBtnText = root.querySelector('#share-btn-text');
 
@@ -644,6 +693,8 @@ const stepDecimals = (input: { step?: number }) =>
         );
       }
 
+      /* `className` replaces the whole list, so the markup's `mt-4` has to be
+         restated here (and in showError) — see the note on the pill's markup. */
       if (statusPill) statusPill.className = 'status-pill-' + band + ' mt-4';
       if (statusTitle) statusTitle.textContent = status ? status.label : 'Score computed';
       if (statusDesc) {
@@ -659,7 +710,7 @@ const stepDecimals = (input: { step?: number }) =>
             return input.shortLabel + ' ' + fmt(values[input.id]);
           })
           .join(', ');
-        // Only score components may appear in the printed equation. Walk the
+        // Only score components may appear in the applied equation. Walk the
         // rows against the same denominator the total uses, so an
         // eligibility-gate row (MHT-CET's HSC board aggregate, say) can never
         // be added into a sum that is then claimed to equal the score. Zero
@@ -859,12 +910,6 @@ const stepDecimals = (input: { step?: number }) =>
         });
         refreshSteppers();
         runCalculation();
-      });
-    }
-
-    if (printBtn) {
-      printBtn.addEventListener('click', function () {
-        if (typeof window.print === 'function') window.print();
       });
     }
 

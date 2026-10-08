@@ -77,38 +77,30 @@ const normalizeUrl = (url: string): string => {
 /**
  * Fit a description to the SERP snippet window.
  *
- * The clamp runs on the ESCAPED string, because `&` is one character of source
- * but five in the rendered attribute — clamping before escaping under-reports
- * the length and overflows the snippet. Truncation only ever happens on a word
- * boundary and never appends an ellipsis: an ellipsised description reads as
- * broken and costs clicks, so the templates are written short enough that this
- * cut path is a safety net rather than a routine.
+ * NO manual entity escaping here. Every consumer is a `content={description}`
+ * attribute (`<meta name="description">`, `og:description`,
+ * `twitter:description`), and Astro escapes attribute values itself — so
+ * escaping in this function encoded the string twice and the university-admission
+ * category snippet literally read `TNGASA Arts &amp; Science` in the SERP.
  *
- * The `&`/`<`/`>`/`"` escaping is inlined rather than calling a helper because
- * this function is exported: Astro hoists exported declarations above the rest of
- * the module, and a reference to a module-level helper declared below it fails at
- * prerender with "helper is not defined". Inlining has no real cost — it runs
- * once per page at build time, never at runtime.
+ * Clamping before escaping is also correct now rather than a compromise: the
+ * 158-character budget applies to the characters a reader and a crawler actually
+ * see, which is the unescaped string. Counting `&amp;` as five characters
+ * pushed descriptions into the cut path earlier than the real window allows.
+ *
+ * Truncation only ever happens on a word boundary and never appends an
+ * ellipsis: an ellipsised description reads as broken and costs clicks, so the
+ * templates are written short enough that this cut path is a safety net rather
+ * than a routine.
  */
 export const clampDescription = (value: string, max = 158): string => {
-  const escaped = String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  const text = String(value);
 
-  if (escaped.length <= max) return escaped;
+  if (text.length <= max) return text;
 
-  const cut = escaped.slice(0, max);
+  const cut = text.slice(0, max);
   const boundary = cut.lastIndexOf(' ');
-  let out = (boundary > max * 0.6 ? cut.slice(0, boundary) : cut).replace(/[\s,;:.\-&]+$/, '');
-
-  // A hard cut can land inside an entity we just introduced (`&am`). Roll it back
-  // to the last complete token so the attribute is never malformed.
-  const amp = out.lastIndexOf('&');
-  if (amp !== -1 && !out.slice(amp).includes(';')) out = out.slice(0, amp);
-
-  return out;
+  return (boundary > max * 0.6 ? cut.slice(0, boundary) : cut).replace(/[\s,;:.\-&]+$/, '');
 };
 
 /**

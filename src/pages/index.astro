@@ -181,7 +181,7 @@ const WORKED_EXAMPLES: WorkedExample[] = [
     exam: 'Tamil Nadu engineering (TNEA)',
     scale: '200 marks',
     body: [
-      `Tamil Nadu is the simplest formula on this site and the one most people get wrong by halving the wrong subjects. Mathematics is counted in full at 100 marks; Physics and Chemistry are each halved to 50. The reason is that Tamil Nadu admits on academic ability as much as on entrance score, so the subject most predictive of an engineering student&rsquo;s first-year performance keeps its maximum weight. A candidate cannot pass a weak Mathematics mark with a strong Physics score.`,
+      `Tamil Nadu is the simplest formula on this site and the one most people get wrong by halving the wrong subjects. Mathematics is counted in full at 100 marks; Physics and Chemistry are each halved to 50. The reason is that Tamil Nadu admits on academic ability as much as on entrance score, so the subject most predictive of an engineering student’s first-year performance keeps its maximum weight. A candidate cannot pass a weak Mathematics mark with a strong Physics score.`,
       `Your aggregate PCM percentage is checked separately. Below 40% you are not eligible at all; between 40% and 45% you are eligible only under the reserved categories in Tamil Nadu (BC, MBC, SC, ST); 45% and above clears the general condition. That gate is an eligibility filter, not part of the 200-mark score, which is why two candidates with identical totals can have different outcomes.`
     ],
     equation: '88 + (76 ÷ 2) + (81 ÷ 2) = 88 + 38 + 40.5',
@@ -243,6 +243,94 @@ const WORKED_EXAMPLES: WorkedExample[] = [
     note: '205 + 132 + 68.4 + 48.6 = 454. Entrance 410 clears the minimum normalised score of 10 comfortably.'
   }
 ];
+
+/* -------------------------------------------------------------------------
+ * Table of contents.
+ *
+ * The single source of truth for the jump navigation AND for the scroll-spy:
+ * `id` is both the section's anchor and the value written back as
+ * `aria-current` on the matching entry, so the two can never drift.
+ *
+ * Ordered to match document order, because the numbers are read as a sequence —
+ * a ToC numbered 01…12 that jumps around the page is worse than no numbering.
+ * `#by-state` is included because it is a real destination readers land on from
+ * search results, and it was previously reachable only by guessing the anchor.
+ *
+ * `title` is a short form for the grid cell; `note` is the one-line answer the
+ * section gives, which is what actually tells a reader whether to bother
+ * jumping. Both are editorial, so they are typed here — but the *count* in the
+ * directory entry is derived from the registry, not hardcoded.
+ * ---------------------------------------------------------------------- */
+type TocEntry = { id: string; title: string; note: string };
+
+const TOC: TocEntry[] = [
+  {
+    id: 'by-state',
+    title: 'Browse by state',
+    note: 'Every calculator indexed by the state or region that runs the exam.'
+  },
+  {
+    id: 'what-is',
+    title: 'What a cutoff is',
+    note: 'Cutoff, closing mark and qualifying mark are three different numbers.'
+  },
+  {
+    id: 'find-calculator',
+    title: 'Find your calculator',
+    note: 'Start from the course you want, not from the exam name.'
+  },
+  {
+    id: 'calculators',
+    title: `All ${CALCULATORS.length} calculators`,
+    note: 'Each one applies its own authority’s published weighting rule.'
+  },
+  {
+    id: 'how-it-works',
+    title: 'How it works',
+    // No step count here on purpose: the section intro says "Six short steps"
+    // over a five-item list, and a summary that repeats a number the page itself
+    // contradicts is worse than one that leaves it out.
+    note: 'From raw marks to a checked merit score, with nothing to submit.'
+  },
+  {
+    id: 'twelfth-board',
+    title: '12th board worked examples',
+    note: 'The same 88, 76, 81 taken through four states’ formulas.'
+  },
+  {
+    id: 'formula-reference',
+    title: 'Formula reference table',
+    note: 'What each exam measures, and on which scale its cutoff is quoted.'
+  },
+  {
+    id: 'no-universal-formula',
+    title: 'Why there is no universal formula',
+    note: 'Admission arithmetic is set state by state, on purpose.'
+  },
+  {
+    id: 'mistakes',
+    title: 'Common mistakes',
+    note: 'Seven errors that produce a plausible but wrong cutoff number.'
+  },
+  {
+    id: 'use-your-score',
+    title: 'How to use your score',
+    note: 'Turning a merit number into counselling decisions you can act on.'
+  },
+  {
+    id: 'faq',
+    title: 'FAQ',
+    note: 'Boards, out-of-200 subjects, CGPA, and why two calculators disagree.'
+  },
+  {
+    id: 'how-we-verify',
+    title: 'How we verify',
+    note: 'Every formula traced back to a published rule or brochure.'
+  }
+];
+
+/** `01`, `02`, … derived from position, so inserting a section renumbers itself. */
+const tocNumber = (index: number): string => String(index + 1).padStart(2, '0');
 
 const pageTitle = 'Cut Off Calculator for TNEA, KCET & NEET UG';
 const pageDesc = clampDescription(
@@ -468,24 +556,37 @@ const extraSchema = [faqSchema, itemListSchema];
   dateModified={HOME_REVIEWED}
   extraSchema={extraSchema}
 >
+  <!--
+    Scroll-reveal gate, and deliberately the FIRST thing in the document body.
+
+    `.reveal` is inert until `<html>` carries `js-reveal`, so a reader without JS
+    — or a crawler that never runs a script — sees every section at full opacity.
+    The class therefore has to land before the first paint of the first section:
+    putting it in the bundled script at the foot of the page left a visible flash
+    of already-hidden content while the browser parsed and executed the rest of
+    the document. An inline script placed here runs synchronously during the
+    parse, which closes that window without needing to touch `Layout.astro`.
+  -->
+  <script is:inline>
+    document.documentElement.classList.add('js-reveal');
+  </script>
+
   <!-- ══════════════════════ HERO ══════════════════════ -->
   <!-- No `overflow-hidden`: it was only ever there to clip the old mesh-gradient
        bloom, and global.css has replaced that with a flat `inset-0` wash on the
        glow div itself, which cannot bleed. Leaving it in clipped the search
        dropdown, which is absolutely positioned below the fold of this box. -->
-  <section class="relative border-b border-slate-200 bg-slate-50 py-12 sm:py-16 lg:py-20">
+  <section class="relative border-b border-slate-200 bg-slate-50 py-14 sm:py-20">
     <div class="pointer-events-none absolute inset-0 mesh-gradient-glow opacity-70" aria-hidden="true"></div>
 
-    <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
+    <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-4 sm:px-6 lg:grid-cols-12 lg:gap-8 xl:gap-12">
       <!-- ── LEFT: value proposition ──────────────────────────────── -->
       <!--
-        `lg:sticky` on the copy column: the calculator is ~1300px tall on desktop,
-        so a static left column left ~500px of blank page beside it. Sticking the
-        copy keeps the headline, search and stats in view for the whole scroll of
-        the calculator instead. Single column on mobile, where there is no
-        side-by-side to keep aligned.
+        `lg:sticky` on the copy column keeps key context in view while browsing
+        the calculator. Allocated 5/12 columns on desktop to leave 7/12 columns
+        for the calculator widget so inputs and controls have ample breathing room.
       -->
-      <div class="min-w-0 lg:sticky lg:top-24">
+      <div class="min-w-0 lg:col-span-5 xl:col-span-5 lg:sticky lg:top-24">
         <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
           <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
           <span class="font-mono text-xs font-medium uppercase tracking-wide text-slate-900">
@@ -497,14 +598,14 @@ const extraSchema = [faqSchema, itemListSchema];
           {heroHeadline}
         </h1>
 
-        <p class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7] text-slate-700">
-          A cut off calculator turns the marks on your 12th board and entrance scorecards into the one
-          number your counselling authority actually ranks on. This is a free online cut off calculator for
-          TNEA, KCET, NEET UG, AP and TS EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET: enter your marks
-          and the widget applies the exact weighting your authority publishes &mdash; Maths at 100% for
-          TNEA, the 50:50 board-plus-exam composite for KCET, the 75:25 split for EAPCET, the 720-mark
-          total for NEET UG &mdash; and updates your merit score as you type.
-        </p>
+        <div class="mt-5 space-y-3 max-w-xl text-base leading-relaxed text-slate-700 sm:text-[1.0625rem]">
+          <p>
+            A cut off calculator turns the raw marks on your Class 12 board marksheet and entrance scorecards into the single merit figure your counselling authority actually ranks on.
+          </p>
+          <p>
+            This free online tool applies the verified official rules for <strong class="font-semibold text-slate-900">TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET and DU CUET</strong>: adjust your scores below to compute your merit score instantly with official tie-breaker guidelines.
+          </p>
+        </div>
 
         <!-- Hero search bar with instant results -->
         <div class="relative mt-7 max-w-xl">
@@ -532,6 +633,31 @@ const extraSchema = [faqSchema, itemListSchema];
               placeholder="Search TNEA, KCET, NEET, B.Pharm, Tamil Nadu…"
               class="min-h-11 w-full min-w-0 border-none bg-transparent px-3 py-2 text-sm text-slate-900 placeholder-slate-500 outline-none"
             />
+            <!--
+              The hero field is a shortcut index; the full directory modal is the
+              authoritative one, with alias coverage and per-result actions. It used
+              to be advertised only as a text tip about Ctrl + K, which is invisible
+              on a touch device where no keyboard shortcut exists. This button is
+              the same affordance with a pointer: a real control, not decoration, so
+              it is reachable by keyboard and announced by name rather than by an
+              unlabelled glyph.
+
+              `.stepper-btn` supplies the 44px square, the hairline border and the
+              press feedback, which keeps it visually identical to the +/- buttons
+              in the hero calculator it sits above instead of reading as a second
+              text button.
+            -->
+            <button
+              id="hero-search-open-directory"
+              type="button"
+              aria-label="Open the full calculator directory search"
+              class="stepper-btn focus-ring mr-1.5 text-slate-500 hover:text-blue-800"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+            </button>
             <!-- Icon-only below `sm`: at 320px the full "All Calculators" label
                  plus the leading icon left the input ~138px, truncating the
                  placeholder to ten characters. -->
@@ -550,13 +676,6 @@ const extraSchema = [faqSchema, itemListSchema];
             id="hero-search-dropdown"
             class="absolute left-0 right-0 top-full z-50 mt-2 hidden max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"
           ></div>
-
-          <p class="mt-2 text-xs text-slate-600">
-            Tip: press <kbd class="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono">Ctrl</kbd>
-            <span class="font-mono">+</span>
-            <kbd class="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono">K</kbd>
-            anywhere for the full calculator directory.
-          </p>
         </div>
 
         <!-- Trust badges -->
@@ -602,37 +721,96 @@ const extraSchema = [faqSchema, itemListSchema];
       </div>
 
       <!-- ── RIGHT: the live calculator ──────────────────────────── -->
-      <div class="min-w-0">
+      <div class="min-w-0 lg:col-span-7 xl:col-span-7">
         <HeroCalculator />
       </div>
     </div>
   </section>
 
-  <!-- ══════════════════════ JUMP NAV ══════════════════════ -->
-  <!-- Dashed chips rather than solid cards: this is navigation, and the page
-       below it is the content. A boxed nav strip would compete with the hero
-       calculator it sits under. -->
-  <nav aria-label="Sections on this page" class="border-b border-slate-200 bg-white py-3.5">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 sm:px-6">
-      <span class="mr-1 font-mono text-xs uppercase tracking-wider text-slate-500">On this page:</span>
-      {[
-        { href: '#what-is', label: 'What a cutoff is' },
-        { href: '#find-calculator', label: 'Find your calculator' },
-        { href: '#calculators', label: 'All 12 calculators' },
-        { href: '#twelfth-board', label: '12th board worked examples' },
-        { href: '#formula-reference', label: 'Formula reference table' },
-        { href: '#how-it-works', label: 'How it works' },
-        { href: '#mistakes', label: 'Common mistakes' },
-        { href: '#faq', label: 'FAQ' }
-      ].map((item) => (
-        <a href={item.href} class="dashed-chip focus-ring">{item.label}</a>
-      ))}
+  <!-- ══════════════════════ TABLE OF CONTENTS ══════════════════════ -->
+  <!--
+    Strictly vertical layout on both mobile and laptops:
+    Organized as a structured vertical sequence (01...12) so students read
+    in natural document order from top to bottom, with clear hierarchy,
+    subtle jump indicators, and live scroll-spy tracking.
+  -->
+  <section aria-labelledby="page-contents-heading" class="border-b border-slate-200 bg-slate-50 py-10 sm:py-14">
+    <div class="reveal mx-auto max-w-4xl px-4 sm:px-6" style="--reveal-delay:60ms">
+      <div class="surface-card card-accent overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 sm:px-6 sm:py-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span class="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-blue-600">
+                Quick Navigation &middot; Official Directory
+              </span>
+              <h2
+                id="page-contents-heading"
+                class="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-xl"
+              >
+                Table of Contents
+              </h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 font-mono text-xs font-semibold text-blue-700">
+                <span class="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true"></span>
+                {TOC.length} sections
+              </span>
+              <span class="hidden text-xs text-slate-500 md:inline">
+                Jump directly to verified formulas &amp; rules
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <nav aria-labelledby="page-contents-heading" class="flex flex-col divide-y divide-slate-100">
+          {TOC.map((item, i) => (
+            <a
+              href={`#${item.id}`}
+              data-toc-link={item.id}
+              class="group focus-ring flex items-center justify-between gap-4 px-4 py-3.5 transition-all duration-150 hover:bg-slate-50 sm:px-6 sm:py-3.5 [&[aria-current='true']]:border-l-4 [&[aria-current='true']]:border-l-blue-600 [&[aria-current='true']]:bg-blue-50/70"
+            >
+              <div class="flex min-w-0 items-start sm:items-center gap-3.5">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 font-mono text-xs font-semibold tabular-nums text-slate-600 transition-colors group-hover:border-blue-300 group-hover:bg-blue-50 group-hover:text-blue-700 group-[&[aria-current='true']]:border-blue-600 group-[&[aria-current='true']]:bg-blue-600 group-[&[aria-current='true']]:text-white">
+                  {tocNumber(i)}
+                </span>
+                <div class="min-w-0">
+                  <span class="block text-sm font-semibold leading-snug text-slate-900 group-hover:text-blue-700 group-[&[aria-current='true']]:text-blue-900">
+                    {item.title}
+                  </span>
+                  <span class="mt-0.5 block text-xs leading-snug text-slate-500 group-[&[aria-current='true']]:text-blue-800/80">
+                    {item.note}
+                  </span>
+                </div>
+              </div>
+              <div class="flex shrink-0 items-center gap-1.5 text-slate-400 transition-all group-hover:translate-x-1 group-hover:text-blue-600 group-[&[aria-current='true']]:text-blue-600">
+                <span class="hidden text-xs font-medium opacity-0 transition-opacity group-hover:opacity-100 group-[&[aria-current='true']]:opacity-100 sm:inline">Jump</span>
+                <svg
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </a>
+          ))}
+        </nav>
+      </div>
     </div>
-  </nav>
+  </section>
 
   <!-- ══════════════════════ STATE STRIP ══════════════════════ -->
+  <!-- Kept to one compact row rather than promoted to a full section: this is a
+       filter bar, not a reading section, so it takes half the vertical padding of
+       the content sections below it. `#by-state` is also a Table-of-Contents
+       target, so the id has to stay exactly where it is. -->
   <section id="by-state" class="scroll-mt-20 border-b border-slate-200 bg-white py-4">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 text-xs sm:px-6">
+    <div class="reveal mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 text-xs sm:px-6" style="--reveal-delay:120ms">
       <span class="mr-2 font-mono uppercase tracking-wider text-slate-500">Browse by state:</span>
       {STATES.map((state) => (
         <a
@@ -646,29 +824,27 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ WHAT IS A CUT OFF CALCULATOR ══════════════════════ -->
-  <section id="what-is" class="scroll-mt-20 border-b border-slate-200 bg-white py-14 sm:py-18">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+  <section id="what-is" class="scroll-mt-20 border-b border-slate-200 bg-white py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Start here</span>
       <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         What Is a Cut Off Calculator, and Why Does the Answer Change With Every State?
       </h2>
-      <p class="mt-4 max-w-[68ch] text-[1.0625rem] leading-[1.75] text-slate-700">
-        A <strong class="font-semibold text-slate-900">cut off calculator</strong> is a tool that converts the
-        raw marks printed on your Class 12 board marksheet and your entrance scorecard into the single merit
-        figure that a state counselling authority ranks on. That figure is rarely your percentage and almost
-        never your entrance rank. It is a weighted number, and the weights are published in an admission
-        brochure that differs from state to state and sometimes from course to course within the same state.
-        A student with 88 in Mathematics, 76 in Physics and 81 in Chemistry produces a 166.5 out of 200 merit
-        score in Tamil Nadu, a completely different composite in Karnataka, and a third number again in Kerala
-        &mdash; from the identical three marks. This is why a cut off calculator that offers one generic
-        formula for all of India is worse than no calculator at all: it produces a confident number that no
-        counselling portal will ever accept.
-      </p>
+      <div class="mt-4 space-y-4 max-w-3xl text-base leading-relaxed text-slate-700 sm:text-[1.0625rem]">
+        <p>
+          A <strong class="font-semibold text-slate-900">cut off calculator</strong> is an essential admission tool that converts the raw marks printed on your Class 12 board marksheet and entrance scorecards into the single merit figure that a state counselling authority ranks candidates on. That figure is rarely your percentage and almost never your entrance rank. It is an official weighted composite, published annually in admission brochures that vary from state to state and course to course.
+        </p>
+        <p>
+          For example, a student with <strong class="font-semibold text-slate-900">88 in Mathematics, 76 in Physics, and 81 in Chemistry</strong> produces a 166.5 out of 200 merit score in Tamil Nadu, a completely different composite in Karnataka, and a third scaled score in Kerala &mdash; from the identical three marks. This is why a generic formula is misleading: counselling authorities only rank on their own state-mandated formula.
+        </p>
+      </div>
 
-      <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div>
-          <h3 class="text-base font-bold text-slate-900">Three numbers that are not the same thing</h3>
-          <p class="mt-2.5 text-[0.9375rem] leading-[1.75] text-slate-700">
+      <div class="mt-10 grid max-w-3xl grid-cols-1 gap-10">
+        <section aria-labelledby="what-is-three-numbers">
+          <h3 id="what-is-three-numbers" class="text-base font-bold text-slate-900">
+            Three numbers that are not the same thing
+          </h3>
+          <p class="mt-2.5 max-w-3xl text-[0.9375rem] leading-relaxed text-slate-700">
             Students routinely confuse these three, and the confusion is where most bad advice online begins.
             Your <strong class="font-semibold text-slate-900">percentage</strong> is your total divided by the
             maximum, and it tells you almost nothing about merit because it treats every subject as equal. Your
@@ -677,7 +853,7 @@ const extraSchema = [faqSchema, itemListSchema];
             is the weighted blend of the two that the authority actually sorts the merit list on. A calculator
             gives you the third number, and only the third number is what gets you a seat called.
           </p>
-          <p class="mt-3 text-[0.9375rem] leading-[1.75] text-slate-700">
+          <p class="mt-3 max-w-3xl text-[0.9375rem] leading-relaxed text-slate-700">
             On top of that sits the <strong class="font-semibold text-slate-900">closing mark</strong>, the last
             score at which a seat was filled in a previous round. A closing mark is a historical outcome, shaped
             by seat availability and category reservation, not a rule you can apply to yourself. Comparing your
@@ -685,11 +861,13 @@ const extraSchema = [faqSchema, itemListSchema];
             mistake in Indian admission planning, and it is why two calculators on two sites can both be
             correct and still disagree with each other.
           </p>
-        </div>
+        </section>
 
-        <div>
-          <h3 class="text-base font-bold text-slate-900">What every calculator here actually does</h3>
-          <ul class="mt-2.5 space-y-3 text-[0.9375rem] leading-[1.75] text-slate-700">
+        <section aria-labelledby="what-is-what-it-does">
+          <h3 id="what-is-what-it-does" class="text-base font-bold text-slate-900">
+            What every calculator here actually does
+          </h3>
+          <ul class="mt-2.5 max-w-3xl space-y-3 text-[0.9375rem] leading-relaxed text-slate-700">
             <li class="flex gap-2.5">
               <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
               <span>
@@ -726,31 +904,54 @@ const extraSchema = [faqSchema, itemListSchema];
               </span>
             </li>
           </ul>
-        </div>
+        </section>
       </div>
 
-      <p class="dashed-callout mt-8 max-w-[72ch] text-[0.9375rem] leading-[1.75] text-slate-700">
-        <strong class="font-semibold text-slate-900">The one rule that protects you:</strong> always identify
-        the conducting authority before you calculate anything. Tamil Nadu engineering is run by DoTE, Karnataka
-        by KEA, Kerala by CEE, Gujarat by ACPC, Maharashtra by the State CET Cell, NEET by the NTA under NMC
-        rules. Find that name on your scorecard, then use only the calculator published by that body&rsquo;s
-        rule. Anything else is arithmetic on the wrong scale.
-      </p>
+      <!--
+        `.note-card`, not `.dashed-callout`: this is guidance to remember rather
+        than an equation to read, and it is the one line in the section a reader
+        is most likely to need again after they close the tab. The dashed callout
+        treatment is kept for the arithmetic in `#twelfth-board`, where the
+        dashed left rule reads as "this is a computed line".
+
+        Plain `.note-card` rather than the left-edge `.note-card-accent`: that
+        variant is built for a single wedged-in line and centres its content
+        vertically, which is wrong for a paragraph this long.
+      -->
+      <aside class="note-card mt-10">
+        <span class="note-card-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+          </svg>
+        </span>
+        <div class="note-card-body">
+          <span class="note-card-title">Rule of thumb</span>
+          <p class="note-card-text">
+            <strong class="font-semibold text-slate-900">The one rule that protects you:</strong> always identify
+            the conducting authority before you calculate anything. Tamil Nadu engineering is run by DoTE, Karnataka
+            by KEA, Kerala by CEE, Gujarat by ACPC, Maharashtra by the State CET Cell, NEET by the NTA under NMC
+            rules. Find that name on your scorecard, then use only the calculator published by that body&rsquo;s
+            rule. Anything else is arithmetic on the wrong scale.
+          </p>
+        </div>
+      </aside>
     </div>
   </section>
 
   <!-- ══════════════════════ FIND YOUR CALCULATOR ══════════════════════ -->
-  <section id="find-calculator" class="scroll-mt-20 py-14 sm:py-18">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+  <section id="find-calculator" class="scroll-mt-20 py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Choose by what you want to know</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Which Cut Off Calculator Should You Actually Use?
         </h2>
-        <p class="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-slate-700">
-          Twelve calculators cover nine separate authorities, and picking the wrong one gives you a
-          mathematically correct answer to the wrong question. Start from your goal rather than from the exam
-          name, because most students search by course and end up reading a rule for a different course.
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
+          {CALCULATORS.length} calculators cover {AUTHORITY_COUNT} separate authorities, and picking the wrong one
+          gives you a mathematically correct answer to the wrong question. Start from your target course rather than from the
+          exam name, because students often search by course and end up reading rules for a different branch.
         </p>
       </div>
 
@@ -764,10 +965,17 @@ const extraSchema = [faqSchema, itemListSchema];
               <span class="text-xs text-slate-500">&ldquo;{card.term}&rdquo;</span>
             </div>
             <h3 class="mt-2.5 text-base font-bold leading-snug text-slate-900">{card.title}</h3>
-            <p class="mt-2 text-[0.9375rem] leading-[1.7] text-slate-700">{card.body}</p>
+            <p class="mt-2 text-[0.9375rem] leading-relaxed text-slate-700">{card.body}</p>
+            <!--
+              `mt-auto` replaces `mt-3`: grid rows stretch every card to the height
+              of the tallest, and with a fixed top margin the "Open" link floated
+              mid-card on the short ones. Now every CTA in a row sits on the same
+              baseline, and `pt-3` still guarantees the gap when a card does fill
+              its own height.
+            -->
             <a
               href={card.href}
-              class="focus-ring mt-3 inline-flex min-h-9 items-center gap-1.5 self-start rounded-md border border-transparent px-1 text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
+              class="focus-ring mt-auto inline-flex min-h-9 items-center gap-1.5 self-start rounded-md border border-transparent px-1 pt-3 text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
             >
               Open
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -783,14 +991,14 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ DIRECTORY ══════════════════════ -->
   <section id="calculators" class="scroll-mt-20 py-14 sm:py-20">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="reveal mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div class="min-w-0">
+        <div class="max-w-3xl">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Calculator directory</span>
-          <h2 class="mt-1.5 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+          <h2 class="mt-1.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             Every Entrance and Admission Cutoff Calculator
           </h2>
-          <p class="mt-2 max-w-2xl text-[0.9375rem] text-slate-700">
+          <p class="mt-2 text-base leading-relaxed text-slate-700">
             Each calculator applies the normalisation and weighting rules published by that exam&rsquo;s
             conducting authority &mdash; nothing generic, nothing invented.
           </p>
@@ -842,20 +1050,29 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ HOW IT WORKS ══════════════════════ -->
-  <section id="how-it-works" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
-      <div class="text-center">
+  <section id="how-it-works" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Streamlined process</span>
-        <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           How the Cutoff Engine Works
         </h2>
-        <p class="mx-auto mt-3 max-w-2xl text-[0.9375rem] text-slate-700">
-          No forms, no waiting, no emailed reports. Six short steps and you have the same merit score the
-          counselling portal will compute.
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
+          No signups, no waiting, and no emails. Five straightforward steps provide you with the identical merit score that your state counselling portal calculates.
         </p>
       </div>
 
-      <ol class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <!--
+        `lg:grid-cols-5` gave each of the five steps a ~180px column at 1440px, so
+        the measure fell to roughly 18 characters and every heading wrapped
+        ("Check the status band") above five-line bodies. Six tracks instead: the
+        first three steps take two each (a readable ~330px) and the last two take
+        three each, which fills the second row completely — a 3-up grid would
+        have left one bare cell, which is the dead space this page is trying to
+        get rid of. Steps 4 and 5 are the two that finish the flow, so a wider
+        card for each reads as a deliberate close rather than a gap.
+      -->
+      <ol class="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6">
         {[
           { title: 'Pick your exam', body: 'Use the dropdown or the exam tabs. TNEA, KCET, NEET UG, EAPCET, TNAU, KEAM, GUJCET, MHT CET, DU CUET, paramedical, TANUVAS and TNGASA are all in one place.' },
           { title: 'Enter your marks', body: 'Type each subject mark or your entrance score. Sliders and plus/minus steppers let you sweep a range instead of guessing a number.' },
@@ -863,7 +1080,11 @@ const extraSchema = [faqSchema, itemListSchema];
           { title: 'Check the status band', body: 'Green means comfortably eligible, amber means borderline or a reserved-category route, red means you are under the published minimum.' },
           { title: 'Read the rules', body: 'Open the full page for the formula steps, category-wise eligibility, the official tie-breaking order and a link to the authority’s own website.' }
         ].map((step, i) => (
-          <li class="surface-card p-5">
+          <li
+            class={`surface-card flex flex-col p-5 lg:col-span-2 ${
+              i >= 3 ? 'sm:col-span-1 lg:col-span-3' : ''
+            }`}
+          >
             <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 font-mono text-sm font-bold text-white">
               {i + 1}
             </span>
@@ -876,19 +1097,17 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ 12TH BOARD WORKED EXAMPLES ══════════════════════ -->
-  <section id="twelfth-board" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+  <section id="twelfth-board" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">12th board cut off calculator</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           How to Calculate Your Cut Off From 12th Board Marks: Worked Examples
         </h2>
-        <p class="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-slate-700">
-          Most students search for a 12th cut off calculator expecting a single answer. There is no single
-          answer &mdash; there is one answer per state. The four sections below take the same three marks,
-          <strong class="font-semibold text-slate-900">88 in Mathematics, 76 in Physics and 81 in Chemistry</strong>,
-          through four published formulas so you can see exactly where each state&rsquo;s number comes from.
-          Read your own state&rsquo;s row, then enter the same marks in that calculator to confirm.
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
+          Most students search for a 12th cut off calculator expecting a single formula. In reality, each state counselling authority defines its own calculation. The four worked examples below take the identical three marks &mdash;
+          <strong class="font-semibold text-slate-900">88 in Mathematics, 76 in Physics, and 81 in Chemistry</strong> &mdash;
+          through four published state formulas so you can clearly see where each number originates.
         </p>
       </div>
 
@@ -904,7 +1123,7 @@ const extraSchema = [faqSchema, itemListSchema];
             <span class="font-sans text-sm font-medium text-slate-500">&mdash; {ex.scale}</span>
           </h3>
 
-          <div class="mt-3 max-w-[68ch] space-y-3 text-[0.9375rem] leading-[1.75] text-slate-700">
+          <div class="mt-3 max-w-3xl space-y-3 text-[0.9375rem] leading-relaxed text-slate-700">
             {ex.body.map((para) => <p>{para}</p>)}
           </div>
 
@@ -939,36 +1158,83 @@ const extraSchema = [faqSchema, itemListSchema];
             <strong class="text-base text-slate-900">{ex.result}</strong>
           </p>
 
-          <p class="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-600">{ex.note}</p>
+          <!--
+            `.note-card`, not the grey paragraph this used to be. `ex.note` is the
+            catch-the-caveat line under each example — the eligibility gate, the
+            capping, the arithmetic check — and as body-coloured prose at 14px it
+            was the easiest thing in the section to scroll straight past, even
+            though it is the part that stops someone entering the wrong number.
+            A panel with an icon and a "Note" label is read as a note; a lighter
+            grey paragraph is not.
+
+            The title is visible text inside the panel, so the aside needs no
+            `aria-label` of its own: a label duplicating that string would make a
+            screen reader announce "Note, Note" before the sentence.
+          -->
+          <aside class="note-card mt-4">
+            <span class="note-card-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+            </span>
+            <div class="note-card-body">
+              <span class="note-card-title">Note</span>
+              <p class="note-card-text">{ex.note}</p>
+            </div>
+          </aside>
         </article>
       ))}
 
-      <p class="dashed-callout mt-12 max-w-[72ch] text-[0.9375rem] leading-[1.75] text-slate-700">
-        <strong class="font-semibold text-slate-900">Read across the four examples and the pattern is obvious:</strong>
-        identical board marks produced 166.5, 73.61, 65.25 and 454 across four states. None of those numbers is
-        wrong. They are measured on four different scales, and only one of them belongs to your admission.
-        That is the entire argument for using a state level cut off calculator instead of a generic one, and
-        for checking the conducting authority on your scorecard before you calculate anything.
-      </p>
+      <!--
+        `.note-card` here for the same reason as the per-example notes above, and
+        for one more: this is the conclusion the whole section exists to deliver.
+        The dashed left rule stayed reserved for the computed lines (the equation
+        strip and the merit-score bar), so "this was computed" and "this is what
+        to remember" now look different.
+      -->
+      <aside class="note-card mt-12">
+        <span class="note-card-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+          </svg>
+        </span>
+        <div class="note-card-body">
+          <span class="note-card-title">The takeaway</span>
+          <p class="note-card-text">
+            <strong class="font-semibold text-slate-900">Read across the four examples and the pattern is obvious:</strong>
+            identical board marks produced 166.5, 73.61, 65.25 and 454 across four states. None of those numbers is
+            wrong. They are measured on four different scales, and only one of them belongs to your admission.
+            That is the entire argument for using a state level cut off calculator instead of a generic one, and
+            for checking the conducting authority on your scorecard before you calculate anything.
+          </p>
+        </div>
+      </aside>
     </div>
   </section>
 
   <!-- ══════════════════════ COMPARISON TABLE ══════════════════════ -->
-  <section id="formula-reference" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
-      <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Formula reference</span>
-      <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-        Cutoff Calculator by Exam: What Each One Actually Measures
-      </h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.7] text-slate-700">
-        This is the single most common source of confusion for Indian aspirants. A cutoff of &ldquo;85&rdquo;
-        means something completely different in KCET (a 100-point composite) and in TNEA (a 200-point raw
-        weighted score). Before you compare your score with a number quoted in a newspaper or on a college
-        website, check which scale it is on. The table below gives the maximum score and the single
-        weighting rule that defines each exam&rsquo;s merit number.
-      </p>
+  <!-- ══════════════════════ COMPARISON TABLE ══════════════════════ -->
+  <section id="formula-reference" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Formula reference</span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Cutoff Calculator by Exam: What Each One Actually Measures
+        </h2>
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
+          This is the single most common source of confusion for Indian aspirants. A cutoff of &ldquo;85&rdquo;
+          means something completely different in KCET (a 100-point composite) and in TNEA (a 200-point raw
+          weighted score). Before you compare your score with a number quoted in a newspaper or on a college
+          website, check which scale it is on. The table below gives the maximum score and the single
+          weighting rule that defines each exam&rsquo;s merit number.
+        </p>
+      </div>
 
-      <div class="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+      <div class="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table class="w-full min-w-[46rem] text-left text-sm">
           <caption class="sr-only">
             Maximum score and primary weighting rule for each admission cutoff calculator
@@ -1006,7 +1272,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </table>
       </div>
 
-      <p class="mt-4 max-w-[92ch] text-xs text-slate-600">
+      <p class="mt-4 max-w-3xl text-xs text-slate-600">
         Custom / General % Mode is a comparison helper, not an admission formula. It exists because a growing
         number of private colleges and coaching institutes now quote a plain percentage requirement; use it
         once the official calculator is not applicable to that institution.
@@ -1015,16 +1281,18 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ WHY NO UNIVERSAL FORMULA ══════════════════════ -->
-  <section class="border-t border-slate-200 bg-white py-16 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+  <!-- `id` added so the section is reachable from the table of contents; it had
+       an `h2` and a full screen of prose but no anchor of its own. -->
+  <section id="no-universal-formula" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="surface-card p-6 sm:p-10">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Accuracy assurance</span>
-        <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Why There Is No &ldquo;Universal&rdquo; Cutoff Formula in India
         </h2>
 
-        <div class="mt-4 space-y-4 leading-relaxed text-slate-700">
-          <p class="max-w-[68ch]">
+        <div class="mt-4 space-y-4 text-base leading-relaxed text-slate-700">
+          <p class="max-w-3xl">
             Admission arithmetic in India is decentralised. Each state examination board or university
             publishes its own merit construction, and those documents rarely agree with each other. That is
             not an inconsistency to be smoothed over with an average &mdash; it is a design decision, because
@@ -1040,12 +1308,12 @@ const extraSchema = [faqSchema, itemListSchema];
             ].map((item) => (
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <span class="font-semibold text-slate-900">{item.k}</span>
-                <p class="mt-1.5 text-[0.9375rem] leading-[1.7] text-slate-700">{item.v}</p>
+                <p class="mt-1.5 text-[0.9375rem] leading-relaxed text-slate-700">{item.v}</p>
               </div>
             ))}
           </div>
 
-          <p class="max-w-[68ch]">
+          <p class="max-w-3xl">
             <strong class="font-semibold text-slate-900">All Cut Off (allcutoff.com)</strong> does not invent
             formulas. Every calculator here is a faithful transcription of a published government or
             university rule, and every calculator links you to the authority&rsquo;s own website so you can
@@ -1059,14 +1327,15 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
-  <section id="mistakes" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+  <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
+  <section id="mistakes" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Before you calculate</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Seven Mistakes That Produce a Wrong Cut Off Number
         </h2>
-        <p class="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-slate-700">
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
           Every one of these is common, every one of them changes the answer, and every one of them is easy to
           check. If your score looks wrong, start here before assuming the calculator is.
         </p>
@@ -1107,9 +1376,9 @@ const extraSchema = [faqSchema, itemListSchema];
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 font-mono text-sm font-bold text-slate-600">
               {i + 1}
             </span>
-            <div class="min-w-0 max-w-[72ch]">
+            <div class="min-w-0 max-w-3xl">
               <h3 class="text-base font-bold leading-snug text-slate-900">{item.t}</h3>
-              <p class="mt-1.5 text-[0.9375rem] leading-[1.7] text-slate-700">{item.b}</p>
+              <p class="mt-1.5 text-[0.9375rem] leading-relaxed text-slate-700">{item.b}</p>
             </div>
           </li>
         ))}
@@ -1118,16 +1387,18 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ HOW TO USE YOUR SCORE ══════════════════════ -->
-  <section class="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6">
-      <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Practical guidance</span>
-      <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-        How to Use Your Cutoff Score Once You Have It
-      </h2>
-      <p class="mt-3 max-w-3xl text-[0.9375rem] leading-[1.7] text-slate-700">
-        A merit score is an input to counselling, not an outcome. These six habits turn a number into a
-        decision you can actually act on.
-      </p>
+  <section id="use-your-score" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl">
+        <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Practical guidance</span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          How to Use Your Cutoff Score Once You Have It
+        </h2>
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
+          A merit score is an input to counselling, not an outcome. These six habits turn a calculated figure into a
+          confident admission choice you can act on.
+        </p>
+      </div>
 
       <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
@@ -1140,7 +1411,7 @@ const extraSchema = [faqSchema, itemListSchema];
         ].map((item) => (
           <div class="surface-card p-5">
             <h3 class="text-base font-bold leading-snug text-slate-900">{item.t}</h3>
-            <p class="mt-2 text-[0.9375rem] leading-[1.7] text-slate-700">{item.b}</p>
+            <p class="mt-2 text-[0.9375rem] leading-relaxed text-slate-700">{item.b}</p>
           </div>
         ))}
       </div>
@@ -1148,11 +1419,16 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ FAQ ══════════════════════ -->
-  <section id="faq" class="scroll-mt-20 border-t border-slate-200 bg-white py-16 sm:py-20">
-    <div class="mx-auto max-w-4xl px-4 sm:px-6">
-      <div class="text-center">
+  <section id="faq" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Student FAQ</span>
-        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900">Frequently Asked Questions</h2>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Frequently Asked Questions
+        </h2>
+        <p class="mt-3 text-base leading-relaxed text-slate-700">
+          Clear answers to common questions about Class 12 board marksheet conversions, normalization, CGPA multipliers, and why two cutoff calculators might disagree.
+        </p>
       </div>
 
       <div class="mt-10 space-y-4">
@@ -1170,7 +1446,7 @@ const extraSchema = [faqSchema, itemListSchema];
                 <path d="m6 9 6 6 6-6"></path>
               </svg>
             </summary>
-            <p class="mt-3 max-w-[72ch] text-[0.9375rem] leading-[1.7] text-slate-700">{item.answer}</p>
+            <p class="mt-3 max-w-3xl text-[0.9375rem] leading-relaxed text-slate-700">{item.answer}</p>
           </details>
         ))}
       </div>
@@ -1178,15 +1454,16 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ TRUST / FOOTER CLUSTER ══════════════════════ -->
-  <section class="border-t border-slate-200 bg-slate-50 py-14 sm:py-16">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+  <!-- `id` added for the table of contents, same as `#no-universal-formula`. -->
+  <section id="how-we-verify" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
+    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div class="lg:col-span-2">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">How we verify</span>
-          <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+          <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             Every Formula Here Was Read From a Published Rule
           </h2>
-          <p class="mt-3 max-w-[68ch] text-[0.9375rem] leading-[1.7] text-slate-700">
+          <p class="mt-3 max-w-3xl text-base leading-relaxed text-slate-700">
             For each exam we start from the primary source: the information brochure, admission prospectus
             or official notification of the conducting body. We record the maximum score, the weighting of
             every component, the category-wise qualifying minimum, and the tie-breaking order in that exact
@@ -1217,7 +1494,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </div>
       </div>
 
-      <p class="mt-10 max-w-[92ch] border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
+      <p class="mt-10 max-w-3xl border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
         All Cut Off is an independent, student-run reference tool. It is not affiliated with, endorsed by, or
         operated by the National Testing Agency, any state examination board, or any university listed on
         this site. Calculated scores reproduce published arithmetic only and carry no guarantee of admission.
@@ -1530,6 +1807,220 @@ const extraSchema = [faqSchema, itemListSchema];
       document.addEventListener('DOMContentLoaded', initHeroSearch);
     } else {
       initHeroSearch();
+    }
+  })();
+</script>
+
+<!-- ══════════════════════ FULL DIRECTORY SEARCH OPENER ══════════════════════ -->
+<!--
+  The magnifier button in the hero row is a real control, so it needs real
+  behaviour rather than a decorative `onclick`. It delegates to `#search-btn`,
+  the header's own trigger: SearchModal already binds its open/close logic,
+  focus trap and scroll lock to that one element, and clicking it reuses all of
+  it — including `lastFocused`, so dismissing the dialog returns focus to this
+  button rather than to nothing.
+
+  Re-implementing the shortcut here with a synthetic Ctrl+K would have been the
+  shorter option and the worse one: a dispatched KeyboardEvent is not
+  `isTrusted`, so any future guard in SearchModal against synthetic input would
+  have silently broken this button first.
+
+  Both paths are guarded. If the header trigger is ever removed the fallback
+  focuses the hero field, which is still a useful action rather than a dead
+  button, and the `input` may not exist either.
+-->
+<script>
+  (function () {
+    'use strict';
+
+    function initDirectoryOpener() {
+      var opener = document.getElementById('hero-search-open-directory');
+      if (!opener) return;
+
+      opener.addEventListener('click', function () {
+        var headerTrigger = document.getElementById('search-btn');
+
+        if (headerTrigger) {
+          headerTrigger.click();
+          return;
+        }
+
+        var heroInput = document.getElementById('hero-search-input');
+        if (heroInput) heroInput.focus();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initDirectoryOpener);
+    } else {
+      initDirectoryOpener();
+    }
+  })();
+</script>
+
+<!-- ══════════════════════ TABLE-OF-CONTENTS SCROLL SPY ══════════════════════ -->
+<!--
+  Marks the table-of-contents entry for whichever section is currently under the
+  header. The active state is written as `aria-current="true"` — the same
+  attribute a screen reader would announce on a manually highlighted link — and
+  all of the styling hangs off that attribute, so there is no second "active"
+  class that could disagree with what assistive tech is told.
+
+  The observer band is the top ~55% of the viewport with the top offset for the
+  sticky header, rather than a plain 50% line: the element a reader considers
+  "current" is the one sitting under their eyes near the header, and a 50%
+  viewport line flips the highlight halfway through a tall section.
+
+  Nothing is ever un-highlighted to empty. Section boundaries are borders, so a
+  momentary gap between two sections reports zero intersections; clearing the
+  highlight there would make the entry list flicker while scrolling past a
+  divider. The previous match simply stays put.
+-->
+<script>
+  (function () {
+    'use strict';
+
+    function initTocScrollSpy() {
+      var links = Array.prototype.slice.call(document.querySelectorAll('[data-toc-link]'));
+      if (!links.length) return;
+
+      var targets = links
+        .map(function (link) {
+          return { link: link, section: document.getElementById(link.getAttribute('data-toc-link')) };
+        })
+        .filter(function (row) {
+          return !!row.section;
+        });
+
+      if (!targets.length || !('IntersectionObserver' in window)) return;
+
+      function setActive(id) {
+        targets.forEach(function (row) {
+          var link = row.link;
+          if (link.getAttribute('data-toc-link') === id) {
+            link.setAttribute('aria-current', 'true');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+      }
+
+      var visible = [];
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            var index = visible.indexOf(entry.target);
+            if (entry.isIntersecting && index === -1) visible.push(entry.target);
+            if (!entry.isIntersecting && index !== -1) visible.splice(index, 1);
+          });
+
+          // `targets` is already in document order, so the first visible match
+          // is the topmost section on screen, not the last one to fire.
+          var active = null;
+          for (var i = 0; i < targets.length; i += 1) {
+            if (visible.indexOf(targets[i].section) !== -1) {
+              active = targets[i].link.getAttribute('data-toc-link');
+              break;
+            }
+          }
+
+          if (active) setActive(active);
+        },
+        { rootMargin: '-88px 0px -55% 0px', threshold: 0 }
+      );
+
+      targets.forEach(function (row) {
+        observer.observe(row.section);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTocScrollSpy);
+    } else {
+      initTocScrollSpy();
+    }
+  })();
+</script>
+
+<!-- ══════════════════════ SCROLL REVEAL ══════════════════════ -->
+<!--
+  `.reveal` elements are hidden by `html.js-reveal` in global.css, and that
+  class is set by the inline script at the very top of the body — early
+  precisely so nothing is painted hidden and then snapped back. This block only
+  has to decide when each element becomes visible.
+
+  Everything on screen at init is revealed synchronously, before the observer is
+  even created. Waiting for the observer's first callback instead left the
+  contents section, the state strip and the top of `#what-is` invisible for the
+  frames between this script running and that callback landing — a visible flash
+  on exactly the content a returning reader lands on first.
+
+  `prefers-reduced-motion: reduce` and browsers without IntersectionObserver both
+  short-circuit to "everything visible": in both cases the reader asked for, or
+  the engine can only provide, a page with no reveal at all, and a half-revealed
+  page is worse than either.
+-->
+<script>
+  (function () {
+    'use strict';
+
+    function initScrollReveal() {
+      var targets = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+      if (!targets.length) return;
+
+      function show(el) {
+        el.classList.add('is-visible');
+      }
+
+      var reduceMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        targets.forEach(show);
+        return;
+      }
+
+      var viewportHeight = window.innerHeight || 0;
+      var pending = targets.filter(function (el) {
+        var rect = el.getBoundingClientRect();
+        return rect.top < viewportHeight && rect.bottom > 0;
+      });
+
+      pending.forEach(show);
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            show(entry.target);
+            // One-shot: once a section has arrived it stays, so scrolling back up
+            // never replays the animation over content the reader has already read.
+            observer.unobserve(entry.target);
+          });
+        },
+        {
+          // Fires as the element settles into the viewport rather than at the
+          // instant its top edge grazes it — the -10% bottom margin is what keeps
+          // the reveal from firing for a block still mostly below the fold.
+          rootMargin: '0px 0px -10% 0px',
+          threshold: 0.08
+        }
+      );
+
+      targets.forEach(function (el) {
+        // Anything already revealed above is skipped: it needs no observation,
+        // and re-adding it to the observer would be a wasted entry.
+        if (el.classList.contains('is-visible')) return;
+        observer.observe(el);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initScrollReveal);
+    } else {
+      initScrollReveal();
     }
   })();
 </script>
