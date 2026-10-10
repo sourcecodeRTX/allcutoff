@@ -1,5 +1,5 @@
 // @ts-check
-import { readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
@@ -72,6 +72,30 @@ const lastmodFromPage = (canonical) => {
   }
 };
 
+/**
+ * Copy the generated sitemap-index.xml to sitemap.xml so both standard paths
+ * resolve identical, valid XML sitemaps.
+ */
+const syncSitemapXml = {
+  name: 'allcutoff-sync-sitemap-xml',
+  hooks: {
+    'astro:build:done': ({ dir }) => {
+      const targetDir = typeof dir === 'string' ? dir : fileURLToPath(dir);
+      const sitemapIndex = join(targetDir, 'sitemap-index.xml');
+      const sitemapZero = join(targetDir, 'sitemap-0.xml');
+      const sitemapXml = join(targetDir, 'sitemap.xml');
+      if (existsSync(sitemapIndex)) {
+        copyFileSync(sitemapIndex, sitemapXml);
+        copyFileSync(sitemapIndex, join('public', 'sitemap-index.xml'));
+        copyFileSync(sitemapIndex, join('public', 'sitemap.xml'));
+      }
+      if (existsSync(sitemapZero)) {
+        copyFileSync(sitemapZero, join('public', 'sitemap-0.xml'));
+      }
+    },
+  },
+};
+
 export default defineConfig({
   site: SITE,
   // One canonical, one sitemap URL, one dev-server behaviour per page.
@@ -106,6 +130,7 @@ export default defineConfig({
         return lastmod ? { ...item, url, lastmod } : { ...item, url };
       },
     }),
+    syncSitemapXml,
   ],
   redirects: {
     '/about-us': '/about',

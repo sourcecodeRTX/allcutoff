@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
+Sitemap: https://allcutoff.com/sitemap.xml
 Sitemap: https://allcutoff.com/sitemap-index.xml

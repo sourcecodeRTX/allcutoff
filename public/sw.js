@@ -35,8 +35,7 @@ const NAV_TIMEOUT_MS = 4000;
 const OFFLINE_FALLBACK = '/';
 const PAGE_CACHE_LIMIT = 12;
 const STATIC_FILE = /\.(?:css|js|mjs|woff2?|ttf|otf|svg|png|jpe?g|gif|webp|avif|ico|webmanifest)$/i;
-/* Crawler-only: a share/unfurl fetch must never be answered from a stale cache. */
-const NEVER_CACHE = new Set(['/og-image.png', '/og-image.svg', '/robots.txt']);
+const NEVER_CACHE = new Set(['/og-image.png', '/og-image.svg', '/robots.txt', '/sitemap.xml', '/sitemap-index.xml', '/sitemap-0.xml']);
 
 const cacheable = (res) => res && res.ok && res.type !== 'opaque';
 const isHtml = (res) => /text\/html/i.test(res.headers.get('content-type') || '');
