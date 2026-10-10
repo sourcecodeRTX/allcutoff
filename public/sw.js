@@ -15,7 +15,7 @@
  *   everything else     -> network only.
  */
 
-const CACHE_VERSION = 'allcutoff-v1';
+const CACHE_VERSION = 'allcutoff-v2';
 const ASSET_CACHE = CACHE_VERSION;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const ACTIVE_CACHES = [ASSET_CACHE, PAGE_CACHE];
@@ -124,13 +124,36 @@ async function networkFirst(event) {
       res = null;
     }
   }
-  // Never cache a failed, redirected or non-HTML response.
-  if (cacheable(res) && !res.redirected && isHtml(res)) {
-    pages.put(key, res.clone()).then(prunePages).catch(() => {});
+
+  // Network succeeded: cache valid HTML and ALWAYS return the network response.
+  if (res) {
+    if (cacheable(res) && isHtml(res)) {
+      try {
+        pages.put(key, res.clone()).then(prunePages).catch(() => {});
+        // If the URL was redirected (e.g. /about -> /about/), also record under the final destination
+        if (res.redirected && res.url) {
+          const finalUrl = new URL(res.url);
+          const finalKey = finalUrl.origin + finalUrl.pathname;
+          if (finalKey !== key) {
+            pages.put(finalKey, res.clone()).catch(() => {});
+          }
+        }
+      } catch (err) {
+        /* Caching failed, continue returning network response */
+      }
+    }
     return res;
   }
+
+  // Network failed or offline: check cache (both with and without trailing slash), then offline shell
+  const altPathname = url.pathname.endsWith('/')
+    ? url.pathname.slice(0, -1)
+    : `${url.pathname}/`;
+  const altKey = url.origin + altPathname;
+
   return (
     (await pages.match(key, { ignoreVary: true })) ||
+    (await pages.match(altKey, { ignoreVary: true })) ||
     (await caches.match(OFFLINE_FALLBACK)) ||
     Response.error()
   );
