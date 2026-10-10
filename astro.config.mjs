@@ -95,6 +95,10 @@ export default defineConfig({
   integrations: [
     captureOutDir,
     sitemap({
+      filter: (page) =>
+        !['/about-us', '/contact-us', '/privacy-policy', '/terms-and-conditions', '/404', '/500'].some(
+          (r) => page.endsWith(r) || page.endsWith(r + '/')
+        ),
       serialize: (item) => {
         const url = toCanonical(item.url);
         if (!url) return undefined;
@@ -103,6 +107,12 @@ export default defineConfig({
       },
     }),
   ],
+  redirects: {
+    '/about-us': '/about',
+    '/contact-us': '/contact',
+    '/privacy-policy': '/privacy',
+    '/terms-and-conditions': '/terms',
+  },
   vite: {
     plugins: [tailwindcss()],
   },

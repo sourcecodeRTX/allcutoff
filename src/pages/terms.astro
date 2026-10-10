@@ -1,0 +1,133 @@
+---
+import Layout, { SITE_URL } from '../layouts/Layout.astro';
+import { ACADEMIC_YEAR, CALCULATORS } from '../data/calculators';
+
+const siteUrl = SITE_URL;
+const canonical = `${siteUrl}/terms`;
+
+/** Real content-review date for this policy. Never the build clock. */
+const lastUpdated = '2026-10-06';
+
+const YEAR_LABEL = (CALCULATORS[0]?.academicYear ?? ACADEMIC_YEAR).replace(/\s*-\s*/g, '-');
+
+const title = "Terms & Conditions - Student Usage Agreement";
+const description = "Terms and conditions for All Cut Off (allcutoff.com): free client-side cutoff calculators, educational use guidelines, and limitation of liability.";
+
+const extraSchema = [
+  {
+    '@type': 'BreadcrumbList',
+    '@id': `${canonical}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Terms & Conditions', item: canonical }
+    ]
+  }
+];
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={lastUpdated}
+  extraSchema={extraSchema}
+>
+  <section class="border-b border-slate-200 bg-white py-12 sm:py-16">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6">
+      <nav aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-2 text-[0.9375rem] text-slate-600">
+          <li><a href="/" class="transition-colors hover:text-blue-600">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="font-medium text-slate-900">Terms &amp; Conditions</li>
+        </ol>
+      </nav>
+      <span class="mt-6 block font-mono text-xs uppercase tracking-widest text-blue-600">TERMS OF SERVICE</span>
+      <h1 class="mt-2 text-[1.75rem] text-slate-900 sm:text-[2.125rem]">
+        Terms &amp; Conditions
+      </h1>
+      <p class="mt-3 text-[0.9375rem] text-slate-700 sm:text-base">
+        Usage guidelines, service agreement, and transparency policies. Last updated: <time datetime={lastUpdated}>{lastUpdated}</time>
+      </p>
+    </div>
+  </section>
+
+  <section class="py-12 sm:py-16" aria-labelledby="terms-content-heading">
+    <div class="mx-auto max-w-4xl space-y-6 px-4 sm:px-6">
+      <h2 id="terms-content-heading" class="sr-only">Terms and conditions details</h2>
+      <div class="hairline-card space-y-4 p-6 text-[0.9375rem] leading-[1.7] text-slate-700 sm:p-8">
+        <h3 class="text-base font-bold text-slate-900">1. Acceptance of Terms</h3>
+        <p>
+          By visiting, accessing, or using All Cut Off (<a href="/" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">allcutoff.com</a>), you agree to comply with and be bound by these Terms &amp; Conditions, our <a href="/privacy" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Privacy Policy</a>, and our <a href="/disclaimer" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Official Disclaimer</a>. If you do not agree with any part of these terms, please discontinue using the website immediately.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">2. Free Educational Self-Assessment Tool</h3>
+        <p>
+          All Cut Off provides free, open-access cutoff calculators for higher education entrance exams and university admissions across India (including TNEA, KCET, AP/TS EAPCET, NEET UG, TNAU, CUET, KEAM, GUJCET, MHT CET, TANUVAS, and related streams). The service is designed solely as an informational reference and preliminary self-assessment aid for students, parents, and academic counselors during the {YEAR_LABEL} admissions cycle.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">3. Independent Project &amp; No Government Affiliation</h3>
+        <p>
+          All Cut Off is an independent, non-commercial educational project. We are not affiliated with, authorized by, sponsored by, or in any way officially connected to any government department, ministry, examining board, or admissions authority. This includes, without limitation:
+        </p>
+        <ul class="mt-2 list-disc space-y-1.5 pl-5 text-slate-700">
+          <li>The National Testing Agency (NTA)</li>
+          <li>Directorate of Technical Education (DoTE) Tamil Nadu / Anna University</li>
+          <li>Karnataka Examinations Authority (KEA)</li>
+          <li>Andhra Pradesh &amp; Telangana State Councils of Higher Education (APSCHE / TGCHE)</li>
+          <li>Medical Counselling Committee (MCC) / National Medical Commission (NMC)</li>
+          <li>Any central or state university or examination board mentioned on this website</li>
+        </ul>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">4. Calculations Are Not Official Ranks or Seat Allotments</h3>
+        <p>
+          Scores and cutoffs computed by our tools are mathematical calculations derived from published normalization and weighting rules. A computed score does <strong>not</strong> represent an official merit rank, qualifying certificate, counselling allotment, or admission guarantee into any institution. Official merit lists, community reservations, round cutoffs, and seat allotments are published exclusively by the respective statutory conducting authorities.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">5. Client-Side Processing &amp; User Input Responsibility</h3>
+        <p>
+          All cutoff math executes entirely inside your device's web browser using client-side JavaScript. No subject marks, entrance scores, or personal identifiers are uploaded to or stored on our servers. You are solely responsible for ensuring that the values, marks, and categories you input reflect your actual, official board marks and scorecard figures.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">6. Official Authorities &amp; Brochure Precedence</h3>
+        <p>
+          While we diligently verify our mathematical models against officially published brochures, information bulletins, and government orders, admission rules and normalization matrices may change through corrigenda. In the event of any difference between an output on this website and an official circular or information brochure issued by the conducting authority, <strong>the official authority's brochure is always correct</strong>. Always verify admission criteria directly on the official counselling portal before making academic or financial commitments.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">7. Acceptable Use Policy</h3>
+        <p>
+          You agree to use All Cut Off for lawful, non-commercial educational purposes only. You must not:
+        </p>
+        <ul class="mt-2 list-disc space-y-1.5 pl-5 text-slate-700">
+          <li>Use automated scripts, bots, spiders, or scrapers to bulk-harvest formulas, data, or content without explicit permission.</li>
+          <li>Attempt to interfere with the integrity, availability, or operational security of the website.</li>
+          <li>Present, forge, or represent any calculation output from this site as an official government or university rank document or admission card.</li>
+        </ul>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">8. Intellectual Property</h3>
+        <p>
+          The layout, user interface design, visual assets, software implementation, and editorial explanations on allcutoff.com are protected by copyright and intellectual property laws. Public admission formulas, statutory eligibility criteria, and examination trademarks belong to their respective statutory examining authorities.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">9. Outbound Links to Official Portals</h3>
+        <p>
+          Our pages link directly to official state and central admission portals (e.g., tneaonline.org, cetonline.karnataka.gov.in, exams.nta.ac.in) for student verification. We have no control over the content, uptime, availability, or privacy practices of those external sites.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">10. Disclaimer of Warranties &amp; Limitation of Liability</h3>
+        <p>
+          All Cut Off is provided on an "as is" and "as available" basis without warranties of any kind, whether express, statutory, or implied. To the maximum extent permitted under applicable law, All Cut Off, its maintainers, and contributors disclaim all liability for any direct, indirect, incidental, or consequential decisions, losses, or expenses resulting from reliance on the calculations or information provided on this platform.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">11. Changes to Terms</h3>
+        <p>
+          We may update these Terms &amp; Conditions periodically as admission rules or website functionality evolve. Any changes will be published on this page with an updated review date. Your continued use of the website following any modification constitutes your acceptance of the updated terms.
+        </p>
+
+        <h3 class="pt-2 text-base font-bold text-slate-900">12. Contact &amp; Formula Corrections</h3>
+        <p>
+          If you have questions about these Terms &amp; Conditions or notice a rule change in an official brochure, please contact us through our <a href="/contact" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">contact page</a>. For our verification process and student safety practices, read <a href="/about#how-formulas-are-verified" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">How Formulas Are Verified</a>, our <a href="/privacy" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Privacy Policy</a>, and our <a href="/disclaimer" class="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Official Disclaimer</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>

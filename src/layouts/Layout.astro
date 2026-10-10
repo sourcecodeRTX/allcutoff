@@ -134,6 +134,8 @@ interface Props {
   /** Real content-review date for THIS page (YYYY-MM-DD). Never the build clock. */
   dateModified?: string;
   extraSchema?: unknown | unknown[];
+  /** When true, outputs <meta name="robots" content="noindex, nofollow" /> */
+  noindex?: boolean;
 }
 
 const {
@@ -142,7 +144,8 @@ const {
   currentCategory = '',
   canonicalUrl,
   dateModified,
-  extraSchema
+  extraSchema,
+  noindex = false
 } = Astro.props;
 
 const siteUrl = SITE_URL;
@@ -277,7 +280,11 @@ const jsonLd = {
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="author" content={brandName} />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    {noindex ? (
+      <meta name="robots" content="noindex, nofollow" />
+    ) : (
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    )}
     <meta name="theme-color" content="#2563eb" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
     <meta name="color-scheme" content="light" />
