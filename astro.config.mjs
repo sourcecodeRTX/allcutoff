@@ -100,6 +100,9 @@ export default defineConfig({
   site: SITE,
   // One canonical, one sitemap URL, one dev-server behaviour per page.
   trailingSlash: 'never',
+  devToolbar: {
+    enabled: false,
+  },
   /*
    * `compressHTML` is OFF, deliberately.
    *
