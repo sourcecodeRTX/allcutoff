@@ -22,13 +22,13 @@ const ACTIVE_CACHES = [ASSET_CACHE, PAGE_CACHE];
 
 const CORE_ASSETS = [
   '/',
-  '/manifest.webmanifest',
+  '/site.webmanifest',
   '/favicon.svg',
-  '/icon-192.svg',
-  '/icon-512.svg',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/favicon-96x96.png',
+  '/favicon.ico',
   '/apple-touch-icon.png',
+  '/web-app-manifest-192x192.png',
+  '/web-app-manifest-512x512.png',
 ];
 
 const NAV_TIMEOUT_MS = 4000;

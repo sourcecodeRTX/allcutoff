@@ -1,0 +1,43 @@
+---
+interface Props {
+  class?: string;
+  size?: number | string;
+}
+
+const { class: className = 'h-8 w-8', size } = Astro.props;
+const sizeProps = size ? { width: size, height: size } : {};
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 600 600"
+  class={className}
+  {...sizeProps}
+  aria-hidden="true"
+  focusable="false"
+>
+  <rect width="600" height="600" rx="60" fill="#2889cf"></rect>
+  <svg
+    x="82.5"
+    y="82.5"
+    width="435"
+    height="435"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1.85"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <rect width="16" height="20" x="4" y="2" rx="2"></rect>
+    <line x1="8" x2="16" y1="6" y2="6"></line>
+    <line x1="16" x2="16" y1="14" y2="18"></line>
+    <path d="M16 10h.01"></path>
+    <path d="M12 10h.01"></path>
+    <path d="M8 10h.01"></path>
+    <path d="M12 14h.01"></path>
+    <path d="M8 14h.01"></path>
+    <path d="M12 18h.01"></path>
+    <path d="M8 18h.01"></path>
+  </svg>
+</svg>

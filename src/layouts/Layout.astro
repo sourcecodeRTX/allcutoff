@@ -178,7 +178,7 @@ const graph: Record<string, unknown>[] = [
     '@id': organizationId,
     name: brandName,
     url: siteUrl,
-    logo: `${siteUrl}/icon-512.png`
+    logo: `${siteUrl}/logo.svg`
   }
 ];
 
@@ -265,18 +265,13 @@ const jsonLd = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Icons & App Metadata. The PNGs are real, already-built assets, so they
-         are declared as sized fallbacks rather than shipping a URL that 404s.
-         `mask-icon` is deliberately absent: it requires a MONOCHROME svg and
-         /favicon.svg is full-colour, so Safari was rendering nothing. -->
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="AllCutOff" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Primary SEO Meta Tags -->
     <title>{fullTitle}</title>

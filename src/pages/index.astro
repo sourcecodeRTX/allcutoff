@@ -8,7 +8,7 @@ const SITE = SITE_URL;
 const canonical = `${SITE}/`;
 
 /** Real content-review date for the home page. Never the build clock. */
-const HOME_REVIEWED = '2026-10-06';
+const HOME_REVIEWED = '2026-10-10';
 
 /**
  * Single source of truth for the academic year: read it off the registry rather
@@ -344,77 +344,93 @@ const pageDesc = clampDescription(
 /* -------------------------------------------------------------------------
  * Homepage FAQ — single source of truth for the visible accordion and the
  * FAQPage JSON-LD node, so schema and on-page copy can never drift apart.
+ * Structured for Google Rich Snippets (FAQPage schema) and AdSense E-E-A-T.
  * ---------------------------------------------------------------------- */
 const HOME_FAQS = [
   {
+    question: 'What is the All Cut Off calculator?',
+    answer:
+      'All Cut Off is a free, privacy-first admission calculator built specifically for Indian college admissions. It automates the exact mathematical formulas published in the official admission brochures of conducting authorities — including TNEA Anna University, KEA Karnataka, APSCHE, TGCHE, NTA NEET UG, Maharashtra CET Cell, ACPC Gujarat, and CEE Kerala. Instead of manually converting marks or relying on guesswork, students can enter their Class 12 board marks and entrance test scores to instantly calculate their verified composite cutoff score. Every calculation runs entirely in your browser with zero registration, no phone numbers, and complete privacy.'
+  },
+  {
+    question: 'What is the meaning of cut off?',
+    answer:
+      'In college admissions, a cut off is the benchmark score used to determine whether an applicant qualifies for counselling or secures a seat in a specific college and branch. It takes two distinct forms: a qualifying cut off and an admission closing cut off. A qualifying cut off is the minimum score required simply to be eligible for counselling (such as the 50th percentile in NEET UG or 45% aggregate in 12th PCM for engineering). An admission cut off, or closing rank, is the final score of the last student admitted to a specific branch in a counselling round. In state engineering admissions like TNEA, cut off also refers to your own composite merit score calculated out of 200 from board marks.'
+  },
+  {
+    question: 'How to calculate cut-off?',
+    answer:
+      'To calculate your admission cut-off, you must convert your scorecard marks into the weighted composite score defined by your target counselling authority. First, identify your core group subjects (Mathematics, Physics, Chemistry for engineering; Biology, Physics, Chemistry for medical and agriculture). Second, convert each subject mark to a 100-point scale if your board scored them out of 200 or 50. Third, apply the governing authority’s formula. For example, in Tamil Nadu engineering, take Maths in full and add half of Physics and half of Chemistry: Cutoff = Maths + (Physics / 2) + (Chemistry / 2). For exams that combine entrance and board results like KCET or EAPCET, scale each component according to the published ratio (such as 50:50 or 75:25) and sum them.'
+  },
+  {
+    question: 'What is cut off in 12th?',
+    answer:
+      'Cut off in 12th refers to the composite merit score derived specifically from your Class 12 Higher Secondary (HSC / CBSE / ISC / PUC) board marks to determine undergraduate college admissions. Unlike your overall board percentage, which averages all 5 or 6 subjects including language papers (English, Tamil, Hindi, etc.), a 12th admission cut off evaluates only your core domain subjects. For engineering admissions, the 12th cut off is calculated strictly from Physics, Chemistry, and Mathematics (PCM). For medical, paramedical, and agriculture courses, it is based on Physics, Chemistry, and Biology (PCB). For arts and commerce degrees (such as TNGASA), it is calculated out of 400 by summing the top four academic subjects while discarding languages.'
+  },
+  {
+    question: 'How is 200 cut-off calculated?',
+    answer:
+      'A 200-mark cut off is the official composite standard used for Tamil Nadu Engineering Admissions (TNEA) and Tamil Nadu Paramedical counselling. For engineering, Mathematics carries 100 marks, Physics carries 50 marks, and Chemistry carries 50 marks. The formula is: Cutoff = Maths + (Physics / 2) + (Chemistry / 2). For example, if a student scores 94 in Mathematics, 86 in Physics, and 82 in Chemistry out of 100 each, the calculation is 94 + (86 / 2) + (82 / 2) = 94 + 43 + 41 = 178.00 out of 200. For Tamil Nadu Paramedical admissions, Biology is taken out of 100 while Physics and Chemistry are averaged: Biology + ((Physics + Chemistry) / 2).'
+  },
+  {
+    question: 'How to calculate cut off for 600 marks?',
+    answer:
+      'In boards like Tamil Nadu State Board HSC where the Class 12 total is 600 marks (6 subjects of 100 marks each), calculating your cut off depends on the degree you are pursuing. To calculate your overall 12th percentage, divide your total marks by 6: (Total Marks / 600) * 100. To calculate your 200-mark engineering cutoff from a 600-mark marksheet, discard Language 1, Language 2, and your fourth elective (such as Computer Science or Biology), and calculate Maths + (Physics / 2) + (Chemistry / 2). For government Arts and Science admissions (TNGASA), exclude both 100-mark language papers and sum the remaining four core subjects to get your cut off out of 400.'
+  },
+  {
+    question: 'How to calculate engineering cut off marks for 12th?',
+    answer:
+      'Engineering cut off calculation from 12th marks depends on the state conducting the counselling. In Tamil Nadu (TNEA), engineering cut off is derived entirely from 12th marks out of 200 using: Maths + (Physics / 2) + (Chemistry / 2), with no entrance exam involved. In Karnataka (KCET), 12th board PCM marks out of 300 are scaled to 50% and combined equally with your KCET entrance PCM score scaled to 50%: (Board PCM / 300 * 50) + (KCET / 180 * 50). In Andhra Pradesh and Telangana (EAPCET), 25% weightage is given to your 12th Intermediate group percentage and 75% to your EAPCET entrance score. In Maharashtra (MHT CET), 12th marks serve as a 45% qualifying eligibility gate, while the merit rank is determined by entrance percentile.'
+  },
+  {
+    question: 'What cut off calculator for engineering?',
+    answer:
+      'The engineering cut off calculator you should use depends directly on your target state and counselling portal. For admissions to Anna University and affiliated engineering colleges in Tamil Nadu, use the TNEA Engineering Cutoff Calculator (200-mark scale). For engineering colleges in Karnataka (such as RVCE, BMSCE, or MSRIT), use the KCET Combined Score Calculator (50:50 board-plus-entrance model). For Andhra Pradesh and Telangana state colleges, use the AP & TS EAPCET Calculator (75% entrance + 25% intermediate). For Maharashtra colleges (COEP, VJTI), use the MHT CET Calculator, and for Kerala engineering, use the KEAM 50:50 index calculator. All Cut Off provides dedicated calculators for each of these authorities so you never calculate with the wrong formula.'
+  },
+  {
+    question: 'Is 170 a good cutoff?',
+    answer:
+      'A cut off of 170 out of 200 (85%) is a solid, competitive score in state engineering counselling such as TNEA. In top tier-1 government institutions like Anna University CEG, MIT Campus, and GCT Coimbatore, a 170 cut off can secure core engineering branches (such as Mechanical, Civil, or Production Engineering) under reserved categories (BC, MBC, SC, ST), though Computer Science and IT in open competition typically require 190+. In reputable tier-2 autonomous and private institutions, a 170 cutoff regularly opens seats in Electronics & Communication (ECE), Electrical (EEE), Mechanical, and specialised emerging computing streams. For tier-3 accredited colleges, 170 comfortably qualifies for any branch including CSE.'
+  },
+  {
+    question: 'What is the difference between a qualifying cut off and an admission closing cut off?',
+    answer:
+      'A qualifying cut off is the predetermined minimum score or percentile set by an exam authority to decide whether a candidate has passed and is eligible to participate in counselling. For example, NEET UG mandates the 50th percentile for General category candidates, and MHT CET requires 45% aggregate in 12th PCM. An admission closing cut off, on the other hand, is not fixed in advance; it is the actual score or rank of the final candidate who took the last available seat in a specific college, branch, and category during counselling. Meeting the qualifying cut off makes you eligible to apply, but securing admission depends on beating the closing cut off.'
+  },
+  {
     question: `Are these cutoff calculators updated for the ${YEAR_LABEL} admission season?`,
     answer:
-      'Yes. Every formula on All Cut Off is transcribed from the admission brochure, information bulletin or official notification of the conducting body for the current cycle — DoTE Tamil Nadu, KEA Karnataka, APSCHE and TGCHE, ACPC Gujarat, CEE Kerala, the Maharashtra CET Cell, TNAU, TANUVAS, DCE Tamil Nadu, the NTA and the University of Delhi. When a body amends its merit rule, the calculator is updated rather than silently kept.'
-  },
-  {
-    question: 'Do I need to sign up, log in, or enter my phone number?',
-    answer:
-      'No. All Cut Off has no accounts and no paywall. There is no registration, no OTP, and no email capture. Every calculation runs entirely inside your browser, so the marks you type are never transmitted to our servers or stored anywhere.'
-  },
-  {
-    question: 'What exactly is a cutoff score, and how is it different from my admission rank?',
-    answer:
-      'A cutoff score is the raw or composite mark that your counselling authority computes from your board and entrance results, such as 184 out of 200 in TNEA or 82.5 out of 100 in KCET. A rank is your position in the merit list after every candidate with a similar score has been separated by the published tie-breaking rules and after category reservation is applied. A cutoff score tells you what to expect; only the published merit list tells you where you actually landed.'
+      'Yes. Every formula on All Cut Off is transcribed from the latest official admission brochure, information bulletin, or gazette notification of the conducting body — including DoTE Tamil Nadu, KEA Karnataka, APSCHE and TGCHE, ACPC Gujarat, CEE Kerala, Maharashtra CET Cell, TNAU, TANUVAS, and NTA. Whenever an authority amends its merit rules or tie-breaking order, the corresponding calculator is updated immediately rather than left on legacy formulas.'
   },
   {
     question: 'Can CBSE or ICSE students use the state board cutoff calculators?',
     answer:
-      'Yes, with one rule in mind: these calculators expect each subject mark out of 100, which is what both CBSE and ICSE print for most subjects. If your board evaluates a subject out of 50 or 200, convert it to a percentage out of 100 first. Board-level normalisation used by states such as Kerala is a statistical process that only the conducting authority can apply, so enter your published standardised PCM percentage there rather than a raw total.'
-  },
-  {
-    question: 'Why does the same calculator give a different number from my college website?',
-    answer:
-      'Usually one of three things. First, the college may be quoting the previous year closing mark, not the live calculated merit score — those are different numbers. Second, some portals add a bonus or a normalisation step we cannot reproduce without the full normalised marks. Third, a genuine formula change in a new brochure. Send the brochure reference and the marks you used to our contact page and we will check and correct the calculator.'
-  },
-  {
-    question: 'Is the result guaranteed admission?',
-    answer:
-      'No, and we will not pretend otherwise. A calculator reproduces the published arithmetic, which is the part most students get wrong by hand. Seat availability, category reservation, choice freezing, tie-breakers on identical scores, and the order of rounds all sit above that arithmetic and are decided by the conducting authority. Always treat our number as your merit score and the official counselling portal as the decision.'
-  },
-  {
-    question: 'What is a cut off calculator, in plain words?',
-    answer:
-      'A cut off calculator converts the marks printed on your 12th board scorecard and your entrance scorecard into the single merit number your counselling authority ranks on. For most engineering seats that number is not your percentage and not your entrance rank — it is a weighted figure produced by a formula the state publishes, such as Maths in full plus Physics and Chemistry halved for TNEA, or a 50:50 board-plus-exam composite for KCET. The calculator applies that formula exactly, so your score can be checked by hand.'
-  },
-  {
-    question: 'How do I calculate my cut off from 12th board marks?',
-    answer:
-      'It depends on the state. In Tamil Nadu engineering, add your Mathematics mark to half your Physics mark plus half your Chemistry mark: 88 Maths, 76 Physics and 81 Chemistry gives 88 + 38 + 40.5 = 166.5 out of 200. In Karnataka, your 12th PCM total out of 300 is scaled to 50 marks and added to your KCET score scaled to 50, so board marks alone never decide the rank. In Kerala the 12th marks enter on a 5:3:2 ratio for Maths, Physics and Chemistry alongside the entrance score. This page has the worked arithmetic for each.'
+      'Yes. Admission authorities rank all applicants on identical arithmetic regardless of their school board. A CBSE or ICSE student applying to TNEA or KCET is evaluated with the exact same formula as a state board candidate. The only requirement is to enter each subject mark on a 100-point scale. If your marksheet lists marks out of 50 or 200, scale them to 100 first. Where a state implements official statistical normalisation across different boards (such as KEAM Kerala), enter your published standardised mark rather than raw scorecard numbers.'
   },
   {
     question: 'My 12th board marks are out of 200 for one subject. What do I enter?',
     answer:
-      'Convert to a percentage out of 100 before entering it, because every calculator here reads each subject on a 100-point scale. A subject score of 184 out of 200 becomes 92, and 162 out of 200 becomes 81. If your board prints a CGPA instead of marks, multiply it by 10 — a 9.2 CGPA is 92%. Where a state applies its own statistical normalisation, such as Kerala, use the standardised figure published by the conducting authority, because a raw total will not match their index.'
-  },
-  {
-    question: 'What is the difference between a cut off score, a closing mark and a qualifying mark?',
-    answer:
-      'A qualifying mark is the minimum you must score just to appear in the merit list, such as 50% of HSC PCM marks for MHT CET or the 40 marks out of 160 that OC and BC candidates need in EAPCET. A cut off score is your own weighted merit figure. A closing mark is the last score at which a seat was actually filled in the previous round, which is a historical outcome rather than a rule. Your calculator produces the middle number; the other two decide whether you get called.'
-  },
-  {
-    question: 'Do these calculators work for CBSE, ICSE and other boards?',
-    answer:
-      'Yes. The formulas are published by the admitting authority, not by your Class 12 board, so a CBSE candidate sitting TNEA and a Tamil Nadu board candidate sitting TNEA are ranked on identical arithmetic. The only requirement is that you enter each subject as a mark out of 100. Students of other boards that print subject totals out of 50 or out of 200 should convert to a percentage first, and students with a CGPA should multiply by 10.'
+      'Convert your marks to a percentage out of 100 before entering them into our calculators, as each subject input expects a 100-point scale. For example, if your marksheet shows 176 out of 200, divide by 2 to enter 88. If your board awards letter grades or CGPA instead of marks, convert CGPA to percentage using your board’s official multiplier (typically CGPA * 9.5 for CBSE or CGPA * 10 for universities).'
   },
   {
     question: 'Can I use one cut off calculator for every state?',
     answer:
-      'No, and using one is the single most common reason a student misreads their own merit list. Tamil Nadu halves Physics and Chemistry; Karnataka splits the weight equally between board and entrance; Andhra Pradesh and Telangana weight the entrance at 75% against 25% of Intermediate marks; Kerala uses a 5:3:2 subject ratio with a scaled entrance score; Gujarat uses 60:40 board theory against the entrance. Each of those is on this site as its own calculator, because they genuinely produce different numbers from the same marks.'
+      'No. Using a generic calculator is the most common reason students misunderstand their counselling rank. Different states use fundamentally different formulas: Tamil Nadu weights Mathematics at 100% and halves Physics and Chemistry; Karnataka splits weight 50:50 between board PCM and KCET entrance; Andhra Pradesh and Telangana assign 75% to EAPCET entrance and 25% to Intermediate group marks; Kerala applies a 5:3:2 subject ratio; and Gujarat uses 50% theory board plus 50% GUJCET. Always use the state-specific calculator matching your target counselling authority.'
   },
   {
-    question: 'Why does my calculator score not match the cutoff quoted by a coaching institute?',
+    question: 'Why does the calculator score differ from college closing marks or cutoffs?',
     answer:
-      'Almost always because two different numbers are being compared. Institutes usually quote a previous year’s closing mark, which is a historical figure decided by seat availability and category reservation, while a calculator produces the live merit score from your own marks. A second cause is a coaching formula that drops an eligibility gate, such as the HSC percentage condition in MHT CET or the minimum normalised entrance score in KEAM, which changes the label but not the score. Check both numbers on the same scale before concluding either one is wrong.'
+      'A calculator computes your live composite merit score from your actual marks. In contrast, cutoff tables published on college websites or coaching portals usually quote the previous year’s closing mark — the historical score at which the last seat was filled. Closing marks fluctuate every year based on exam difficulty, total applicants, and seat quotas, whereas the calculation formula remains constant. Compare your calculated merit score against the previous year’s closing range for your category to assess admission probability accurately.'
   },
   {
-    question: 'Is my data safe? Do you store my marks?',
+    question: 'Is the calculated cutoff score a guarantee of admission?',
     answer:
-      'There is nothing to store, because there are no accounts on this site. Every formula is executed client-side in your own browser, the marks you type never travel to a server, and we hold no register, no login and no contact list. That also means the tools keep working on a slow connection or completely offline once the page has loaded.'
+      'No. A cutoff calculator accurately reproduces the official mathematical formula used to compute your merit score, eliminating manual calculation errors. However, final seat allotment depends on external factors decided during counselling: seat matrix availability, category-wise reservation quotas (General, OBC, SC, ST, EWS), candidate choice ordering, and official tie-breaking rules applied when multiple students achieve identical composite scores. Always treat your calculated score as your official merit score and refer to the statutory counselling portal for final allotment.'
+  },
+  {
+    question: 'Do I need to sign up, log in, or enter personal data to calculate my cutoff?',
+    answer:
+      'No. All Cut Off is completely free and requires no registration, login, phone number, or email address. All calculations execute client-side directly within your web browser. The marks you enter are never sent to a server, tracked, or stored in any database. The platform remains fully private and works seamlessly even on low-bandwidth connections or offline once loaded.'
   }
 ];
 
@@ -1413,7 +1429,7 @@ const extraSchema = [faqSchema, itemListSchema];
           Frequently Asked Questions
         </h2>
         <p class="mt-3 text-base leading-relaxed text-slate-700">
-          Clear answers to common questions about Class 12 board marksheet conversions, normalization, CGPA multipliers, and why two cutoff calculators might disagree.
+          Clear, authoritative answers to common questions about admission cutoff calculation, Class 12 board marksheet conversion, 200 and 600-mark systems, engineering merit formulas, and closing ranks.
         </p>
       </div>
 
