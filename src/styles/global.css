@@ -927,40 +927,10 @@
     color: var(--color-mute);
   }
 
-  /* ---- Scroll reveal (progressive enhancement) -------------------------
-     Sections ease up into place as they enter the viewport. This is the one
-     effect on the site that can leave content permanently unreadable if it goes
-     wrong, so it is gated hard:
-
-     the hidden state lives under `html.js-reveal`, a class the observer script
-     puts on <html> as its very first act. No script, a blocked script, a script
-     that throws before it gets there — the selector simply never matches and
-     every element renders as ordinary static markup. There is no code path that
-     leaves a page's content stuck at opacity 0.
-
-     `--reveal-delay` is the only knob: an inline `style="--reveal-delay: 80ms"`
-     staggers siblings. Keep it at or under 240ms — past that the last item in a
-     group feels broken rather than choreographed, and the effect stops reading
-     as a reveal and starts reading as lag. */
+  /* ---- Performance-optimized layout containers ------------------------
+     All page sections and content blocks render instantly at full opacity
+     without scroll delays, layout shifts, or GPU compositor thrashing. */
   .reveal {
-    --reveal-delay: 0ms;
-    transition:
-      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay),
-      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay);
-  }
-
-  html.js-reveal .reveal {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  /* Promote only while the element is still waiting to appear. Leaving this on
-     for the whole page would pin a compositor layer to every section. */
-  html.js-reveal .reveal:not(.is-visible) {
-    will-change: opacity, transform;
-  }
-
-  html.js-reveal .reveal.is-visible {
     opacity: 1;
     transform: none;
   }
@@ -974,10 +944,7 @@
     scroll-behavior: auto !important;
   }
 
-  /* The reveal is motion, and so is the lift — both come off. Content keeps its
-     final state either way; nothing on the page depends on seeing an animation
-     to find out that it exists. */
-  html.js-reveal .reveal {
+  .reveal {
     opacity: 1;
     transform: none;
   }

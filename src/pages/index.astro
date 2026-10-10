@@ -556,20 +556,6 @@ const extraSchema = [faqSchema, itemListSchema];
   dateModified={HOME_REVIEWED}
   extraSchema={extraSchema}
 >
-  <!--
-    Scroll-reveal gate, and deliberately the FIRST thing in the document body.
-
-    `.reveal` is inert until `<html>` carries `js-reveal`, so a reader without JS
-    — or a crawler that never runs a script — sees every section at full opacity.
-    The class therefore has to land before the first paint of the first section:
-    putting it in the bundled script at the foot of the page left a visible flash
-    of already-hidden content while the browser parsed and executed the rest of
-    the document. An inline script placed here runs synchronously during the
-    parse, which closes that window without needing to touch `Layout.astro`.
-  -->
-  <script is:inline>
-    document.documentElement.classList.add('js-reveal');
-  </script>
 
   <!-- ══════════════════════ HERO ══════════════════════ -->
   <!-- No `overflow-hidden`: it was only ever there to clip the old mesh-gradient
@@ -679,22 +665,22 @@ const extraSchema = [faqSchema, itemListSchema];
         </div>
 
         <!-- Trust badges -->
-        <div class="mt-6 grid grid-cols-2 items-center gap-x-4 gap-y-2 text-xs text-slate-600 sm:flex sm:flex-wrap">
-          <span class="inline-flex items-center gap-1.5">
+        <div class="mt-6 grid grid-cols-2 items-center justify-items-center gap-x-3 gap-y-2.5 text-xs text-slate-600 sm:flex sm:flex-wrap sm:justify-start sm:gap-x-5">
+          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
             <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Verified state &amp; university rules
+            <span>Verified official rules</span>
           </span>
-          <span class="inline-flex items-center gap-1.5">
+          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
             <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            100% free, no sign-up
+            <span>100% free, no sign-up</span>
           </span>
-          <span class="inline-flex items-center gap-1.5">
+          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
             <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Runs in your browser
+            <span>Runs in your browser</span>
           </span>
-          <span class="inline-flex items-center gap-1.5">
+          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
             <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Step-by-step tie-breakers
+            <span>Step-by-step tie-breakers</span>
           </span>
         </div>
 
@@ -705,16 +691,16 @@ const extraSchema = [faqSchema, itemListSchema];
           number is derived from the registry rather than typed, so it cannot
           drift when a calculator is added.
         -->
-        <dl class="mt-8 grid max-w-xl grid-cols-2 gap-x-4 gap-y-5 border-t border-slate-200 pt-6 sm:grid-cols-4">
+        <dl class="mt-8 grid max-w-xl grid-cols-2 gap-3 border-t border-slate-200 pt-6 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5">
           {[
             { k: `${CALCULATORS.length}`, v: 'calculators' },
             { k: `${AUTHORITY_COUNT}`, v: 'authorities' },
             { k: `${STATE_COUNT}`, v: 'states & regions' },
             { k: '0', v: 'sign-ups required' }
           ].map((stat) => (
-            <div class="min-w-0">
-              <dt class="text-xl font-bold tabular-nums tracking-tight text-slate-900">{stat.k}</dt>
-              <dd class="mt-0.5 text-xs leading-snug text-slate-600">{stat.v}</dd>
+            <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200/80 bg-white/70 p-3 text-center shadow-xs transition-colors sm:items-start sm:justify-start sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-left sm:shadow-none min-w-0">
+              <dt class="text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-xl">{stat.k}</dt>
+              <dd class="mt-0.5 text-xs leading-snug text-slate-600 text-center sm:text-left">{stat.v}</dd>
             </div>
           ))}
         </dl>
@@ -735,7 +721,7 @@ const extraSchema = [faqSchema, itemListSchema];
     subtle jump indicators, and live scroll-spy tracking.
   -->
   <section aria-labelledby="page-contents-heading" class="border-b border-slate-200 bg-slate-50 py-10 sm:py-14">
-    <div class="reveal mx-auto max-w-4xl px-4 sm:px-6" style="--reveal-delay:60ms">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6">
       <div class="surface-card card-accent overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 sm:px-6 sm:py-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -810,7 +796,7 @@ const extraSchema = [faqSchema, itemListSchema];
        the content sections below it. `#by-state` is also a Table-of-Contents
        target, so the id has to stay exactly where it is. -->
   <section id="by-state" class="scroll-mt-20 border-b border-slate-200 bg-white py-4">
-    <div class="reveal mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 text-xs sm:px-6" style="--reveal-delay:120ms">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 text-xs sm:px-6">
       <span class="mr-2 font-mono uppercase tracking-wider text-slate-500">Browse by state:</span>
       {STATES.map((state) => (
         <a
@@ -825,7 +811,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ WHAT IS A CUT OFF CALCULATOR ══════════════════════ -->
   <section id="what-is" class="scroll-mt-20 border-b border-slate-200 bg-white py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Start here</span>
       <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         What Is a Cut Off Calculator, and Why Does the Answer Change With Every State?
@@ -942,7 +928,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ FIND YOUR CALCULATOR ══════════════════════ -->
   <section id="find-calculator" class="scroll-mt-20 py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Choose by what you want to know</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -991,7 +977,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ DIRECTORY ══════════════════════ -->
   <section id="calculators" class="scroll-mt-20 py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div class="max-w-3xl">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Calculator directory</span>
@@ -1051,7 +1037,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ HOW IT WORKS ══════════════════════ -->
   <section id="how-it-works" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Streamlined process</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1098,7 +1084,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ 12TH BOARD WORKED EXAMPLES ══════════════════════ -->
   <section id="twelfth-board" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">12th board cut off calculator</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1219,7 +1205,7 @@ const extraSchema = [faqSchema, itemListSchema];
   <!-- ══════════════════════ COMPARISON TABLE ══════════════════════ -->
   <!-- ══════════════════════ COMPARISON TABLE ══════════════════════ -->
   <section id="formula-reference" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Formula reference</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1284,7 +1270,7 @@ const extraSchema = [faqSchema, itemListSchema];
   <!-- `id` added so the section is reachable from the table of contents; it had
        an `h2` and a full screen of prose but no anchor of its own. -->
   <section id="no-universal-formula" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="surface-card p-6 sm:p-10">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Accuracy assurance</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1329,7 +1315,7 @@ const extraSchema = [faqSchema, itemListSchema];
   <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
   <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
   <section id="mistakes" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Before you calculate</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1388,7 +1374,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ HOW TO USE YOUR SCORE ══════════════════════ -->
   <section id="use-your-score" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Practical guidance</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1420,7 +1406,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ FAQ ══════════════════════ -->
   <section id="faq" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Student FAQ</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1456,7 +1442,7 @@ const extraSchema = [faqSchema, itemListSchema];
   <!-- ══════════════════════ TRUST / FOOTER CLUSTER ══════════════════════ -->
   <!-- `id` added for the table of contents, same as `#no-universal-formula`. -->
   <section id="how-we-verify" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
-    <div class="reveal mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div class="lg:col-span-2">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">How we verify</span>
@@ -1942,85 +1928,4 @@ const extraSchema = [faqSchema, itemListSchema];
     }
   })();
 </script>
-
-<!-- ══════════════════════ SCROLL REVEAL ══════════════════════ -->
-<!--
-  `.reveal` elements are hidden by `html.js-reveal` in global.css, and that
-  class is set by the inline script at the very top of the body — early
-  precisely so nothing is painted hidden and then snapped back. This block only
-  has to decide when each element becomes visible.
-
-  Everything on screen at init is revealed synchronously, before the observer is
-  even created. Waiting for the observer's first callback instead left the
-  contents section, the state strip and the top of `#what-is` invisible for the
-  frames between this script running and that callback landing — a visible flash
-  on exactly the content a returning reader lands on first.
-
-  `prefers-reduced-motion: reduce` and browsers without IntersectionObserver both
-  short-circuit to "everything visible": in both cases the reader asked for, or
-  the engine can only provide, a page with no reveal at all, and a half-revealed
-  page is worse than either.
--->
-<script>
-  (function () {
-    'use strict';
-
-    function initScrollReveal() {
-      var targets = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
-      if (!targets.length) return;
-
-      function show(el) {
-        el.classList.add('is-visible');
-      }
-
-      var reduceMotion =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      if (reduceMotion || !('IntersectionObserver' in window)) {
-        targets.forEach(show);
-        return;
-      }
-
-      var viewportHeight = window.innerHeight || 0;
-      var pending = targets.filter(function (el) {
-        var rect = el.getBoundingClientRect();
-        return rect.top < viewportHeight && rect.bottom > 0;
-      });
-
-      pending.forEach(show);
-
-      var observer = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(function (entry) {
-            if (!entry.isIntersecting) return;
-            show(entry.target);
-            // One-shot: once a section has arrived it stays, so scrolling back up
-            // never replays the animation over content the reader has already read.
-            observer.unobserve(entry.target);
-          });
-        },
-        {
-          // Fires as the element settles into the viewport rather than at the
-          // instant its top edge grazes it — the -10% bottom margin is what keeps
-          // the reveal from firing for a block still mostly below the fold.
-          rootMargin: '0px 0px -10% 0px',
-          threshold: 0.08
-        }
-      );
-
-      targets.forEach(function (el) {
-        // Anything already revealed above is skipped: it needs no observation,
-        // and re-adding it to the observer would be a wasted entry.
-        if (el.classList.contains('is-visible')) return;
-        observer.observe(el);
-      });
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initScrollReveal);
-    } else {
-      initScrollReveal();
-    }
-  })();
-</script>
+</Layout>
