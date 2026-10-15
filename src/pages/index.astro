@@ -17,8 +17,6 @@ const HOME_REVIEWED = '2026-10-10';
  */
 const YEAR = CALCULATORS[0]?.academicYear ?? ACADEMIC_YEAR;
 const YEAR_LABEL = YEAR.replace(/\s*-\s*/g, '-');
-/** Display form with an en dash, e.g. "2025–2026". */
-const YEAR_DISPLAY = YEAR.replace(/\s*-\s*/g, '\u2013');
 
 /**
  * The H1 used to hardcode "& 9 More Entrance Exams", which implied thirteen
@@ -584,14 +582,7 @@ const extraSchema = [faqSchema, itemListSchema];
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <!-- ── Centered Hero Header Block ──────────────────────────── -->
       <div class="mx-auto max-w-4xl text-center">
-        <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
-          <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
-          <span class="font-mono text-xs font-medium uppercase tracking-wide text-slate-900">
-            Official admission formulas &middot; {YEAR_DISPLAY}
-          </span>
-        </div>
-
-        <h1 class="mt-5 text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.25rem] lg:text-[2.65rem]">
+        <h1 class="text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.25rem] lg:text-[2.65rem]">
           {heroHeadline}
         </h1>
 
