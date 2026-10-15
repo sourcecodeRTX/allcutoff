@@ -23,7 +23,7 @@ const CANONICAL_HOST = 'allcutoff.com';
  * that one also forces `https:` and strips query + fragment, which a sitemap URL
  * never carries in the first place. This is the smaller, sitemap-specific rule.
  */
-const toCanonical = (href) => {
+const toCanonical = (/** @type {string} */ href) => {
   let parsed;
   try {
     parsed = new URL(href);
@@ -45,7 +45,7 @@ let outDir = 'dist';
 const captureOutDir = {
   name: 'allcutoff-capture-outdir',
   hooks: {
-    'astro:config:done': ({ config }) => {
+    'astro:config:done': (/** @type {any} */ { config }) => {
       outDir = typeof config.outDir === 'string' ? config.outDir : fileURLToPath(config.outDir);
     },
   },
@@ -57,7 +57,7 @@ const captureOutDir = {
  * claims a page changed just because it was redeployed — the one signal a
  * "current-cycle formulas" site cannot afford to get wrong.
  */
-const lastmodFromPage = (canonical) => {
+const lastmodFromPage = (/** @type {string} */ canonical) => {
   const { pathname } = new URL(canonical);
   const file = pathname === '/'
     ? join(outDir, 'index.html')
@@ -79,7 +79,7 @@ const lastmodFromPage = (canonical) => {
 const syncSitemapXml = {
   name: 'allcutoff-sync-sitemap-xml',
   hooks: {
-    'astro:build:done': ({ dir }) => {
+    'astro:build:done': (/** @type {any} */ { dir }) => {
       const targetDir = typeof dir === 'string' ? dir : fileURLToPath(dir);
       const sitemapIndex = join(targetDir, 'sitemap-index.xml');
       const sitemapZero = join(targetDir, 'sitemap-0.xml');

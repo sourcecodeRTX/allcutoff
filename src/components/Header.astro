@@ -139,7 +139,7 @@ const catLink = (slug: string) => (currentCategory === slug ? navLinkActive : na
   const menu = document.getElementById('mobile-menu');
 
   if (toggleBtn && menu) {
-    const setOpen = (isOpen) => {
+    const setOpen = (isOpen: boolean) => {
       menu.classList.toggle('hidden', !isOpen);
       toggleBtn.setAttribute('aria-expanded', String(isOpen));
     };

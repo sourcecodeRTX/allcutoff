@@ -578,17 +578,12 @@ const extraSchema = [faqSchema, itemListSchema];
        bloom, and global.css has replaced that with a flat `inset-0` wash on the
        glow div itself, which cannot bleed. Leaving it in clipped the search
        dropdown, which is absolutely positioned below the fold of this box. -->
-  <section class="relative border-b border-slate-200 bg-slate-50 py-14 sm:py-20">
+  <section class="relative border-b border-slate-200 bg-slate-50 py-12 sm:py-16 lg:py-20">
     <div class="pointer-events-none absolute inset-0 mesh-gradient-glow opacity-70" aria-hidden="true"></div>
 
-    <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-4 sm:px-6 lg:grid-cols-12 lg:gap-8 xl:gap-12">
-      <!-- ── LEFT: value proposition ──────────────────────────────── -->
-      <!--
-        `lg:sticky` on the copy column keeps key context in view while browsing
-        the calculator. Allocated 5/12 columns on desktop to leave 7/12 columns
-        for the calculator widget so inputs and controls have ample breathing room.
-      -->
-      <div class="min-w-0 lg:col-span-5 xl:col-span-5 lg:sticky lg:top-24">
+    <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <!-- ── Centered Hero Header Block ──────────────────────────── -->
+      <div class="mx-auto max-w-4xl text-center">
         <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm">
           <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
           <span class="font-mono text-xs font-medium uppercase tracking-wide text-slate-900">
@@ -596,11 +591,11 @@ const extraSchema = [faqSchema, itemListSchema];
           </span>
         </div>
 
-        <h1 class="mt-5 text-[1.75rem] leading-[1.18] text-slate-900 sm:text-[2.125rem] lg:text-[2.375rem]">
+        <h1 class="mt-5 text-[1.85rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:text-[2.25rem] lg:text-[2.65rem]">
           {heroHeadline}
         </h1>
 
-        <div class="mt-5 space-y-3 max-w-xl text-base leading-relaxed text-slate-700 sm:text-[1.0625rem]">
+        <div class="mx-auto mt-4 max-w-2xl space-y-2.5 text-base leading-relaxed text-slate-600 sm:text-lg">
           <p>
             A cut off calculator turns the raw marks on your Class 12 board marksheet and entrance scorecards into the single merit figure your counselling authority actually ranks on.
           </p>
@@ -610,7 +605,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </div>
 
         <!-- Hero search bar with instant results -->
-        <div class="relative mt-7 max-w-xl">
+        <div class="relative mx-auto mt-7 max-w-xl text-left">
           <label for="hero-search-input" class="sr-only">Search calculators by exam, course or state</label>
           <div class="flex items-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
             <span class="pl-2.5 text-slate-500" aria-hidden="true">
@@ -619,13 +614,6 @@ const extraSchema = [faqSchema, itemListSchema];
                 <path d="m21 21-4.3-4.3"></path>
               </svg>
             </span>
-            <!--
-              A plain search field, NOT a combobox. The old markup claimed
-              `role="combobox"` + `aria-activedescendant` over `role="option"` rows
-              that each contained a link AND a button — invalid, because an option
-              may not be focusable and may not own interactive descendants. Focus
-              now moves to real links (see SearchModal for the same pattern).
-            -->
             <input
               id="hero-search-input"
               type="search"
@@ -635,20 +623,6 @@ const extraSchema = [faqSchema, itemListSchema];
               placeholder="Search TNEA, KCET, NEET, B.Pharm, Tamil Nadu…"
               class="min-h-11 w-full min-w-0 border-none bg-transparent px-3 py-2 text-sm text-slate-900 placeholder-slate-500 outline-none"
             />
-            <!--
-              The hero field is a shortcut index; the full directory modal is the
-              authoritative one, with alias coverage and per-result actions. It used
-              to be advertised only as a text tip about Ctrl + K, which is invisible
-              on a touch device where no keyboard shortcut exists. This button is
-              the same affordance with a pointer: a real control, not decoration, so
-              it is reachable by keyboard and announced by name rather than by an
-              unlabelled glyph.
-
-              `.stepper-btn` supplies the 44px square, the hairline border and the
-              press feedback, which keeps it visually identical to the +/- buttons
-              in the hero calculator it sits above instead of reading as a second
-              text button.
-            -->
             <button
               id="hero-search-open-directory"
               type="button"
@@ -660,9 +634,6 @@ const extraSchema = [faqSchema, itemListSchema];
                 <path d="m21 21-4.3-4.3"></path>
               </svg>
             </button>
-            <!-- Icon-only below `sm`: at 320px the full "All Calculators" label
-                 plus the leading icon left the input ~138px, truncating the
-                 placeholder to ten characters. -->
             <a href="#calculators" class="btn-accent focus-ring min-h-11 min-w-11 shrink-0 justify-center px-2 sm:min-w-0 sm:px-4 sm:text-xs">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 sm:hidden" aria-hidden="true">
                 <rect x="3" y="3" width="7" height="7" rx="1"></rect>
@@ -680,50 +651,44 @@ const extraSchema = [faqSchema, itemListSchema];
           ></div>
         </div>
 
-        <!-- Trust badges -->
-        <div class="mt-6 grid grid-cols-2 items-center justify-items-center gap-x-3 gap-y-2.5 text-xs text-slate-600 sm:flex sm:flex-wrap sm:justify-start sm:gap-x-5">
-          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
-            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Verified official rules</span>
-          </span>
-          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
-            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>100% free, no sign-up</span>
-          </span>
-          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
-            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Runs in your browser</span>
-          </span>
-          <span class="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
-            <svg class="shrink-0 text-emerald-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Step-by-step tie-breakers</span>
-          </span>
+        <!-- Problem 1: Green Tick Alignment (strict responsive grid) -->
+        <div class="mx-auto mt-6 grid max-w-2xl grid-cols-2 gap-x-4 gap-y-3 text-left sm:grid-cols-4">
+          <div class="flex items-start gap-2 text-xs font-medium text-slate-700">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="leading-snug">Verified official rules</span>
+          </div>
+          <div class="flex items-start gap-2 text-xs font-medium text-slate-700">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="leading-snug">100% free, no sign-up</span>
+          </div>
+          <div class="flex items-start gap-2 text-xs font-medium text-slate-700">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="leading-snug">Runs in your browser</span>
+          </div>
+          <div class="flex items-start gap-2 text-xs font-medium text-slate-700">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="leading-snug">Step-by-step tie-breakers</span>
+          </div>
         </div>
 
-        <!--
-          At-a-glance strip. The calculator column is far taller than the copy
-          column on desktop, which left ~500px of dead white space beside it.
-          This fills that space with facts a student actually wants, and every
-          number is derived from the registry rather than typed, so it cannot
-          drift when a calculator is added.
-        -->
-        <dl class="mt-8 grid max-w-xl grid-cols-2 gap-3 border-t border-slate-200 pt-6 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5">
+        <!-- Problem 3: Balanced 4-column card grid bridging hero title & calculator island -->
+        <dl class="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {[
             { k: `${CALCULATORS.length}`, v: 'calculators' },
             { k: `${AUTHORITY_COUNT}`, v: 'authorities' },
             { k: `${STATE_COUNT}`, v: 'states & regions' },
             { k: '0', v: 'sign-ups required' }
           ].map((stat) => (
-            <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200/80 bg-white/70 p-3 text-center shadow-xs transition-colors sm:items-start sm:justify-start sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-left sm:shadow-none min-w-0">
-              <dt class="text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-xl">{stat.k}</dt>
-              <dd class="mt-0.5 text-xs leading-snug text-slate-600 text-center sm:text-left">{stat.v}</dd>
+            <div class="flex min-w-0 flex-col items-center justify-center rounded-xl border border-slate-200/90 bg-white p-3.5 text-center shadow-xs transition-all hover:border-slate-300 hover:shadow-sm">
+              <dt class="text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-3xl">{stat.k}</dt>
+              <dd class="mt-1 text-xs font-medium leading-snug text-slate-600">{stat.v}</dd>
             </div>
           ))}
         </dl>
       </div>
 
-      <!-- ── RIGHT: the live calculator ──────────────────────────── -->
-      <div class="min-w-0 lg:col-span-7 xl:col-span-7">
+      <!-- ── Centered Hero Live Calculator Island ──────────────────────── -->
+      <div class="mx-auto mt-10 max-w-4xl">
         <HeroCalculator />
       </div>
     </div>
@@ -827,12 +792,12 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ WHAT IS A CUT OFF CALCULATOR ══════════════════════ -->
   <section id="what-is" class="scroll-mt-20 border-b border-slate-200 bg-white py-14 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
       <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Start here</span>
       <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         What Is a Cut Off Calculator, and Why Does the Answer Change With Every State?
       </h2>
-      <div class="mt-4 space-y-4 max-w-3xl text-base leading-relaxed text-slate-700 sm:text-[1.0625rem]">
+      <div class="mt-4 space-y-4 text-base leading-relaxed text-slate-700 sm:text-[1.0625rem]">
         <p>
           A <strong class="font-semibold text-slate-900">cut off calculator</strong> is an essential admission tool that converts the raw marks printed on your Class 12 board marksheet and entrance scorecards into the single merit figure that a state counselling authority ranks candidates on. That figure is rarely your percentage and almost never your entrance rank. It is an official weighted composite, published annually in admission brochures that vary from state to state and course to course.
         </p>
@@ -841,12 +806,12 @@ const extraSchema = [faqSchema, itemListSchema];
         </p>
       </div>
 
-      <div class="mt-10 grid max-w-3xl grid-cols-1 gap-10">
+      <div class="mt-10 grid grid-cols-1 gap-10">
         <section aria-labelledby="what-is-three-numbers">
           <h3 id="what-is-three-numbers" class="text-base font-bold text-slate-900">
             Three numbers that are not the same thing
           </h3>
-          <p class="mt-2.5 max-w-3xl text-[0.9375rem] leading-relaxed text-slate-700">
+          <p class="mt-2.5 text-[0.9375rem] leading-relaxed text-slate-700">
             Students routinely confuse these three, and the confusion is where most bad advice online begins.
             Your <strong class="font-semibold text-slate-900">percentage</strong> is your total divided by the
             maximum, and it tells you almost nothing about merit because it treats every subject as equal. Your
@@ -855,7 +820,7 @@ const extraSchema = [faqSchema, itemListSchema];
             is the weighted blend of the two that the authority actually sorts the merit list on. A calculator
             gives you the third number, and only the third number is what gets you a seat called.
           </p>
-          <p class="mt-3 max-w-3xl text-[0.9375rem] leading-relaxed text-slate-700">
+          <p class="mt-3 text-[0.9375rem] leading-relaxed text-slate-700">
             On top of that sits the <strong class="font-semibold text-slate-900">closing mark</strong>, the last
             score at which a seat was filled in a previous round. A closing mark is a historical outcome, shaped
             by seat availability and category reservation, not a rule you can apply to yourself. Comparing your
@@ -869,7 +834,7 @@ const extraSchema = [faqSchema, itemListSchema];
           <h3 id="what-is-what-it-does" class="text-base font-bold text-slate-900">
             What every calculator here actually does
           </h3>
-          <ul class="mt-2.5 max-w-3xl space-y-3 text-[0.9375rem] leading-relaxed text-slate-700">
+          <ul class="mt-2.5 space-y-3 text-[0.9375rem] leading-relaxed text-slate-700">
             <li class="flex gap-2.5">
               <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
               <span>
@@ -1100,8 +1065,8 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ 12TH BOARD WORKED EXAMPLES ══════════════════════ -->
   <section id="twelfth-board" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-      <div class="max-w-3xl">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div>
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">12th board cut off calculator</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           How to Calculate Your Cut Off From 12th Board Marks: Worked Examples
@@ -1125,7 +1090,7 @@ const extraSchema = [faqSchema, itemListSchema];
             <span class="font-sans text-sm font-medium text-slate-500">&mdash; {ex.scale}</span>
           </h3>
 
-          <div class="mt-3 max-w-3xl space-y-3 text-[0.9375rem] leading-relaxed text-slate-700">
+          <div class="mt-3 space-y-3 text-[0.9375rem] leading-relaxed text-slate-700">
             {ex.body.map((para) => <p>{para}</p>)}
           </div>
 
@@ -1146,9 +1111,9 @@ const extraSchema = [faqSchema, itemListSchema];
             cell: it is the answer the whole section exists to produce, so it
             gets the emphasis instead of being one item among four.
           -->
-          <dl class="mt-4 flex flex-wrap">
-            {ex.rows.map((row) => (
-              <div class="surface-dashed-card w-1/2 flex-1 basis-[9rem] px-3.5 py-2.5 not-first:ml-2 first:ml-0">
+          <dl class={`mt-4 grid gap-3 ${ex.rows.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
+            {ex.rows.map((row, rIdx) => (
+              <div class={`surface-dashed-card px-3.5 py-2.5 ${ex.rows.length === 3 && rIdx === 2 ? 'col-span-2 sm:col-span-1' : ''}`}>
                 <dt class="font-mono text-[0.75rem] uppercase tracking-wider text-slate-500">{row.label}</dt>
                 <dd class="mt-0.5 font-mono text-sm tabular-nums text-slate-900">{row.value}</dd>
               </div>
@@ -1286,7 +1251,7 @@ const extraSchema = [faqSchema, itemListSchema];
   <!-- `id` added so the section is reachable from the table of contents; it had
        an `h2` and a full screen of prose but no anchor of its own. -->
   <section id="no-universal-formula" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
       <div class="surface-card p-6 sm:p-10">
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Accuracy assurance</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -1294,7 +1259,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </h2>
 
         <div class="mt-4 space-y-4 text-base leading-relaxed text-slate-700">
-          <p class="max-w-3xl">
+          <p>
             Admission arithmetic in India is decentralised. Each state examination board or university
             publishes its own merit construction, and those documents rarely agree with each other. That is
             not an inconsistency to be smoothed over with an average &mdash; it is a design decision, because
@@ -1315,7 +1280,7 @@ const extraSchema = [faqSchema, itemListSchema];
             ))}
           </div>
 
-          <p class="max-w-3xl">
+          <p>
             <strong class="font-semibold text-slate-900">All Cut Off (allcutoff.com)</strong> does not invent
             formulas. Every calculator here is a faithful transcription of a published government or
             university rule, and every calculator links you to the authority&rsquo;s own website so you can
@@ -1329,10 +1294,9 @@ const extraSchema = [faqSchema, itemListSchema];
   </section>
 
   <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
-  <!-- ══════════════════════ COMMON MISTAKES ══════════════════════ -->
   <section id="mistakes" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-      <div class="max-w-3xl">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div>
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Before you calculate</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Seven Mistakes That Produce a Wrong Cut Off Number
@@ -1378,7 +1342,7 @@ const extraSchema = [faqSchema, itemListSchema];
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 font-mono text-sm font-bold text-slate-600">
               {i + 1}
             </span>
-            <div class="min-w-0 max-w-3xl">
+            <div class="min-w-0 flex-1">
               <h3 class="text-base font-bold leading-snug text-slate-900">{item.t}</h3>
               <p class="mt-1.5 text-[0.9375rem] leading-relaxed text-slate-700">{item.b}</p>
             </div>
@@ -1422,8 +1386,8 @@ const extraSchema = [faqSchema, itemListSchema];
 
   <!-- ══════════════════════ FAQ ══════════════════════ -->
   <section id="faq" class="scroll-mt-20 border-t border-slate-200 bg-white py-14 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-      <div class="max-w-3xl">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div>
         <span class="font-mono text-xs uppercase tracking-widest text-blue-600">Student FAQ</span>
         <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Frequently Asked Questions
@@ -1448,7 +1412,7 @@ const extraSchema = [faqSchema, itemListSchema];
                 <path d="m6 9 6 6 6-6"></path>
               </svg>
             </summary>
-            <p class="mt-3 max-w-3xl text-[0.9375rem] leading-relaxed text-slate-700">{item.answer}</p>
+            <p class="mt-3 text-[0.9375rem] leading-relaxed text-slate-700">{item.answer}</p>
           </details>
         ))}
       </div>
@@ -1458,14 +1422,14 @@ const extraSchema = [faqSchema, itemListSchema];
   <!-- ══════════════════════ TRUST / FOOTER CLUSTER ══════════════════════ -->
   <!-- `id` added for the table of contents, same as `#no-universal-formula`. -->
   <section id="how-we-verify" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 py-14 sm:py-20">
-    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div class="lg:col-span-2">
           <span class="font-mono text-xs uppercase tracking-widest text-blue-600">How we verify</span>
           <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             Every Formula Here Was Read From a Published Rule
           </h2>
-          <p class="mt-3 max-w-3xl text-base leading-relaxed text-slate-700">
+          <p class="mt-3 text-base leading-relaxed text-slate-700">
             For each exam we start from the primary source: the information brochure, admission prospectus
             or official notification of the conducting body. We record the maximum score, the weighting of
             every component, the category-wise qualifying minimum, and the tie-breaking order in that exact
@@ -1497,7 +1461,7 @@ const extraSchema = [faqSchema, itemListSchema];
         </div>
       </div>
 
-      <p class="mt-10 max-w-3xl border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
+      <p class="mt-10 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-600">
         All Cut Off is an independent, student-run reference tool. It is not affiliated with, endorsed by, or
         operated by the National Testing Agency, any state examination board, or any university listed on
         this site. Calculated scores reproduce published arithmetic only and carry no guarantee of admission.
@@ -1505,7 +1469,7 @@ const extraSchema = [faqSchema, itemListSchema];
       </p>
     </div>
   </section>
-</Layout>
+
 
 <!-- ══════════════════════ DIRECTORY FILTERING ══════════════════════ -->
 <script define:vars={{ REFILTER_EVENT: 'allcutoff:refilter-directory' }}>
@@ -1884,20 +1848,21 @@ const extraSchema = [faqSchema, itemListSchema];
     'use strict';
 
     function initTocScrollSpy() {
-      var links = Array.prototype.slice.call(document.querySelectorAll('[data-toc-link]'));
+      var links = Array.prototype.slice.call(document.querySelectorAll('[data-toc-link]')) as HTMLElement[];
       if (!links.length) return;
 
       var targets = links
         .map(function (link) {
-          return { link: link, section: document.getElementById(link.getAttribute('data-toc-link')) };
+          var targetId = link.getAttribute('data-toc-link');
+          return { link: link, section: targetId ? document.getElementById(targetId) : null };
         })
-        .filter(function (row) {
-          return !!row.section;
+        .filter(function (row): row is { link: HTMLElement; section: HTMLElement } {
+          return Boolean(row.section);
         });
 
       if (!targets.length || !('IntersectionObserver' in window)) return;
 
-      function setActive(id) {
+      function setActive(id: string) {
         targets.forEach(function (row) {
           var link = row.link;
           if (link.getAttribute('data-toc-link') === id) {
@@ -1908,7 +1873,7 @@ const extraSchema = [faqSchema, itemListSchema];
         });
       }
 
-      var visible = [];
+      var visible: Element[] = [];
 
       var observer = new IntersectionObserver(
         function (entries) {
@@ -1920,7 +1885,7 @@ const extraSchema = [faqSchema, itemListSchema];
 
           // `targets` is already in document order, so the first visible match
           // is the topmost section on screen, not the last one to fire.
-          var active = null;
+          var active: string | null = null;
           for (var i = 0; i < targets.length; i += 1) {
             if (visible.indexOf(targets[i].section) !== -1) {
               active = targets[i].link.getAttribute('data-toc-link');
@@ -1934,7 +1899,7 @@ const extraSchema = [faqSchema, itemListSchema];
       );
 
       targets.forEach(function (row) {
-        observer.observe(row.section);
+        if (row.section) observer.observe(row.section);
       });
     }
 

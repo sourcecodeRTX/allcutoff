@@ -1,10 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
-@import "tailwindcss" source(none);
-
-/* Restrict class generation to this project's own source files only.
-   Automatic detection would otherwise scan the whole repo root (including the
-   .agents/ reference docs) and emit dead url() assets into the production CSS. */
-@source "../../src/**/*.{astro,html,js,ts}";
+@import "tailwindcss";
 
 /* ==========================================================================
    Design tokens
@@ -580,6 +575,7 @@
     width: 100%;
     /* Allow the field to shrink inside the stepper flex row. */
     min-width: 0;
+    min-height: 44px;
     background-color: var(--color-canvas-elevated);
     border: 1px solid var(--color-hairline);
     border-radius: var(--radius-input);

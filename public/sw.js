@@ -15,7 +15,7 @@
  *   everything else     -> network only.
  */
 
-const CACHE_VERSION = 'allcutoff-v2';
+const CACHE_VERSION = 'allcutoff-v3';
 const ASSET_CACHE = CACHE_VERSION;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const ACTIVE_CACHES = [ASSET_CACHE, PAGE_CACHE];

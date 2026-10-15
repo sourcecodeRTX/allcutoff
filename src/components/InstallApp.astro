@@ -230,7 +230,7 @@ const isHeader = variant === 'header';
       if (!roots.length) return;
 
       /* Every storage touch is defensive — Safari private mode throws on write. */
-      function readStore(key) {
+      function readStore(key: string): string | null {
         try {
           return window.localStorage.getItem(key);
         } catch (e) {
@@ -238,7 +238,7 @@ const isHeader = variant === 'header';
         }
       }
 
-      function writeStore(key, value) {
+      function writeStore(key: string, value: string) {
         try {
           window.localStorage.setItem(key, value);
         } catch (e) {
@@ -248,7 +248,7 @@ const isHeader = variant === 'header';
 
       function isStandalone() {
         try {
-          if (window.navigator.standalone === true) return true;
+          if ((window.navigator as any).standalone === true) return true;
           return window.matchMedia('(display-mode: standalone)').matches;
         } catch (e) {
           return false;
@@ -275,7 +275,7 @@ const isHeader = variant === 'header';
       }
 
       /* Shared across every mounted instance — the event fires once per page. */
-      var deferred = null;
+      var deferred: any = null;
 
       function reveal() {
         if (isStandalone() || isDismissed() || readStore(INSTALLED_KEY)) return;
@@ -321,7 +321,7 @@ const isHeader = variant === 'header';
             if (first) first.focus();
           }
 
-          function closePanel(refocus) {
+          function closePanel(refocus?: boolean) {
             if (!panel || panel.hidden) return;
             panel.hidden = true;
             trigger.setAttribute('aria-expanded', 'false');
@@ -338,7 +338,7 @@ const isHeader = variant === 'header';
                 var choice = promptEvent.userChoice;
                 if (choice && typeof choice.then === 'function') {
                   choice.then(
-                    function (result) {
+                    function (result: any) {
                       if (result && result.outcome === 'accepted') {
                         writeStore(INSTALLED_KEY, '1');
                         hideAll();
@@ -362,8 +362,8 @@ const isHeader = variant === 'header';
           });
 
           if (panel) {
-            panel.addEventListener('click', function (event) {
-              var target = event.target;
+            panel.addEventListener('click', function (event: MouseEvent) {
+              var target = event.target as HTMLElement | null;
               if (!target || !target.closest) return;
               if (target.closest('[data-install-done]')) {
                 dismissForever();
@@ -400,10 +400,11 @@ const isHeader = variant === 'header';
         var revealLater = function () {
           if (!isDismissed()) reveal();
         };
-        if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(revealLater, { timeout: 2500 });
+        var win = window as any;
+        if ('requestIdleCallback' in win) {
+          win.requestIdleCallback(revealLater, { timeout: 2500 });
         } else {
-          window.setTimeout(revealLater, 1200);
+          win.setTimeout(revealLater, 1200);
         }
       }
     } catch (e) {

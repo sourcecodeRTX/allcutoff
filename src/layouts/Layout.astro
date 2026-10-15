@@ -273,6 +273,9 @@ const jsonLd = {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="AllCutOff" />
     <link rel="manifest" href="/site.webmanifest" />
 
@@ -373,7 +376,7 @@ const jsonLd = {
         }
       }
 
-      function showToast(message) {
+      function showToast(message: string) {
         if (!message || !document.body) return;
 
         var bar = document.createElement('div');
@@ -434,18 +437,18 @@ const jsonLd = {
         window.setTimeout(dismiss, TOAST_MS);
       }
 
-      function watch(reg) {
+      function watch(reg: ServiceWorkerRegistration) {
         if (!reg) return;
         if (reg.waiting) {
           showToast('All Cut Off has been updated. Reloading\u2026');
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
         reg.addEventListener('updatefound', function () {
-          var installing = reg.installing;
-          if (!installing) return;
-          installing.addEventListener('statechange', function () {
+          const worker = reg.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', function () {
             /* `controller` existing means this is an update, not a first install. */
-            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
               showToast('A new version of All Cut Off is ready. Reloading\u2026');
             }
           });

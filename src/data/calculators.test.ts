@@ -439,7 +439,7 @@ describe('GUJCET ACPC', () => {
     const hint = calc.inputs.find((i) => i.id === 'gujcet_pcm')?.hint ?? '';
     expect(hint.toLowerCase()).toContain('percentile');
     expect(hint.toLowerCase()).toContain('proxy');
-    const text = `${calc.remarks} ${calc.officialRules.join(' ')}`.toLowerCase();
+    const text = `${calc.summary} ${calc.officialRules.join(' ')}`.toLowerCase();
     expect(text).toContain('percentile');
   });
 
