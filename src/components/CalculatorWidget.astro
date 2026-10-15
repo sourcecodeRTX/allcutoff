@@ -345,40 +345,6 @@ const stepDecimals = (input: { step?: number }) =>
     </div>
   </details>
 
-  <!-- Result actions — now a single button, so the wrapper flex row is gone
-       entirely: with one child it bought nothing but a `gap-3` that reserved
-       space for the button that is no longer there.
-
-       The "Download / Print Score Summary" button and its `window.print()`
-       handler were removed. That button advertised a "download" that never
-       downloaded anything — `window.print()` opens the browser's own dialog,
-       and the resulting sheet was the page minus its controls. Share stays as
-       the one primary action because it produces something portable (a text
-       result through `navigator.share`, or the clipboard) instead of a
-       screenshot, and it is the only action that survives on a phone.
-
-       Ctrl+P is unaffected on purpose: the `@media print` block in global.css is
-       scoped to the page itself, not to this button. Browser-initiated printing
-       still drops `#cutoff-form`, the buttons and the site chrome while keeping
-       the calculator title, result region, breakdown table and the whole
-       formula walkthrough (global.css expands every closed <details> on paper).
-       That stylesheet was intentionally left in place. -->
-  <button type="button" id="btn-share-result" class="btn-accent focus-ring mt-5 w-full sm:w-auto">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <circle cx="18" cy="5" r="3"></circle>
-      <circle cx="6" cy="12" r="3"></circle>
-      <circle cx="18" cy="19" r="3"></circle>
-      <line x1="8.6" x2="15.4" y1="10.5" y2="6.5"></line>
-      <line x1="8.6" x2="15.4" y1="13.5" y2="17.5"></line>
-    </svg>
-    <span id="share-btn-text">Share / Copy Result</span>
-  </button>
-
-  <!-- `mt-2` (was `mt-2.5`) so the attribution hugs the button it credits
-       instead of floating in the middle of the card's bottom padding. -->
-  <p class="mt-2 text-xs text-slate-500">
-    Calculated on <span class="font-semibold text-slate-700">All Cut Off</span> &mdash; allcutoff.com
-  </p>
 
   <!-- Official rules reminder.
 
@@ -434,15 +400,16 @@ const stepDecimals = (input: { step?: number }) =>
       )}
     </div>
   </aside>
+
+  <p class="mt-4 text-xs text-slate-500">
+    Calculated on <span class="font-semibold text-slate-700">All Cut Off</span> &mdash; allcutoff.com
+  </p>
 </div>
 
 <script define:vars={{ payload }}>
   (function () {
     'use strict';
 
-    var BRAND = 'All Cut Off';
-    var SITE = 'https://allcutoff.com';
-    var SHARE_DEFAULT = 'Share / Copy Result';
     /* Long enough that a slider drag reads as one result, short enough that a
        typing user still hears each figure they settle on. */
     var LIVE_DEBOUNCE_MS = 500;
@@ -472,8 +439,6 @@ const stepDecimals = (input: { step?: number }) =>
      * ------------------------------------------------------------------ */
     var calculateBtn = root.querySelector('#btn-calculate');
     var resetBtn = root.querySelector('#btn-reset');
-    var shareBtn = root.querySelector('#btn-share-result');
-    var shareBtnText = root.querySelector('#share-btn-text');
 
     var displayTotal = root.querySelector('#display-total-cutoff');
     var displayPercent = root.querySelector('#display-percentage');
@@ -905,100 +870,6 @@ const stepDecimals = (input: { step?: number }) =>
         });
         refreshSteppers();
         runCalculation();
-      });
-    }
-
-    function legacyCopy(text) {
-      try {
-        var area = document.createElement('textarea');
-        area.value = text;
-        area.setAttribute('readonly', '');
-        area.style.position = 'fixed';
-        area.style.top = '0';
-        area.style.left = '-9999px';
-        document.body.appendChild(area);
-        area.select();
-        area.setSelectionRange(0, area.value.length);
-        var ok = document.execCommand('copy');
-        document.body.removeChild(area);
-        return !!ok;
-      } catch (err) {
-        return false;
-      }
-    }
-
-    function copyText(text) {
-      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        return navigator.clipboard
-          .writeText(text)
-          .then(function () {
-            return true;
-          })
-          .catch(function () {
-            return legacyCopy(text);
-          });
-      }
-      return Promise.resolve(legacyCopy(text));
-    }
-
-    function buildResultText() {
-      if (!lastState) {
-        return payload.name + '\n\nCalculated on ' + BRAND + ' — ' + SITE;
-      }
-
-      var lines = [
-        payload.name + ' (' + payload.academicYear + ')',
-        '',
-        'Calculated Cutoff: ' + lastState.total + ' ' + (payload.scoreUnit || ''),
-        'Score band: ' + lastState.pct.toFixed(1) + '% of ' + lastState.denom
-      ];
-
-      if (lastState.statusLabel) lines.push('Qualifying status: ' + lastState.statusLabel);
-      if (lastState.remarks) lines.push('', lastState.remarks);
-
-      lines.push('', 'Calculated on ' + BRAND + ' — ' + SITE);
-      return lines.join('\n');
-    }
-
-    var flashTimer = null;
-
-    function flash(label, ms) {
-      if (!shareBtnText) return;
-      shareBtnText.textContent = label;
-      if (flashTimer) window.clearTimeout(flashTimer);
-      flashTimer = window.setTimeout(function () {
-        shareBtnText.textContent = SHARE_DEFAULT;
-      }, ms || 2000);
-    }
-
-    function copyAndConfirm() {
-      copyText(buildResultText()).then(function (ok) {
-        flash(ok ? 'Copied!' : 'Press Ctrl+C to copy');
-      });
-    }
-
-    if (shareBtn) {
-      shareBtn.addEventListener('click', function () {
-        var text = buildResultText();
-
-        if (typeof navigator.share === 'function') {
-          navigator
-            .share({
-              title: payload.name,
-              text: text,
-              url: SITE + '/calculator/' + payload.slug
-            })
-            .then(function () {
-              flash('Shared');
-            })
-            .catch(function (err) {
-              if (err && err.name === 'AbortError') return;
-              copyAndConfirm();
-            });
-          return;
-        }
-
-        copyAndConfirm();
       });
     }
 
