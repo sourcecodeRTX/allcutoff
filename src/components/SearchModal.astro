@@ -129,9 +129,13 @@ const QUICK_FILTERS = [
         <button
           id="close-search-btn"
           type="button"
-          class="ml-2 min-h-8 shrink-0 cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-xs text-slate-600 hover:bg-slate-100"
+          aria-label="Close search"
+          class="focus-ring ml-2 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
         >
-          ESC
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
       </div>
 
@@ -583,7 +587,7 @@ const QUICK_FILTERS = [
 
       if (event.key === 'Tab') {
         // Focus trap for the whole dialog subtree, not just the input: without
-        // this, Tab from the ESC button or a result link walks into the page
+        // this, Tab from the close button or a result link walks into the page
         // behind the aria-modal overlay.
         var focusable = focusableInDialog();
         if (!focusable.length) return;
