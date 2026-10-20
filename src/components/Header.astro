@@ -16,7 +16,7 @@ const navLinkIdle = `${navLinkBase} text-slate-700 hover:text-slate-900 hover:bg
 const catLink = (slug: string) => (currentCategory === slug ? navLinkActive : navLinkIdle);
 ---
 
-<header class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 transition-colors">
+<header id="site-header" class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 shadow-xs">
   <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
     <!-- Brand Wordmark -->
     <a href="/" class="group flex h-11 shrink-0 items-center gap-2.5">
@@ -296,6 +296,23 @@ const catLink = (slug: string) => (currentCategory === slug ? navLinkActive : na
   </div>
 </header>
 
+<style>
+  #site-header {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    will-change: transform;
+  }
+
+  #site-header.header-hidden {
+    transform: translateY(-100%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #site-header {
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
 <script>
   const toggleBtn = document.getElementById('mobile-menu-toggle');
   const menu = document.getElementById('mobile-menu');
@@ -332,5 +349,91 @@ const catLink = (slug: string) => (currentCategory === slug ? navLinkActive : na
     menu.addEventListener('click', (event) => {
       if (event.target instanceof Element && event.target.closest('a')) close();
     });
+  }
+
+  // Smooth hide on scroll down, reveal on scroll up
+  const header = document.getElementById('site-header');
+  if (header) {
+    let lastScrollY = Math.max(0, window.scrollY);
+    let isTicking = false;
+    const SCROLL_THRESHOLD = 8;
+    const TOP_PIN_LIMIT = 64;
+
+    const isMenuOpen = () => {
+      return toggleBtn ? toggleBtn.getAttribute('aria-expanded') === 'true' : false;
+    };
+
+    const showHeader = () => {
+      if (header.classList.contains('header-hidden')) {
+        header.classList.remove('header-hidden');
+      }
+    };
+
+    const hideHeader = () => {
+      if (!header.classList.contains('header-hidden')) {
+        header.classList.add('header-hidden');
+      }
+    };
+
+    const onScroll = () => {
+      const currentScrollY = Math.max(0, window.scrollY);
+
+      // Never hide if mobile menu is actively open
+      if (isMenuOpen()) {
+        showHeader();
+        lastScrollY = currentScrollY;
+        isTicking = false;
+        return;
+      }
+
+      // Always keep header visible when near the top of the page
+      if (currentScrollY <= TOP_PIN_LIMIT) {
+        showHeader();
+        lastScrollY = currentScrollY;
+        isTicking = false;
+        return;
+      }
+
+      // Keep visible if keyboard focus is currently inside the header
+      if (header.contains(document.activeElement)) {
+        showHeader();
+        lastScrollY = currentScrollY;
+        isTicking = false;
+        return;
+      }
+
+      // Avoid bounce artifacts at the bottom of the page (iOS / macOS rubber-band)
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (currentScrollY >= maxScroll - 10) {
+        isTicking = false;
+        return;
+      }
+
+      const diff = currentScrollY - lastScrollY;
+
+      // Only toggle if delta passes the threshold to avoid jitter
+      if (Math.abs(diff) >= SCROLL_THRESHOLD) {
+        if (diff > 0) {
+          // Scrolling down -> hide header upward
+          hideHeader();
+        } else {
+          // Scrolling up -> reveal header downward
+          showHeader();
+        }
+        lastScrollY = currentScrollY;
+      }
+
+      isTicking = false;
+    };
+
+    window.addEventListener('scroll', () => {
+      if (!isTicking) {
+        window.requestAnimationFrame(onScroll);
+        isTicking = true;
+      }
+    }, { passive: true });
+
+    // Instantly reveal header when a user tabs into any element inside it
+    header.addEventListener('focusin', showHeader);
   }
 </script>
