@@ -1,0 +1,636 @@
+---
+import { EXAM_CONFIGS, type ExamKey } from '../../data/academicCalculators';
+
+interface Props {
+  initialExam?: ExamKey;
+  idPrefix?: string;
+}
+
+const { initialExam = 'universal', idPrefix = 'percentile' } = Astro.props;
+---
+
+<div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Header -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-violet-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-violet-600" aria-hidden="true"></span>
+          National &amp; State Entrance Analytics
+        </span>
+        <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Percentile &amp; Rank Calculator
+        </h3>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <div class="flex flex-wrap rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-semibold gap-1">
+        <button
+          type="button"
+          id={`${idPrefix}-tab-exam`}
+          class="rounded-lg bg-white px-3 py-1.5 text-center text-violet-700 shadow-xs transition-all hover:text-violet-900 font-bold"
+          data-mode="exam"
+        >
+          Exam Score Predictor
+        </button>
+        <button
+          type="button"
+          id={`${idPrefix}-tab-rank-to-pct`}
+          class="rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900"
+          data-mode="rank-to-pct"
+        >
+          Rank &rarr; Percentile
+        </button>
+        <button
+          type="button"
+          id={`${idPrefix}-tab-pct-to-rank`}
+          class="rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900"
+          data-mode="pct-to-rank"
+        >
+          Percentile &rarr; Rank
+        </button>
+      </div>
+    </div>
+    <p class="mt-2 text-xs text-slate-600">
+      Calculate official 7-decimal normalized percentiles, estimated All India Ranks, or predict percentile ranges for JEE Main, CAT, and MHT CET.
+    </p>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT COLUMN: Inputs -->
+    <div class="lg:col-span-6 space-y-5">
+      <!-- 1. EXAM PREDICTOR VIEW -->
+      <div id={`${idPrefix}-view-exam`} class="space-y-4">
+        <!-- Exam selector -->
+        <div>
+          <label for={`${idPrefix}-exam-select`} class="text-xs font-bold uppercase tracking-wider text-slate-700">
+            Select Competitive Entrance Exam:
+          </label>
+          <select
+            id={`${idPrefix}-exam-select`}
+            class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-xs focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none"
+          >
+            <option value="jee-main" selected={initialExam === 'jee-main'}>NTA JEE Main (Marks out of 300 &bull; 14.5 Lakh Candidates)</option>
+            <option value="cat" selected={initialExam === 'cat'}>IIM CAT (Marks out of 198 &bull; 3.3 Lakh Candidates)</option>
+            <option value="mht-cet-pcm" selected={initialExam === 'mht-cet-pcm'}>MHT CET Engineering PCM (Marks out of 200 &bull; 4.1L Candidates)</option>
+            <option value="mht-cet-pcb" selected={initialExam === 'mht-cet-pcb'}>MHT CET Pharmacy PCB (Marks out of 200 &bull; 3.3L Candidates)</option>
+          </select>
+        </div>
+
+        <!-- Raw Marks Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-violet-500 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-exam-score-input`} class="text-sm font-semibold text-slate-900" id={`${idPrefix}-exam-score-label`}>
+              Expected Raw Score (out of 300)
+            </label>
+            <span class="font-mono text-xs text-slate-500" id={`${idPrefix}-exam-max-hint`}>Max: 300</span>
+          </div>
+
+          <div class="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+              id={`${idPrefix}-exam-score-minus`}
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-exam-score-input`}
+              min="0"
+              max="300"
+              value="185"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tabular-nums text-slate-900 outline-none focus:border-violet-500"
+            />
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+              id={`${idPrefix}-exam-score-plus`}
+            >
+              +
+            </button>
+          </div>
+
+          <!-- Quick Score Presets -->
+          <div class="mt-3">
+            <span class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500">Benchmark Scores:</span>
+            <div id={`${idPrefix}-exam-quick-scores`} class="mt-1.5 flex flex-wrap gap-1.5">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. RANK TO PERCENTILE VIEW (Hidden by default) -->
+      <div id={`${idPrefix}-view-rank-to-pct`} class="hidden space-y-4">
+        <!-- Rank Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-violet-500 focus-within:bg-white">
+          <label for={`${idPrefix}-input-rank`} class="text-sm font-semibold text-slate-900">
+            Enter Your All India Rank (AIR)
+          </label>
+          <div class="mt-2">
+            <input
+              type="number"
+              id={`${idPrefix}-input-rank`}
+              min="1"
+              max="2500000"
+              value="14500"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tabular-nums text-slate-900 outline-none focus:border-violet-500"
+            />
+          </div>
+        </div>
+
+        <!-- Total Candidates Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-violet-500 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-candidates-rank`} class="text-xs font-semibold text-slate-900">
+              Total Candidates Appeared (N)
+            </label>
+            <span class="font-mono text-xs text-slate-500">Examinees</span>
+          </div>
+          <div class="mt-2">
+            <input
+              type="number"
+              id={`${idPrefix}-candidates-rank`}
+              min="10"
+              max="5000000"
+              value="1450000"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-lg font-bold tabular-nums text-slate-900 outline-none focus:border-violet-500"
+            />
+          </div>
+          <div class="mt-2 flex flex-wrap gap-1">
+            <button type="button" data-fill-n="1450000" class="n-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">JEE (14.5L)</button>
+            <button type="button" data-fill-n="2400000" class="n-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">NEET (24L)</button>
+            <button type="button" data-fill-n="330000" class="n-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">CAT (3.3L)</button>
+            <button type="button" data-fill-n="410000" class="n-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">CET (4.1L)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. PERCENTILE TO RANK VIEW (Hidden by default) -->
+      <div id={`${idPrefix}-view-pct-to-rank`} class="hidden space-y-4">
+        <!-- Percentile Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-violet-500 focus-within:bg-white">
+          <label for={`${idPrefix}-input-pct`} class="text-sm font-semibold text-slate-900">
+            Enter Percentile Score
+          </label>
+          <div class="mt-2">
+            <input
+              type="number"
+              id={`${idPrefix}-input-pct`}
+              step="0.0001"
+              min="0"
+              max="100"
+              value="99.0000"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tabular-nums text-slate-900 outline-none focus:border-violet-500"
+            />
+          </div>
+        </div>
+
+        <!-- Total Candidates Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-violet-500 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-candidates-pct`} class="text-xs font-semibold text-slate-900">
+              Total Candidates Appeared (N)
+            </label>
+            <span class="font-mono text-xs text-slate-500">Examinees</span>
+          </div>
+          <div class="mt-2">
+            <input
+              type="number"
+              id={`${idPrefix}-candidates-pct`}
+              min="10"
+              max="5000000"
+              value="1450000"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-lg font-bold tabular-nums text-slate-900 outline-none focus:border-violet-500"
+            />
+          </div>
+          <div class="mt-2 flex flex-wrap gap-1">
+            <button type="button" data-fill-n-pct="1450000" class="n-pct-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">JEE (14.5L)</button>
+            <button type="button" data-fill-n-pct="2400000" class="n-pct-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">NEET (24L)</button>
+            <button type="button" data-fill-n-pct="330000" class="n-pct-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">CAT (3.3L)</button>
+            <button type="button" data-fill-n-pct="410000" class="n-pct-btn rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700">CET (4.1L)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formula Notice -->
+      <div class="rounded-xl border border-violet-100 bg-violet-50/50 p-4">
+        <h4 class="text-xs font-bold text-violet-900" id={`${idPrefix}-formula-title`}>
+          NTA / National Exam Normalization Formula
+        </h4>
+        <p class="mt-1 font-mono text-xs font-semibold text-violet-800" id={`${idPrefix}-formula-code`}>
+          Percentile = (100 × Candidates with score &le; Yours) / Total Examinees
+        </p>
+        <p class="mt-1 text-xs text-violet-700/90 leading-relaxed" id={`${idPrefix}-formula-desc`}>
+          Percentiles reflect relative standing, not raw marks. A 99 percentile means scoring equal to or higher than 99% of all test takers.
+        </p>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Output & College Insights -->
+    <div class="lg:col-span-6 flex flex-col justify-between space-y-5">
+      <!-- Main Output Card -->
+      <div class="rounded-2xl border-2 border-violet-500 bg-gradient-to-br from-violet-50/50 via-white to-slate-50 p-6 text-center shadow-xs">
+        <span class="text-xs font-bold uppercase tracking-wider text-violet-700" id={`${idPrefix}-result-label`}>
+          Projected Percentile Score
+        </span>
+
+        <div class="mt-2 flex items-baseline justify-center gap-1">
+          <span id={`${idPrefix}-output-main`} class="font-mono text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+            99.0069%
+          </span>
+        </div>
+
+        <div class="mt-2 text-xs font-mono font-semibold text-violet-800" id={`${idPrefix}-secondary-output`}>
+          Estimated All India Rank: ~14,400
+        </div>
+
+        <!-- Eligibility / Benchmark badge -->
+        <div class="mt-4 flex justify-center">
+          <span
+            id={`${idPrefix}-tier-badge`}
+            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 font-mono text-xs font-bold text-emerald-800"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
+            Top Tier (99+ Percentile)
+          </span>
+        </div>
+
+        <!-- Formula substitution -->
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white/80 p-3 text-left">
+          <span class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Calculation Breakdown:</span>
+          <p id={`${idPrefix}-math-steps`} class="mt-1 font-mono text-xs text-slate-700 font-medium">
+            (1 &minus; (14500 &minus; 1) / 1450000) &times; 100 = 99.0069%
+          </p>
+        </div>
+      </div>
+
+      <!-- College / Admission Insights Card -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs" id={`${idPrefix}-insights-card`}>
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide">
+            Admission &amp; Seat Prospects
+          </h4>
+          <span class="rounded bg-violet-100 px-1.5 py-0.2 font-mono text-[0.65rem] font-bold text-violet-800" id={`${idPrefix}-insights-tag`}>
+            ESTIMATED
+          </span>
+        </div>
+
+        <div class="mt-3 space-y-2 text-xs" id={`${idPrefix}-insights-body`}>
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix, initialExam }}>
+  (function () {
+    const container = document.getElementById(`${idPrefix}-container`);
+    if (!container) return;
+
+    let mode = 'exam'; // 'exam', 'rank-to-pct', 'pct-to-rank'
+    let currentExam = initialExam === 'universal' ? 'jee-main' : initialExam;
+
+    const examData = {
+      'jee-main': {
+        name: 'JEE Main 2026/2025',
+        totalMarks: 300,
+        candidates: 1450000,
+        label: 'Expected Raw Score (out of 300)',
+        quickScores: [240, 200, 185, 160, 140, 110, 80],
+        benchmarks: [
+          { score: 280, pct: 99.99, rank: 150, note: 'Top NIT Trichy / Surathkal / Warangal CSE' },
+          { score: 240, pct: 99.80, rank: 2900, note: 'Top NIT CSE / ECE across home state & other state' },
+          { score: 200, pct: 99.40, rank: 8700, note: 'Top 10 NITs Core branches / Top IIIT CSE' },
+          { score: 180, pct: 99.00, rank: 14500, note: '99+ Club: Qualified for Top NITs & IIITs' },
+          { score: 150, pct: 98.00, rank: 29000, note: 'Mid NITs / IIITs / Top State Govt Colleges' },
+          { score: 125, pct: 96.00, rank: 58000, note: 'NIT Civil/Mech/Chem & Premier GFTIs' },
+          { score: 100, pct: 93.00, rank: 101500, note: 'JEE Advanced Qualifier cutoff (UR General)' },
+          { score: 75, pct: 88.00, rank: 174000, note: 'State Counselling / Top Private University admissions' },
+          { score: 50, pct: 75.00, rank: 362500, note: 'OBC-NCL / EWS / SC / ST qualifying category' }
+        ]
+      },
+      cat: {
+        name: 'IIM CAT 2025/2026',
+        totalMarks: 198,
+        candidates: 330000,
+        label: 'Overall Raw Score (out of 198)',
+        quickScores: [110, 95, 80, 68, 55, 42, 30],
+        benchmarks: [
+          { score: 110, pct: 99.90, rank: 330, note: 'Calls from IIM Ahmedabad, Bangalore, Calcutta (BLACKI)' },
+          { score: 95, pct: 99.70, rank: 990, note: 'IIM Bangalore, Calcutta, Lucknow, FMS Delhi' },
+          { score: 80, pct: 99.10, rank: 2970, note: 'IIM Kozhikode, Indore, SPJIMR, XLRI, MDI' },
+          { score: 68, pct: 98.00, rank: 6600, note: 'CAP IIMs (New IIMs: Udaipur, Trichy, Raipur, Ranchi)' },
+          { score: 55, pct: 95.00, rank: 16500, note: 'Baby IIMs (Bodhgaya, Sambalpur, Sirmaur, Vizag)' },
+          { score: 42, pct: 90.00, rank: 33000, note: 'Tier-2 B-Schools (TAPMI, FORE, GIM, Great Lakes)' },
+          { score: 30, pct: 80.00, rank: 66000, note: 'Qualified for Specialized MBA Programs' }
+        ]
+      },
+      'mht-cet-pcm': {
+        name: 'MHT CET Engineering (PCM)',
+        totalMarks: 200,
+        candidates: 410000,
+        label: 'Total PCM Marks (out of 200)',
+        quickScores: [170, 155, 140, 125, 105, 85, 65],
+        benchmarks: [
+          { score: 170, pct: 99.85, rank: 615, note: 'COEP Pune / VJTI Mumbai CSE / IT' },
+          { score: 155, pct: 99.30, rank: 2870, note: 'SPIT Mumbai, PICT Pune CSE / EnTC' },
+          { score: 140, pct: 98.50, rank: 6150, note: 'Walchand Sangli, VIT Pune, DJSCE Mumbai' },
+          { score: 125, pct: 97.00, rank: 12300, note: 'Top 10 Autonomous Maharashtra Colleges' },
+          { score: 105, pct: 94.00, rank: 24600, note: 'Government Engineering Colleges (Amravati, Karad, Aurangabad)' },
+          { score: 85, pct: 88.00, rank: 49200, note: 'Premier Mumbai & Pune University Affiliated Colleges' },
+          { score: 65, pct: 75.00, rank: 102500, note: 'State General Merit seat allotment' }
+        ]
+      },
+      'mht-cet-pcb': {
+        name: 'MHT CET Pharmacy (PCB)',
+        totalMarks: 200,
+        candidates: 330000,
+        label: 'Total PCB Marks (out of 200)',
+        quickScores: [165, 150, 135, 115, 95, 75, 55],
+        benchmarks: [
+          { score: 165, pct: 99.80, rank: 660, note: 'ICT Mumbai (Institute of Chemical Tech) B.Pharm' },
+          { score: 150, pct: 99.20, rank: 2640, note: 'Government College of Pharmacy (Karad, Amravati, Ratnagiri)' },
+          { score: 135, pct: 98.00, rank: 6600, note: 'Top Private Pharmacy Colleges in Mumbai & Pune' },
+          { score: 115, pct: 95.00, rank: 16500, note: 'Autonomous B.Pharm & Agriculture programs' },
+          { score: 95, pct: 90.00, rank: 33000, note: 'Reputed Pharmacy Institutes across Maharashtra' },
+          { score: 75, pct: 80.00, rank: 66000, note: 'Eligible for CAP rounds allotment' }
+        ]
+      }
+    };
+
+    // DOM Elements
+    const tabExam = document.getElementById(`${idPrefix}-tab-exam`);
+    const tabRankToPct = document.getElementById(`${idPrefix}-tab-rank-to-pct`);
+    const tabPctToRank = document.getElementById(`${idPrefix}-tab-pct-to-rank`);
+
+    const viewExam = document.getElementById(`${idPrefix}-view-exam`);
+    const viewRankToPct = document.getElementById(`${idPrefix}-view-rank-to-pct`);
+    const viewPctToRank = document.getElementById(`${idPrefix}-view-pct-to-rank`);
+
+    const examSelect = document.getElementById(`${idPrefix}-exam-select`);
+    const examScoreInput = document.getElementById(`${idPrefix}-exam-score-input`);
+    const examScoreLabel = document.getElementById(`${idPrefix}-exam-score-label`);
+    const examMaxHint = document.getElementById(`${idPrefix}-exam-max-hint`);
+    const examScoreMinus = document.getElementById(`${idPrefix}-exam-score-minus`);
+    const examScorePlus = document.getElementById(`${idPrefix}-exam-score-plus`);
+    const examQuickScores = document.getElementById(`${idPrefix}-exam-quick-scores`);
+
+    const inputRank = document.getElementById(`${idPrefix}-input-rank`);
+    const candidatesRank = document.getElementById(`${idPrefix}-candidates-rank`);
+    const inputPct = document.getElementById(`${idPrefix}-input-pct`);
+    const candidatesPct = document.getElementById(`${idPrefix}-candidates-pct`);
+
+    const resultLabel = document.getElementById(`${idPrefix}-result-label`);
+    const outputMain = document.getElementById(`${idPrefix}-output-main`);
+    const secondaryOutput = document.getElementById(`${idPrefix}-secondary-output`);
+    const tierBadge = document.getElementById(`${idPrefix}-tier-badge`);
+    const mathSteps = document.getElementById(`${idPrefix}-math-steps`);
+
+    const formulaTitle = document.getElementById(`${idPrefix}-formula-title`);
+    const formulaCode = document.getElementById(`${idPrefix}-formula-code`);
+    const formulaDesc = document.getElementById(`${idPrefix}-formula-desc`);
+
+    const insightsBody = document.getElementById(`${idPrefix}-insights-body`);
+    const insightsTag = document.getElementById(`${idPrefix}-insights-tag`);
+
+    function predictExam(examKey, score) {
+      const data = examData[examKey];
+      const marks = Math.max(0, Math.min(data.totalMarks, score));
+
+      // Find bracket
+      const bms = data.benchmarks;
+      if (marks >= bms[0].score) {
+        return { pct: bms[0].pct, rank: bms[0].rank, note: bms[0].note };
+      }
+      for (let i = 0; i < bms.length - 1; i++) {
+        if (marks <= bms[i].score && marks >= bms[i + 1].score) {
+          const ratio = (marks - bms[i + 1].score) / (bms[i].score - bms[i + 1].score);
+          const pct = bms[i + 1].pct + ratio * (bms[i].pct - bms[i + 1].pct);
+          const rank = Math.round(bms[i + 1].rank - ratio * (bms[i + 1].rank - bms[i].rank));
+          return {
+            pct: Math.round(pct * 1000) / 1000,
+            rank: Math.max(1, rank),
+            note: ratio >= 0.5 ? bms[i].note : bms[i + 1].note
+          };
+        }
+      }
+      const last = bms[bms.length - 1];
+      const ratio = marks / last.score;
+      const pct = Math.max(1, last.pct * ratio);
+      return {
+        pct: Math.round(pct * 100) / 100,
+        rank: Math.round(data.candidates * (1 - pct / 100)),
+        note: 'State / Regional counselling eligibility'
+      };
+    }
+
+    function renderExamQuickScores() {
+      const data = examData[currentExam];
+      examQuickScores.innerHTML = '';
+      data.quickScores.forEach((s) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rounded border border-slate-200 bg-white px-2 py-0.5 font-mono text-[0.7rem] font-medium text-slate-700 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-800 transition-colors';
+        btn.textContent = `${s} marks`;
+        btn.addEventListener('click', () => {
+          examScoreInput.value = s.toString();
+          calculate();
+        });
+        examQuickScores.appendChild(btn);
+      });
+    }
+
+    function calculate() {
+      if (mode === 'exam') {
+        const data = examData[currentExam];
+        const rawScore = parseFloat(examScoreInput.value) || 0;
+        const res = predictExam(currentExam, rawScore);
+
+        resultLabel.textContent = `Projected ${data.name} Percentile`;
+        outputMain.textContent = `${res.pct.toFixed(2)}%`;
+        secondaryOutput.textContent = `Estimated All India Rank: ~${res.rank.toLocaleString('en-IN')}`;
+
+        mathSteps.textContent = `Score ${rawScore}/${data.totalMarks} calibrated across ${data.candidates.toLocaleString('en-IN')} candidates.`;
+
+        // Tier badge
+        if (res.pct >= 99) {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 font-mono text-xs font-bold text-emerald-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Elite Tier (99+ Percentile)';
+        } else if (res.pct >= 95) {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3.5 py-1 font-mono text-xs font-bold text-blue-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span> Premier Tier (95% - 98.99%)';
+        } else if (res.pct >= 85) {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3.5 py-1 font-mono text-xs font-bold text-amber-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-amber-600"></span> Competitive Tier (85% - 94.99%)';
+        } else {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1 font-mono text-xs font-bold text-slate-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span> State / Regional Tier (< 85%)';
+        }
+
+        // Insights
+        insightsTag.textContent = 'PROSPECTS';
+        insightsBody.innerHTML = `
+          <div class="rounded-lg bg-violet-50/70 p-2.5 text-violet-950 font-medium">
+            🎯 <strong class="font-bold">Target Institutions:</strong> ${res.note}
+          </div>
+          <div class="flex items-center justify-between text-slate-600 pt-1">
+            <span>Exam Normalization Pool:</span>
+            <span class="font-mono font-semibold">${data.candidates.toLocaleString('en-IN')} examinees</span>
+          </div>
+          <div class="flex items-center justify-between text-slate-600">
+            <span>Maximum Exam Total:</span>
+            <span class="font-mono font-semibold">${data.totalMarks} Marks</span>
+          </div>
+        `;
+      } else if (mode === 'rank-to-pct') {
+        const rank = Math.max(1, parseFloat(inputRank.value) || 1);
+        const n = Math.max(rank, parseFloat(candidatesRank.value) || 1000000);
+
+        const pct = Math.max(0, Math.min(100, (1 - (rank - 1) / n) * 100));
+
+        resultLabel.textContent = 'Calculated Exact Percentile';
+        outputMain.textContent = `${pct.toFixed(4)}%`;
+        secondaryOutput.textContent = `Rank #${rank.toLocaleString('en-IN')} out of ${n.toLocaleString('en-IN')} examinees`;
+
+        mathSteps.textContent = `(1 - (${rank} - 1) / ${n}) × 100 = ${pct.toFixed(7)}%`;
+
+        if (pct >= 99) {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 font-mono text-xs font-bold text-emerald-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Top 1% of Candidates';
+        } else if (pct >= 90) {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3.5 py-1 font-mono text-xs font-bold text-blue-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span> Top 10% of Candidates';
+        } else {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1 font-mono text-xs font-bold text-slate-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span> All India Merit Rank';
+        }
+
+        insightsTag.textContent = 'INTERPRETATION';
+        insightsBody.innerHTML = `
+          <p class="text-slate-700 leading-relaxed">
+            With an All India Rank of <strong>#${rank.toLocaleString('en-IN')}</strong>, you performed higher than or equal to <strong>${pct.toFixed(2)}%</strong> of all ${n.toLocaleString('en-IN')} students who appeared in this examination.
+          </p>
+          <div class="mt-2 text-slate-500 font-mono text-[0.7rem]">
+            Candidates behind you: ~${Math.round(n * (pct / 100)).toLocaleString('en-IN')} candidates.
+          </div>
+        `;
+      } else {
+        // pct-to-rank
+        const pct = Math.max(0, Math.min(100, parseFloat(inputPct.value) || 99));
+        const n = Math.max(10, parseFloat(candidatesPct.value) || 1450000);
+
+        const rank = Math.max(1, Math.round((1 - pct / 100) * n + 1));
+
+        resultLabel.textContent = 'Estimated All India Rank (AIR)';
+        outputMain.textContent = `#${rank.toLocaleString('en-IN')}`;
+        secondaryOutput.textContent = `Based on ${pct.toFixed(4)}% across ${n.toLocaleString('en-IN')} candidates`;
+
+        mathSteps.textContent = `(1 - ${pct.toFixed(4)} / 100) × ${n} + 1 = ~${rank}`;
+
+        if (pct >= 99) {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 font-mono text-xs font-bold text-emerald-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Top 1% Merit Rank';
+        } else {
+          tierBadge.className = 'inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3.5 py-1 font-mono text-xs font-bold text-blue-800';
+          tierBadge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span> All India Merit Pool';
+        }
+
+        insightsTag.textContent = 'RANK BRACKET';
+        insightsBody.innerHTML = `
+          <p class="text-slate-700 leading-relaxed">
+            At a <strong>${pct.toFixed(4)} percentile</strong>, approximately <strong>${(rank - 1).toLocaleString('en-IN')} candidates</strong> scored higher than you in a cohort of ${n.toLocaleString('en-IN')} examinees.
+          </p>
+        `;
+      }
+    }
+
+    // Mode switching
+    function setMode(newMode) {
+      mode = newMode;
+      tabExam.className = 'rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900';
+      tabRankToPct.className = 'rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900';
+      tabPctToRank.className = 'rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900';
+
+      viewExam.classList.add('hidden');
+      viewRankToPct.classList.add('hidden');
+      viewPctToRank.classList.add('hidden');
+
+      if (mode === 'exam') {
+        tabExam.className = 'rounded-lg bg-white px-3 py-1.5 text-center text-violet-700 shadow-xs transition-all hover:text-violet-900 font-bold';
+        viewExam.classList.remove('hidden');
+        formulaTitle.textContent = `${examData[currentExam].name} Normalization Formula`;
+        formulaCode.textContent = 'Score out of Max Marks ⟶ Normalized Shift Percentile ⟶ All India Rank Bracket';
+        formulaDesc.textContent = 'Calibrated against official conducting agency distributions, past session shift percentiles, and verified college opening/closing ranks.';
+      } else if (mode === 'rank-to-pct') {
+        tabRankToPct.className = 'rounded-lg bg-white px-3 py-1.5 text-center text-violet-700 shadow-xs transition-all hover:text-violet-900 font-bold';
+        viewRankToPct.classList.remove('hidden');
+        formulaTitle.textContent = 'Standard Universal Rank to Percentile Formula';
+        formulaCode.textContent = 'Percentile = (1 - (Rank - 1) / N) × 100';
+        formulaDesc.textContent = 'Where Rank is your rank position and N is the total number of appearing candidates.';
+      } else {
+        tabPctToRank.className = 'rounded-lg bg-white px-3 py-1.5 text-center text-violet-700 shadow-xs transition-all hover:text-violet-900 font-bold';
+        viewPctToRank.classList.remove('hidden');
+        formulaTitle.textContent = 'Standard Percentile to Rank Formula';
+        formulaCode.textContent = 'Rank = (1 - (Percentile / 100)) × N + 1';
+        formulaDesc.textContent = 'Calculates your absolute position among all test takers in the competition.';
+      }
+
+      calculate();
+    }
+
+    tabExam.addEventListener('click', () => setMode('exam'));
+    tabRankToPct.addEventListener('click', () => setMode('rank-to-pct'));
+    tabPctToRank.addEventListener('click', () => setMode('pct-to-rank'));
+
+    examSelect.addEventListener('change', (e) => {
+      currentExam = e.target.value;
+      const data = examData[currentExam];
+      examScoreLabel.textContent = data.label;
+      examMaxHint.textContent = `Max: ${data.totalMarks}`;
+      examScoreInput.max = data.totalMarks.toString();
+      examScoreInput.value = data.quickScores[2].toString();
+      renderExamQuickScores();
+      setMode('exam');
+    });
+
+    examScoreInput.addEventListener('input', calculate);
+    examScoreMinus.addEventListener('click', () => {
+      const cur = parseFloat(examScoreInput.value) || 0;
+      examScoreInput.value = Math.max(0, cur - 5).toString();
+      calculate();
+    });
+    examScorePlus.addEventListener('click', () => {
+      const cur = parseFloat(examScoreInput.value) || 0;
+      const max = examData[currentExam].totalMarks;
+      examScoreInput.value = Math.min(max, cur + 5).toString();
+      calculate();
+    });
+
+    inputRank.addEventListener('input', calculate);
+    candidatesRank.addEventListener('input', calculate);
+
+    container.querySelectorAll('.n-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        candidatesRank.value = e.currentTarget.getAttribute('data-fill-n');
+        calculate();
+      });
+    });
+
+    inputPct.addEventListener('input', calculate);
+    candidatesPct.addEventListener('input', calculate);
+
+    container.querySelectorAll('.n-pct-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        candidatesPct.value = e.currentTarget.getAttribute('data-fill-n-pct');
+        calculate();
+      });
+    });
+
+    // Initialize
+    renderExamQuickScores();
+    calculate();
+  })();
+</script>

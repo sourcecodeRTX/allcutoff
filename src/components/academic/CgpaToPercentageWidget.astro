@@ -1,0 +1,500 @@
+---
+import { UNIVERSITY_CONFIGS, type UniversityKey } from '../../data/academicCalculators';
+
+interface Props {
+  initialUniversity?: UniversityKey;
+  idPrefix?: string;
+}
+
+const { initialUniversity = 'universal', idPrefix = 'cgpa-to-pct' } = Astro.props;
+---
+
+<div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Header -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-indigo-600" aria-hidden="true"></span>
+          Two-Way Grade Converter
+        </span>
+        <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          CGPA to Percentage Calculator
+        </h3>
+      </div>
+
+      <!-- University / Board Preset Selector -->
+      <div class="flex items-center gap-2">
+        <label for={`${idPrefix}-uni-select`} class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Official Formula:
+        </label>
+        <select
+          id={`${idPrefix}-uni-select`}
+          class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
+        >
+          <option value="universal" selected={initialUniversity === 'universal'}>AICTE / UGC Standard (CGPA × 9.5)</option>
+          <option value="cbse" selected={initialUniversity === 'cbse'}>CBSE Board Class 10 (CGPA × 9.5)</option>
+          <option value="vit" selected={initialUniversity === 'vit'}>VIT Vellore (CGPA × 10)</option>
+          <option value="ktu" selected={initialUniversity === 'ktu'}>KTU Kerala (10 × CGPA - 3.75)</option>
+          <option value="vtu" selected={initialUniversity === 'vtu'}>VTU Karnataka ((CGPA - 0.75) × 10)</option>
+          <option value="anna-university" selected={initialUniversity === 'anna-university'}>Anna University (CGPA × 10)</option>
+          <option value="aktu" selected={initialUniversity === 'aktu'}>AKTU / UPTU ((CGPA - 0.75) × 10)</option>
+          <option value="custom">Custom Multiplier</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs: CGPA -> % vs % -> CGPA -->
+    <div class="mt-4 flex rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-semibold">
+      <button
+        type="button"
+        id={`${idPrefix}-tab-cgpa-to-pct`}
+        class="flex-1 rounded-lg bg-white py-2 text-center text-indigo-700 shadow-xs transition-all hover:text-indigo-900"
+        data-mode="cgpa-to-pct"
+      >
+        Convert CGPA to Percentage (%)
+      </button>
+      <button
+        type="button"
+        id={`${idPrefix}-tab-pct-to-cgpa`}
+        class="flex-1 rounded-lg py-2 text-center text-slate-600 transition-all hover:text-slate-900"
+        data-mode="pct-to-cgpa"
+      >
+        Convert Percentage (%) to CGPA (Reverse)
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT COLUMN: Inputs -->
+    <div class="lg:col-span-6 space-y-5">
+      <!-- Primary Input Card -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-indigo-500 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label id={`${idPrefix}-input-label`} for={`${idPrefix}-primary-input`} class="text-sm font-semibold text-slate-900">
+            Enter Cumulative Grade Point Average (CGPA)
+          </label>
+          <span id={`${idPrefix}-scale-hint`} class="font-mono text-xs text-slate-500">Scale: 0.00 – 10.00</span>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+            id={`${idPrefix}-btn-minus`}
+            aria-label="Decrease value"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-primary-input`}
+            step="0.01"
+            min="0"
+            max="10"
+            value="8.4"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tabular-nums text-slate-900 outline-none focus:border-indigo-500"
+          />
+          <button
+            type="button"
+            class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+            id={`${idPrefix}-btn-plus`}
+            aria-label="Increase value"
+          >
+            +
+          </button>
+        </div>
+
+        <!-- Custom Multiplier Row (hidden by default) -->
+        <div id={`${idPrefix}-custom-multiplier-row`} class="mt-3 hidden pt-3 border-t border-slate-200">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-custom-mult`} class="text-xs font-semibold text-slate-700">Custom Multiplier Factor (e.g. 9.5 or 10):</label>
+            <input
+              type="number"
+              id={`${idPrefix}-custom-mult`}
+              step="0.05"
+              min="1"
+              max="20"
+              value="9.5"
+              class="w-24 rounded border border-slate-300 px-2 py-1 text-center font-mono text-xs font-bold text-slate-900 outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Quick Value Presets -->
+        <div class="mt-4">
+          <span class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500">Quick Values:</span>
+          <div id={`${idPrefix}-quick-pills`} class="mt-1.5 flex flex-wrap gap-1.5">
+            <!-- Populated dynamically via JS based on mode -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Formula Notice & Verification -->
+      <div class="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+        <div class="flex items-start gap-2.5">
+          <svg class="h-5 w-5 shrink-0 text-indigo-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h4 class="text-xs font-bold text-indigo-900" id={`${idPrefix}-formula-title`}>
+              AICTE Standard Formula
+            </h4>
+            <p class="mt-1 font-mono text-xs font-semibold text-indigo-800" id={`${idPrefix}-formula-expr`}>
+              Percentage (%) = CGPA × 9.5
+            </p>
+            <p class="mt-1 text-xs text-indigo-700/90 leading-relaxed" id={`${idPrefix}-formula-notes`}>
+              Standard UGC / AICTE guidelines recommend multiplying CGPA by 9.5 for percentage conversion.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Output & Comparison -->
+    <div class="lg:col-span-6 flex flex-col justify-between space-y-5">
+      <!-- Main Result Scorecard -->
+      <div class="rounded-2xl border-2 border-indigo-500 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50 p-6 text-center shadow-xs">
+        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600" id={`${idPrefix}-result-label`}>
+          Equivalent Marks Percentage
+        </span>
+
+        <div class="mt-2 flex items-baseline justify-center gap-1.5">
+          <span id={`${idPrefix}-output-value`} class="font-mono text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+            79.80%
+          </span>
+        </div>
+
+        <!-- Academic Division Badge -->
+        <div class="mt-3 flex justify-center">
+          <span
+            id={`${idPrefix}-division-badge`}
+            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 font-mono text-xs font-bold text-emerald-800"
+          >
+            <svg class="h-3.5 w-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            First Class with Distinction
+          </span>
+        </div>
+
+        <!-- Mathematical Calculation Step-by-Step -->
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white/80 p-3 text-left">
+          <span class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Step-by-Step Substitution:</span>
+          <p id={`${idPrefix}-math-steps`} class="mt-1 font-mono text-xs text-slate-700 font-medium">
+            8.40 × 9.5 = 79.80%
+          </p>
+        </div>
+      </div>
+
+      <!-- Cross-University Comparison Table -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide">
+            Equivalent Score Across Universities
+          </h4>
+          <span class="text-[0.6875rem] font-medium text-slate-500">Same Input Value</span>
+        </div>
+
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <tbody id={`${idPrefix}-comparison-body`} class="divide-y divide-slate-100">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix, initialUniversity }}>
+  (function () {
+    const container = document.getElementById(`${idPrefix}-container`);
+    if (!container) return;
+
+    let mode = 'cgpa-to-pct'; // 'cgpa-to-pct' or 'pct-to-cgpa'
+    let selectedUni = initialUniversity || 'universal';
+
+    const uniConfigs = {
+      universal: {
+        name: 'AICTE / UGC Standard',
+        exprToPct: 'Percentage (%) = CGPA × 9.5',
+        exprToCgpa: 'CGPA = Percentage / 9.5',
+        toPct: (cgpa) => cgpa * 9.5,
+        toCgpa: (pct) => pct / 9.5,
+        stepToPct: (cgpa) => `${cgpa.toFixed(2)} × 9.5 = ${(cgpa * 9.5).toFixed(2)}%`,
+        stepToCgpa: (pct) => `${pct.toFixed(2)} ÷ 9.5 = ${(pct / 9.5).toFixed(2)} CGPA`,
+        notes: 'Standard UGC / AICTE guidelines recommend multiplying CGPA by 9.5 for percentage conversion.'
+      },
+      cbse: {
+        name: 'CBSE Board Class 10',
+        exprToPct: 'Percentage (%) = CGPA × 9.5',
+        exprToCgpa: 'CGPA = Percentage / 9.5',
+        toPct: (cgpa) => cgpa * 9.5,
+        toCgpa: (pct) => pct / 9.5,
+        stepToPct: (cgpa) => `${cgpa.toFixed(2)} × 9.5 = ${(cgpa * 9.5).toFixed(2)}%`,
+        stepToCgpa: (pct) => `${pct.toFixed(2)} ÷ 9.5 = ${(pct / 9.5).toFixed(2)} CGPA`,
+        notes: 'CBSE established the 9.5 factor based on historical statistical analysis of top 500 scorers.'
+      },
+      vit: {
+        name: 'VIT Vellore',
+        exprToPct: 'Percentage (%) = CGPA × 10',
+        exprToCgpa: 'CGPA = Percentage / 10',
+        toPct: (cgpa) => cgpa * 10,
+        toCgpa: (pct) => pct / 10,
+        stepToPct: (cgpa) => `${cgpa.toFixed(2)} × 10 = ${(cgpa * 10).toFixed(2)}%`,
+        stepToCgpa: (pct) => `${pct.toFixed(2)} ÷ 10 = ${(pct / 10).toFixed(2)} CGPA`,
+        notes: 'VIT certificates certify that Equivalent Percentage is directly CGPA multiplied by 10.'
+      },
+      ktu: {
+        name: 'KTU Kerala',
+        exprToPct: 'Percentage (%) = (10 × CGPA) - 3.75',
+        exprToCgpa: 'CGPA = (Percentage + 3.75) / 10',
+        toPct: (cgpa) => Math.max(0, 10 * cgpa - 3.75),
+        toCgpa: (pct) => Math.max(0, (pct + 3.75) / 10),
+        stepToPct: (cgpa) => `(10 × ${cgpa.toFixed(2)}) - 3.75 = ${Math.max(0, 10 * cgpa - 3.75).toFixed(2)}%`,
+        stepToCgpa: (pct) => `(${pct.toFixed(2)} + 3.75) ÷ 10 = ${Math.max(0, (pct + 3.75) / 10).toFixed(2)} CGPA`,
+        notes: 'Official KTU Kerala notification formula printed on university transcripts.'
+      },
+      vtu: {
+        name: 'VTU Belagavi',
+        exprToPct: 'Percentage (%) = (CGPA - 0.75) × 10',
+        exprToCgpa: 'CGPA = (Percentage / 10) + 0.75',
+        toPct: (cgpa) => Math.max(0, (cgpa - 0.75) * 10),
+        toCgpa: (pct) => Math.max(0, pct / 10 + 0.75),
+        stepToPct: (cgpa) => `(${cgpa.toFixed(2)} - 0.75) × 10 = ${Math.max(0, (cgpa - 0.75) * 10).toFixed(2)}%`,
+        stepToCgpa: (pct) => `(${pct.toFixed(2)} ÷ 10) + 0.75 = ${Math.max(0, pct / 10 + 0.75).toFixed(2)} CGPA`,
+        notes: 'Official VTU CBCS notification formula printed on marks cards.'
+      },
+      'anna-university': {
+        name: 'Anna University',
+        exprToPct: 'Percentage (%) = CGPA × 10',
+        exprToCgpa: 'CGPA = Percentage / 10',
+        toPct: (cgpa) => cgpa * 10,
+        toCgpa: (pct) => pct / 10,
+        stepToPct: (cgpa) => `${cgpa.toFixed(2)} × 10 = ${(cgpa * 10).toFixed(2)}%`,
+        stepToCgpa: (pct) => `${pct.toFixed(2)} ÷ 10 = ${(pct / 10).toFixed(2)} CGPA`,
+        notes: 'Anna University Regulation 2021 & 2017 specifies Percentage = CGPA × 10.'
+      },
+      aktu: {
+        name: 'AKTU / UPTU',
+        exprToPct: 'Percentage (%) = (CGPA - 0.75) × 10',
+        exprToCgpa: 'CGPA = (Percentage / 10) + 0.75',
+        toPct: (cgpa) => Math.max(0, (cgpa - 0.75) * 10),
+        toCgpa: (pct) => Math.max(0, pct / 10 + 0.75),
+        stepToPct: (cgpa) => `(${cgpa.toFixed(2)} - 0.75) × 10 = ${Math.max(0, (cgpa - 0.75) * 10).toFixed(2)}%`,
+        stepToCgpa: (pct) => `(${pct.toFixed(2)} ÷ 10) + 0.75 = ${Math.max(0, pct / 10 + 0.75).toFixed(2)} CGPA`,
+        notes: 'AKTU Lucknow ordinance certifies Percentage = (CGPA - 0.75) × 10.'
+      },
+      custom: {
+        name: 'Custom Multiplier',
+        exprToPct: 'Percentage (%) = CGPA × Factor',
+        exprToCgpa: 'CGPA = Percentage / Factor',
+        toPct: (cgpa, factor = 9.5) => cgpa * factor,
+        toCgpa: (pct, factor = 9.5) => pct / factor,
+        stepToPct: (cgpa, factor = 9.5) => `${cgpa.toFixed(2)} × ${factor} = ${(cgpa * factor).toFixed(2)}%`,
+        stepToCgpa: (pct, factor = 9.5) => `${pct.toFixed(2)} ÷ ${factor} = ${(pct / factor).toFixed(2)} CGPA`,
+        notes: 'Custom multiplier configured for specific institutional regulations.'
+      }
+    };
+
+    // DOM Elements
+    const tabCgpaToPct = document.getElementById(`${idPrefix}-tab-cgpa-to-pct`);
+    const tabPctToCgpa = document.getElementById(`${idPrefix}-tab-pct-to-cgpa`);
+    const uniSelect = document.getElementById(`${idPrefix}-uni-select`);
+    const primaryInput = document.getElementById(`${idPrefix}-primary-input`);
+    const inputLabel = document.getElementById(`${idPrefix}-input-label`);
+    const scaleHint = document.getElementById(`${idPrefix}-scale-hint`);
+    const btnMinus = document.getElementById(`${idPrefix}-btn-minus`);
+    const btnPlus = document.getElementById(`${idPrefix}-btn-plus`);
+    const quickPillsContainer = document.getElementById(`${idPrefix}-quick-pills`);
+    const customRow = document.getElementById(`${idPrefix}-custom-multiplier-row`);
+    const customMultInput = document.getElementById(`${idPrefix}-custom-mult`);
+
+    const formulaTitle = document.getElementById(`${idPrefix}-formula-title`);
+    const formulaExpr = document.getElementById(`${idPrefix}-formula-expr`);
+    const formulaNotes = document.getElementById(`${idPrefix}-formula-notes`);
+
+    const resultLabel = document.getElementById(`${idPrefix}-result-label`);
+    const outputValue = document.getElementById(`${idPrefix}-output-value`);
+    const divisionBadge = document.getElementById(`${idPrefix}-division-badge`);
+    const mathSteps = document.getElementById(`${idPrefix}-math-steps`);
+    const comparisonBody = document.getElementById(`${idPrefix}-comparison-body`);
+
+    function getCustomFactor() {
+      const val = parseFloat(customMultInput.value);
+      return isNaN(val) || val <= 0 ? 9.5 : val;
+    }
+
+    function getDivision(pct) {
+      if (pct >= 75) return { label: 'First Class with Distinction', color: 'bg-emerald-100 text-emerald-800' };
+      if (pct >= 60) return { label: 'First Class', color: 'bg-blue-100 text-blue-800' };
+      if (pct >= 50) return { label: 'Second Class', color: 'bg-amber-100 text-amber-800' };
+      if (pct >= 35) return { label: 'Third Class / Pass Division', color: 'bg-slate-100 text-slate-800' };
+      return { label: 'Fail / Essential Repeat', color: 'bg-rose-100 text-rose-800' };
+    }
+
+    function renderQuickPills() {
+      quickPillsContainer.innerHTML = '';
+      const pills = mode === 'cgpa-to-pct'
+        ? [6.5, 7.0, 7.5, 8.0, 8.4, 9.0, 9.5]
+        : [55, 60, 65, 70, 75, 80, 85, 90];
+
+      pills.forEach((p) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rounded-md border border-slate-200 bg-white px-2 py-0.5 font-mono text-[0.7rem] font-semibold text-slate-700 shadow-2xs hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors';
+        btn.textContent = mode === 'cgpa-to-pct' ? p.toFixed(1) : `${p}%`;
+        btn.addEventListener('click', () => {
+          primaryInput.value = p.toString();
+          calculate();
+        });
+        quickPillsContainer.appendChild(btn);
+      });
+    }
+
+    function calculate() {
+      const config = uniConfigs[selectedUni] || uniConfigs.universal;
+      const customFactor = getCustomFactor();
+      const rawVal = parseFloat(primaryInput.value);
+      const val = isNaN(rawVal) ? 0 : rawVal;
+
+      if (mode === 'cgpa-to-pct') {
+        // CGPA -> %
+        const clampedCgpa = Math.max(0, Math.min(10, val));
+        const pct = Math.min(100, Math.max(0, config.toPct(clampedCgpa, customFactor)));
+        outputValue.textContent = `${pct.toFixed(2)}%`;
+        mathSteps.textContent = config.stepToPct(clampedCgpa, customFactor);
+
+        const div = getDivision(pct);
+        divisionBadge.className = `inline-flex items-center gap-1 rounded-full px-3 py-1 font-mono text-xs font-bold ${div.color}`;
+        divisionBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-current"></span> ${div.label}`;
+
+        // Cross comparison
+        renderCrossComparison(clampedCgpa);
+      } else {
+        // % -> CGPA
+        const clampedPct = Math.max(0, Math.min(100, val));
+        const cgpa = Math.min(10, Math.max(0, config.toCgpa(clampedPct, customFactor)));
+        outputValue.textContent = `${cgpa.toFixed(2)} CGPA`;
+        mathSteps.textContent = config.stepToCgpa(clampedPct, customFactor);
+
+        const div = getDivision(clampedPct);
+        divisionBadge.className = `inline-flex items-center gap-1 rounded-full px-3 py-1 font-mono text-xs font-bold ${div.color}`;
+        divisionBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-current"></span> ${div.label}`;
+
+        // Cross comparison
+        renderCrossComparisonReverse(clampedPct);
+      }
+    }
+
+    function renderCrossComparison(cgpa) {
+      const keys = ['universal', 'vit', 'ktu', 'vtu', 'anna-university'];
+      comparisonBody.innerHTML = keys.map((key) => {
+        const c = uniConfigs[key];
+        const res = Math.min(100, Math.max(0, c.toPct(cgpa)));
+        const isCurrent = key === selectedUni;
+        return `
+          <tr class="${isCurrent ? 'bg-indigo-50/70 font-semibold text-indigo-950' : 'text-slate-700'}">
+            <td class="py-1.5 px-2">${c.name}</td>
+            <td class="py-1.5 px-2 font-mono text-slate-500 text-[0.65rem]">${key === 'ktu' ? '10×CGPA-3.75' : key === 'vtu' ? '(CGPA-0.75)×10' : key === 'universal' ? 'CGPA×9.5' : 'CGPA×10'}</td>
+            <td class="py-1.5 px-2 text-right font-mono font-bold text-slate-900">${res.toFixed(2)}%</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderCrossComparisonReverse(pct) {
+      const keys = ['universal', 'vit', 'ktu', 'vtu', 'anna-university'];
+      comparisonBody.innerHTML = keys.map((key) => {
+        const c = uniConfigs[key];
+        const res = Math.min(10, Math.max(0, c.toCgpa(pct)));
+        const isCurrent = key === selectedUni;
+        return `
+          <tr class="${isCurrent ? 'bg-indigo-50/70 font-semibold text-indigo-950' : 'text-slate-700'}">
+            <td class="py-1.5 px-2">${c.name}</td>
+            <td class="py-1.5 px-2 font-mono text-slate-500 text-[0.65rem]">Equivalent CGPA</td>
+            <td class="py-1.5 px-2 text-right font-mono font-bold text-slate-900">${res.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateModeUI() {
+      const config = uniConfigs[selectedUni] || uniConfigs.universal;
+      if (mode === 'cgpa-to-pct') {
+        tabCgpaToPct.className = 'flex-1 rounded-lg bg-white py-2 text-center text-indigo-700 shadow-xs transition-all hover:text-indigo-900 font-bold';
+        tabPctToCgpa.className = 'flex-1 rounded-lg py-2 text-center text-slate-600 transition-all hover:text-slate-900';
+        inputLabel.textContent = 'Enter Cumulative Grade Point Average (CGPA)';
+        scaleHint.textContent = 'Scale: 0.00 – 10.00';
+        resultLabel.textContent = 'Equivalent Marks Percentage';
+        primaryInput.min = '0';
+        primaryInput.max = '10';
+        primaryInput.step = '0.01';
+        primaryInput.value = '8.4';
+        formulaExpr.textContent = config.exprToPct;
+      } else {
+        tabPctToCgpa.className = 'flex-1 rounded-lg bg-white py-2 text-center text-indigo-700 shadow-xs transition-all hover:text-indigo-900 font-bold';
+        tabCgpaToPct.className = 'flex-1 rounded-lg py-2 text-center text-slate-600 transition-all hover:text-slate-900';
+        inputLabel.textContent = 'Enter Marks Percentage (%)';
+        scaleHint.textContent = 'Scale: 0.00% – 100.00%';
+        resultLabel.textContent = 'Equivalent Cumulative CGPA';
+        primaryInput.min = '0';
+        primaryInput.max = '100';
+        primaryInput.step = '0.1';
+        primaryInput.value = '79.8';
+        formulaExpr.textContent = config.exprToCgpa;
+      }
+
+      formulaTitle.textContent = `${config.name} Formula`;
+      formulaNotes.textContent = config.notes;
+      renderQuickPills();
+      calculate();
+    }
+
+    // Event Listeners
+    tabCgpaToPct.addEventListener('click', () => {
+      mode = 'cgpa-to-pct';
+      updateModeUI();
+    });
+
+    tabPctToCgpa.addEventListener('click', () => {
+      mode = 'pct-to-cgpa';
+      updateModeUI();
+    });
+
+    uniSelect.addEventListener('change', (e) => {
+      selectedUni = e.target.value;
+      if (selectedUni === 'custom') {
+        customRow.classList.remove('hidden');
+      } else {
+        customRow.classList.add('hidden');
+      }
+      updateModeUI();
+    });
+
+    primaryInput.addEventListener('input', calculate);
+    customMultInput.addEventListener('input', calculate);
+
+    btnMinus.addEventListener('click', () => {
+      const step = mode === 'cgpa-to-pct' ? 0.1 : 1.0;
+      const cur = parseFloat(primaryInput.value) || 0;
+      const min = parseFloat(primaryInput.min) || 0;
+      primaryInput.value = Math.max(min, cur - step).toFixed(mode === 'cgpa-to-pct' ? 2 : 1);
+      calculate();
+    });
+
+    btnPlus.addEventListener('click', () => {
+      const step = mode === 'cgpa-to-pct' ? 0.1 : 1.0;
+      const cur = parseFloat(primaryInput.value) || 0;
+      const max = parseFloat(primaryInput.max) || 100;
+      primaryInput.value = Math.min(max, cur + step).toFixed(mode === 'cgpa-to-pct' ? 2 : 1);
+      calculate();
+    });
+
+    // Initialize
+    renderQuickPills();
+    updateModeUI();
+  })();
+</script>

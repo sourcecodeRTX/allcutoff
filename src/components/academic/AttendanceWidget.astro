@@ -1,0 +1,407 @@
+---
+interface Props {
+  idPrefix?: string;
+}
+
+const { idPrefix = 'attendance' } = Astro.props;
+---
+
+<div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Header -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-teal-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-teal-600" aria-hidden="true"></span>
+          College Attendance &amp; Bunk Planner
+        </span>
+        <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Attendance Percentage &amp; Safe Bunk Calculator
+        </h3>
+      </div>
+
+      <!-- Target selector pills -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">Target:</span>
+        <button
+          type="button"
+          data-target="75"
+          class="target-pill-btn rounded-lg bg-teal-600 px-3 py-1 text-xs font-bold text-white shadow-xs transition-colors"
+        >
+          75%
+        </button>
+        <button
+          type="button"
+          data-target="80"
+          class="target-pill-btn rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          80%
+        </button>
+        <button
+          type="button"
+          data-target="85"
+          class="target-pill-btn rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          85%
+        </button>
+      </div>
+    </div>
+    <p class="mt-2 text-xs text-slate-600">
+      Calculate your current attendance percentage, discover how many classes you can safely skip, or find the exact number of consecutive classes required to cure attendance shortage.
+    </p>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT COLUMN: Inputs -->
+    <div class="lg:col-span-6 space-y-5">
+      <!-- Classes Attended Input -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-teal-500 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label for={`${idPrefix}-attended`} class="text-sm font-semibold text-slate-900">
+            Classes Attended
+          </label>
+          <span class="font-mono text-xs text-slate-500">Present</span>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+            data-step-target="attended"
+            data-dir="-1"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-attended`}
+            min="0"
+            max="1000"
+            value="36"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-500"
+          />
+          <button
+            type="button"
+            class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+            data-step-target="attended"
+            data-dir="1"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Total Classes Conducted Input -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-teal-500 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label for={`${idPrefix}-total`} class="text-sm font-semibold text-slate-900">
+            Total Classes Conducted
+          </label>
+          <span class="font-mono text-xs text-slate-500">Held to date</span>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+            data-step-target="total"
+            data-dir="-1"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-total`}
+            min="1"
+            max="1000"
+            value="40"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-500"
+          />
+          <button
+            type="button"
+            class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+            data-step-target="total"
+            data-dir="1"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Target Percentage Slider / Custom Input -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="flex items-center justify-between text-xs font-semibold text-slate-700">
+          <span>Target Attendance Rule</span>
+          <span id={`${idPrefix}-target-display`} class="font-mono text-sm font-bold text-teal-700">75%</span>
+        </div>
+        <input
+          type="range"
+          id={`${idPrefix}-target-slider`}
+          min="50"
+          max="95"
+          value="75"
+          class="mt-3 w-full accent-teal-600 cursor-pointer"
+        />
+        <div class="flex justify-between text-[0.7rem] font-mono text-slate-400 mt-1">
+          <span>50%</span>
+          <span>75% (Standard)</span>
+          <span>85%</span>
+          <span>95%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Status & Action Hero Box -->
+    <div class="lg:col-span-6">
+      <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5 sm:p-6 shadow-sm">
+        <span class="font-mono text-[0.7rem] font-bold uppercase tracking-wider text-teal-700 block">
+          Current Attendance Status
+        </span>
+
+        <div class="mt-3 flex items-baseline justify-between">
+          <div>
+            <div class="flex items-baseline gap-2">
+              <span id={`${idPrefix}-pct-display`} class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+                90.00%
+              </span>
+            </div>
+            <p class="mt-0.5 text-xs text-slate-500">
+              <span id={`${idPrefix}-stat-attended`}>36</span> attended of <span id={`${idPrefix}-stat-total`}>40</span> classes
+            </p>
+          </div>
+
+          <!-- Status badge -->
+          <span
+            id={`${idPrefix}-status-pill`}
+            class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800"
+          >
+            <span class="h-2 w-2 rounded-full bg-emerald-600"></span>
+            <span id={`${idPrefix}-status-text`}>Eligible / Safe</span>
+          </span>
+        </div>
+
+        <!-- Progress Gauge -->
+        <div class="mt-4">
+          <div class="h-3 w-full overflow-hidden rounded-full bg-slate-200/80">
+            <div
+              id={`${idPrefix}-gauge-bar`}
+              class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-300"
+              style="width: 90%;"
+            ></div>
+          </div>
+        </div>
+
+        <!-- HERO ACTION CARD: Safe Bunks vs Classes Needed -->
+        <div class="mt-5">
+          <div
+            id={`${idPrefix}-action-box`}
+            class="rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 transition-all"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <span id={`${idPrefix}-action-badge`} class="text-[0.7rem] font-bold uppercase tracking-wider text-emerald-800">
+                  Safe Bunks Available
+                </span>
+                <h4 id={`${idPrefix}-action-count`} class="text-2xl sm:text-3xl font-extrabold text-emerald-900 tabular-nums mt-0.5">
+                  8 Classes
+                </h4>
+              </div>
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-emerald-200 text-emerald-600 shadow-2xs">
+                <svg id={`${idPrefix}-action-icon`} class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+            </div>
+            <p id={`${idPrefix}-action-detail`} class="mt-2 text-xs text-emerald-900/90 leading-relaxed">
+              You can safely miss the next <strong>8 classes</strong> without dropping below your 75% attendance criteria.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3-Threshold Comparison Table -->
+        <div class="mt-5 border-t border-slate-200 pt-4">
+          <span class="block text-xs font-semibold text-slate-700 mb-2">Threshold Overview:</span>
+          <div class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="rounded-lg border border-slate-200 bg-white p-2.5">
+              <span class="font-bold text-slate-800 block">75% Rule</span>
+              <span id={`${idPrefix}-stat-75`} class="font-semibold text-emerald-700 block mt-1">8 Bunks</span>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-2.5">
+              <span class="font-bold text-slate-800 block">80% Rule</span>
+              <span id={`${idPrefix}-stat-80`} class="font-semibold text-emerald-700 block mt-1">5 Bunks</span>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-2.5">
+              <span class="font-bold text-slate-800 block">85% Rule</span>
+              <span id={`${idPrefix}-stat-85`} class="font-semibold text-emerald-700 block mt-1">2 Bunks</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix }}>
+  (function () {
+    let targetPct = 75;
+
+    const attendedInput = document.getElementById(`${idPrefix}-attended`);
+    const totalInput = document.getElementById(`${idPrefix}-total`);
+    const targetSlider = document.getElementById(`${idPrefix}-target-slider`);
+    const targetDisplay = document.getElementById(`${idPrefix}-target-display`);
+    const targetPills = document.querySelectorAll('.target-pill-btn');
+
+    const pctDisplay = document.getElementById(`${idPrefix}-pct-display`);
+    const statAttended = document.getElementById(`${idPrefix}-stat-attended`);
+    const statTotal = document.getElementById(`${idPrefix}-stat-total`);
+    const statusPill = document.getElementById(`${idPrefix}-status-pill`);
+    const statusText = document.getElementById(`${idPrefix}-status-text`);
+    const gaugeBar = document.getElementById(`${idPrefix}-gauge-bar`);
+
+    const actionBox = document.getElementById(`${idPrefix}-action-box`);
+    const actionBadge = document.getElementById(`${idPrefix}-action-badge`);
+    const actionCount = document.getElementById(`${idPrefix}-action-count`);
+    const actionDetail = document.getElementById(`${idPrefix}-action-detail`);
+
+    const stat75 = document.getElementById(`${idPrefix}-stat-75`);
+    const stat80 = document.getElementById(`${idPrefix}-stat-80`);
+    const stat85 = document.getElementById(`${idPrefix}-stat-85`);
+
+    function calculateThreshold(attended, total, target) {
+      if (total <= 0) return { bunks: 0, needed: 0, meets: true };
+      const currentPct = (attended / total) * 100;
+      if (currentPct >= target) {
+        const bunks = Math.floor((100 * attended - target * total) / target);
+        return { bunks: Math.max(0, bunks), needed: 0, meets: true };
+      } else {
+        const needed = Math.ceil((target * total - 100 * attended) / (100 - target));
+        return { bunks: 0, needed: Math.max(0, needed), meets: false };
+      }
+    }
+
+    function calculate() {
+      let attended = Math.max(0, Number(attendedInput?.value) || 0);
+      let total = Math.max(attended, Number(totalInput?.value) || 0);
+
+      if (statAttended) statAttended.textContent = attended.toString();
+      if (statTotal) statTotal.textContent = total.toString();
+
+      const currentPct = total > 0 ? Math.round((attended / total) * 10000) / 100 : 0;
+      if (pctDisplay) pctDisplay.textContent = `${currentPct.toFixed(2)}%`;
+      if (gaugeBar) gaugeBar.style.width = `${Math.min(100, currentPct)}%`;
+
+      const primary = calculateThreshold(attended, total, targetPct);
+      const t75 = calculateThreshold(attended, total, 75);
+      const t80 = calculateThreshold(attended, total, 80);
+      const t85 = calculateThreshold(attended, total, 85);
+
+      if (stat75) stat75.textContent = t75.meets ? `${t75.bunks} Bunks` : `Need ${t75.needed}`;
+      if (stat80) stat80.textContent = t80.meets ? `${t80.bunks} Bunks` : `Need ${t80.needed}`;
+      if (stat85) stat85.textContent = t85.meets ? `${t85.bunks} Bunks` : `Need ${t85.needed}`;
+
+      if (currentPct >= targetPct) {
+        // SAFE / ON TRACK
+        if (statusPill && statusText) {
+          statusPill.className = 'inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800';
+          statusText.textContent = primary.bunks > 0 ? 'Eligible / Safe' : 'Exactly on Track';
+          const dot = statusPill.querySelector('span');
+          if (dot) dot.className = 'h-2 w-2 rounded-full bg-emerald-600';
+        }
+
+        if (actionBox && actionBadge && actionCount && actionDetail) {
+          actionBox.className = 'rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 transition-all';
+          actionBadge.className = 'text-[0.7rem] font-bold uppercase tracking-wider text-emerald-800';
+          actionBadge.textContent = 'Safe Bunks Available';
+          actionCount.className = 'text-2xl sm:text-3xl font-extrabold text-emerald-900 tabular-nums mt-0.5';
+          actionCount.textContent = `${primary.bunks} Class${primary.bunks !== 1 ? 'es' : ''}`;
+          actionDetail.className = 'mt-2 text-xs text-emerald-900/90 leading-relaxed';
+          actionDetail.innerHTML = primary.bunks > 0
+            ? `You can safely miss the next <strong>${primary.bunks} consecutive class${primary.bunks > 1 ? 'es' : ''}</strong> without dropping below your ${targetPct}% requirement.`
+            : `You are exactly on track at <strong>${currentPct}%</strong>. Attend every upcoming class to maintain eligibility.`;
+        }
+      } else {
+        // SHORTAGE / AT RISK
+        if (statusPill && statusText) {
+          statusPill.className = 'inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-800';
+          statusText.textContent = 'Attendance Shortage';
+          const dot = statusPill.querySelector('span');
+          if (dot) dot.className = 'h-2 w-2 rounded-full bg-rose-600';
+        }
+
+        if (actionBox && actionBadge && actionCount && actionDetail) {
+          actionBox.className = 'rounded-xl border border-rose-300 bg-gradient-to-r from-rose-50 to-orange-50 p-4 transition-all';
+          actionBadge.className = 'text-[0.7rem] font-bold uppercase tracking-wider text-rose-800';
+          actionBadge.textContent = 'Consecutive Classes Required';
+          actionCount.className = 'text-2xl sm:text-3xl font-extrabold text-rose-900 tabular-nums mt-0.5';
+          actionCount.textContent = `Attend Next ${primary.needed} Classes`;
+          actionDetail.className = 'mt-2 text-xs text-rose-900/90 leading-relaxed';
+          actionDetail.innerHTML = `You have an attendance shortage (<strong>${currentPct}%</strong>). You must attend the next <strong>${primary.needed} consecutive classes</strong> without missing any to reach ${targetPct}%.`;
+        }
+      }
+    }
+
+    // Event listeners
+    attendedInput?.addEventListener('input', () => {
+      let att = Number(attendedInput.value) || 0;
+      let tot = Number(totalInput?.value) || 0;
+      if (att > tot && totalInput) {
+        totalInput.value = att.toString();
+      }
+      calculate();
+    });
+
+    totalInput?.addEventListener('input', () => {
+      let att = Number(attendedInput?.value) || 0;
+      let tot = Number(totalInput.value) || 0;
+      if (tot < att && attendedInput) {
+        attendedInput.value = tot.toString();
+      }
+      calculate();
+    });
+
+    document.querySelectorAll(`button[data-step-target]`).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetType = btn.getAttribute('data-step-target');
+        const dir = parseInt(btn.getAttribute('data-dir'), 10);
+        const input = targetType === 'attended' ? attendedInput : totalInput;
+        if (input) {
+          let val = Math.max(0, (parseInt(input.value, 10) || 0) + dir);
+          input.value = val.toString();
+          input.dispatchEvent(new Event('input'));
+        }
+      });
+    });
+
+    targetSlider?.addEventListener('input', (e) => {
+      targetPct = parseInt(e.target.value, 10);
+      if (targetDisplay) targetDisplay.textContent = `${targetPct}%`;
+      targetPills.forEach(p => {
+        if (parseInt(p.getAttribute('data-target'), 10) === targetPct) {
+          p.className = 'target-pill-btn rounded-lg bg-teal-600 px-3 py-1 text-xs font-bold text-white shadow-xs transition-colors';
+        } else {
+          p.className = 'target-pill-btn rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors';
+        }
+      });
+      calculate();
+    });
+
+    targetPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const t = parseInt(pill.getAttribute('data-target'), 10);
+        targetPct = t;
+        if (targetSlider) targetSlider.value = t.toString();
+        if (targetDisplay) targetDisplay.textContent = `${t}%`;
+        targetPills.forEach(p => {
+          if (p === pill) {
+            p.className = 'target-pill-btn rounded-lg bg-teal-600 px-3 py-1 text-xs font-bold text-white shadow-xs transition-colors';
+          } else {
+            p.className = 'target-pill-btn rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors';
+          }
+        });
+        calculate();
+      });
+    });
+
+    calculate();
+  })();
+</script>

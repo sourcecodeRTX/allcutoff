@@ -1,0 +1,657 @@
+---
+import { UNIVERSITY_CONFIGS, type UniversityKey } from '../../data/academicCalculators';
+
+interface Props {
+  initialUniversity?: UniversityKey;
+  idPrefix?: string;
+}
+
+const { initialUniversity = 'universal', idPrefix = 'cgpa' } = Astro.props;
+const currentConfig = UNIVERSITY_CONFIGS[initialUniversity] || UNIVERSITY_CONFIGS.universal;
+---
+
+<div id={`${idPrefix}-calculator-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Header / University Selector -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-blue-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true"></span>
+          Academic GPA Suite
+        </span>
+        <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          CGPA Calculator &amp; Class Predictor
+        </h3>
+      </div>
+
+      <!-- University / Board Preset Selector -->
+      <div class="flex items-center gap-2">
+        <label for={`${idPrefix}-uni-select`} class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Grading Scale:
+        </label>
+        <select
+          id={`${idPrefix}-uni-select`}
+          class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+        >
+          <option value="universal" selected={initialUniversity === 'universal'}>Standard 10-Point CBCS (AICTE / UGC)</option>
+          <option value="vit" selected={initialUniversity === 'vit'}>VIT (Vellore Institute of Tech)</option>
+          <option value="ktu" selected={initialUniversity === 'ktu'}>KTU Kerala (A = 8.5 Points)</option>
+          <option value="vtu" selected={initialUniversity === 'vtu'}>VTU Karnataka (CBCS Scale)</option>
+          <option value="anna-university" selected={initialUniversity === 'anna-university'}>Anna University (Reg 2021/2017)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs: Semester-Wise vs Subject-Wise -->
+    <div class="mt-4 flex rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-semibold">
+      <button
+        type="button"
+        id={`${idPrefix}-tab-semesters`}
+        class="flex-1 rounded-lg bg-white py-2 text-center text-blue-700 shadow-xs transition-all hover:text-blue-900"
+        data-mode="semesters"
+      >
+        Semester-Wise SGPA (Multi-Semester)
+      </button>
+      <button
+        type="button"
+        id={`${idPrefix}-tab-subjects`}
+        class="flex-1 rounded-lg py-2 text-center text-slate-600 transition-all hover:text-slate-900"
+        data-mode="subjects"
+      >
+        Subject / Course Grades
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT COLUMN: Inputs (Semesters or Subjects) -->
+    <div class="lg:col-span-7">
+      <!-- Semester-wise Inputs Mode -->
+      <div id={`${idPrefix}-semesters-view`}>
+        <div class="flex items-center justify-between pb-2">
+          <p class="text-xs font-medium text-slate-600">
+            Enter your SGPA and semester credit weights:
+          </p>
+          <span class="font-mono text-xs text-slate-500" id={`${idPrefix}-sem-count`}>4 Semesters</span>
+        </div>
+
+        <div id={`${idPrefix}-semesters-list`} class="space-y-3">
+          <!-- Rows will be populated by JS -->
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            id={`${idPrefix}-add-sem-btn`}
+            class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-blue-300 bg-blue-50/50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-colors"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Semester
+          </button>
+          <button
+            type="button"
+            id={`${idPrefix}-reset-btn`}
+            class="text-xs font-medium text-slate-500 hover:text-slate-700 px-2.5 py-1.5"
+          >
+            Reset to Defaults
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject-wise Inputs Mode (Hidden by default) -->
+      <div id={`${idPrefix}-subjects-view`} class="hidden">
+        <div class="flex items-center justify-between pb-2">
+          <p class="text-xs font-medium text-slate-600">
+            Enter course grade and credit value:
+          </p>
+          <span class="font-mono text-xs text-slate-500" id={`${idPrefix}-sub-count`}>5 Courses</span>
+        </div>
+
+        <div id={`${idPrefix}-subjects-list`} class="space-y-3">
+          <!-- Rows populated by JS -->
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            id={`${idPrefix}-add-sub-btn`}
+            class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-blue-300 bg-blue-50/50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-colors"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Course / Subject
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Output Card & Live Visual Gauge -->
+    <div class="lg:col-span-5">
+      <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5 sm:p-6 shadow-sm">
+        <span class="font-mono text-[0.7rem] font-bold uppercase tracking-wider text-blue-700 block">
+          Calculated Result
+        </span>
+
+        <!-- Primary CGPA Score -->
+        <div class="mt-3 flex items-baseline justify-between">
+          <div>
+            <div class="flex items-baseline gap-2">
+              <span id={`${idPrefix}-cgpa-display`} class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+                8.75
+              </span>
+              <span class="text-sm font-semibold text-slate-500">/ 10.00</span>
+            </div>
+            <p class="mt-0.5 text-xs text-slate-500">Cumulative Grade Point Average</p>
+          </div>
+
+          <!-- Circular / Badge percentage -->
+          <div class="text-right">
+            <span id={`${idPrefix}-percentage-display`} class="text-2xl sm:text-3xl font-bold text-blue-700 tabular-nums">
+              83.13%
+            </span>
+            <p class="mt-0.5 text-[0.7rem] font-medium text-slate-500">Equivalent Marks</p>
+          </div>
+        </div>
+
+        <!-- Gauge Bar -->
+        <div class="mt-5">
+          <div class="flex justify-between text-xs text-slate-500 mb-1">
+            <span>0.00</span>
+            <span id={`${idPrefix}-gauge-label`}>Score: 8.75</span>
+            <span>10.00</span>
+          </div>
+          <div class="h-3 w-full overflow-hidden rounded-full bg-slate-200/80">
+            <div
+              id={`${idPrefix}-gauge-bar`}
+              class="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300"
+              style="width: 87.5%;"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Division Pill -->
+        <div class="mt-5">
+          <div id={`${idPrefix}-division-card`} class="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-600" aria-hidden="true"></span>
+              <span id={`${idPrefix}-division-title`} class="text-xs font-bold text-emerald-900 uppercase tracking-wide">
+                First Class with Distinction
+              </span>
+            </div>
+            <p id={`${idPrefix}-division-desc`} class="mt-1 text-xs text-emerald-800">
+              Outstanding academic performance. Eligible for premier campus placements and higher degree admissions.
+            </p>
+          </div>
+        </div>
+
+        <!-- Stats Breakdown -->
+        <dl class="mt-4 grid grid-cols-2 gap-2 text-xs">
+          <div class="rounded-lg border border-slate-200 bg-white p-2.5">
+            <dt class="text-slate-500">Total Credits</dt>
+            <dd id={`${idPrefix}-stat-credits`} class="mt-0.5 font-bold text-slate-900 tabular-nums">84</dd>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-2.5">
+            <dt class="text-slate-500">Formula Applied</dt>
+            <dd id={`${idPrefix}-stat-formula`} class="mt-0.5 font-medium text-slate-900 truncate" title="Percentage = CGPA × 9.5">
+              Standard AICTE (× 9.5)
+            </dd>
+          </div>
+        </dl>
+
+        <!-- Copy / Share Button -->
+        <div class="mt-5 pt-4 border-t border-slate-200 flex items-center justify-between">
+          <span class="text-[0.7rem] text-slate-400">Updates live as you type</span>
+          <button
+            type="button"
+            id={`${idPrefix}-copy-btn`}
+            class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors"
+          >
+            <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span id={`${idPrefix}-copy-text`}>Copy Result</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix, initialUniversity }}>
+  (function () {
+    const UNI_CONFIGS = {
+      universal: {
+        toPercentage: (c) => Math.min(100, Math.max(0, Math.round(c * 9.5 * 100) / 100)),
+        formulaText: 'Percentage = CGPA × 9.5',
+        grades: [
+          { grade: 'O', points: 10 },
+          { grade: 'A+', points: 9 },
+          { grade: 'A', points: 8 },
+          { grade: 'B+', points: 7 },
+          { grade: 'B', points: 6 },
+          { grade: 'C', points: 5 },
+          { grade: 'P', points: 4 },
+          { grade: 'F', points: 0 }
+        ]
+      },
+      vit: {
+        toPercentage: (c) => Math.min(100, Math.max(0, Math.round(c * 10 * 100) / 100)),
+        formulaText: 'Percentage = CGPA × 10',
+        grades: [
+          { grade: 'S', points: 10 },
+          { grade: 'A', points: 9 },
+          { grade: 'B', points: 8 },
+          { grade: 'C', points: 7 },
+          { grade: 'D', points: 6 },
+          { grade: 'E', points: 4 },
+          { grade: 'F', points: 0 }
+        ]
+      },
+      ktu: {
+        toPercentage: (c) => c <= 0 ? 0 : Math.min(100, Math.max(0, Math.round((10 * c - 3.75) * 100) / 100)),
+        formulaText: 'Percentage = (10 × CGPA) - 3.75',
+        grades: [
+          { grade: 'O', points: 10 },
+          { grade: 'A+', points: 9 },
+          { grade: 'A', points: 8.5 },
+          { grade: 'B+', points: 8 },
+          { grade: 'B', points: 7 },
+          { grade: 'C', points: 6 },
+          { grade: 'P', points: 5 },
+          { grade: 'F', points: 0 }
+        ]
+      },
+      vtu: {
+        toPercentage: (c) => c <= 0.75 ? 0 : Math.min(100, Math.max(0, Math.round(((c - 0.75) * 10) * 100) / 100)),
+        formulaText: 'Percentage = (CGPA - 0.75) × 10',
+        grades: [
+          { grade: 'O', points: 10 },
+          { grade: 'A+', points: 9 },
+          { grade: 'A', points: 8 },
+          { grade: 'B+', points: 7 },
+          { grade: 'B', points: 6 },
+          { grade: 'C', points: 5 },
+          { grade: 'P', points: 4 },
+          { grade: 'F', points: 0 }
+        ]
+      },
+      'anna-university': {
+        toPercentage: (c) => Math.min(100, Math.max(0, Math.round(c * 10 * 100) / 100)),
+        formulaText: 'Percentage = CGPA × 10',
+        grades: [
+          { grade: 'O', points: 10 },
+          { grade: 'A+', points: 9 },
+          { grade: 'A', points: 8 },
+          { grade: 'B+', points: 7 },
+          { grade: 'B', points: 6 },
+          { grade: 'C', points: 5 },
+          { grade: 'RA', points: 0 }
+        ]
+      }
+    };
+
+    let selectedUni = initialUniversity;
+    let activeMode = 'semesters';
+
+    let defaultSemesters = [
+      { num: 1, sgpa: 8.5, credit: 21 },
+      { num: 2, sgpa: 8.8, credit: 21 },
+      { num: 3, sgpa: 8.4, credit: 22 },
+      { num: 4, sgpa: 9.1, credit: 22 }
+    ];
+
+    let defaultSubjects = [
+      { name: 'Mathematics I', points: 9, credit: 4 },
+      { name: 'Physics / Chemistry', points: 8, credit: 3 },
+      { name: 'Data Structures / Programming', points: 10, credit: 4 },
+      { name: 'Engineering Graphics / Design', points: 8, credit: 3 },
+      { name: 'Computing Lab', points: 10, credit: 1.5 }
+    ];
+
+    let semesters = JSON.parse(JSON.stringify(defaultSemesters));
+    let subjects = JSON.parse(JSON.stringify(defaultSubjects));
+
+    const uniSelect = document.getElementById(`${idPrefix}-uni-select`);
+    const tabSem = document.getElementById(`${idPrefix}-tab-semesters`);
+    const tabSub = document.getElementById(`${idPrefix}-tab-subjects`);
+    const semView = document.getElementById(`${idPrefix}-semesters-view`);
+    const subView = document.getElementById(`${idPrefix}-subjects-view`);
+    const semList = document.getElementById(`${idPrefix}-semesters-list`);
+    const subList = document.getElementById(`${idPrefix}-subjects-list`);
+    const addSemBtn = document.getElementById(`${idPrefix}-add-sem-btn`);
+    const addSubBtn = document.getElementById(`${idPrefix}-add-sub-btn`);
+    const resetBtn = document.getElementById(`${idPrefix}-reset-btn`);
+
+    const cgpaDisplay = document.getElementById(`${idPrefix}-cgpa-display`);
+    const percentageDisplay = document.getElementById(`${idPrefix}-percentage-display`);
+    const gaugeBar = document.getElementById(`${idPrefix}-gauge-bar`);
+    const gaugeLabel = document.getElementById(`${idPrefix}-gauge-label`);
+    const divisionCard = document.getElementById(`${idPrefix}-division-card`);
+    const divisionTitle = document.getElementById(`${idPrefix}-division-title`);
+    const divisionDesc = document.getElementById(`${idPrefix}-division-desc`);
+    const statCredits = document.getElementById(`${idPrefix}-stat-credits`);
+    const statFormula = document.getElementById(`${idPrefix}-stat-formula`);
+    const copyBtn = document.getElementById(`${idPrefix}-copy-btn`);
+    const copyText = document.getElementById(`${idPrefix}-copy-text`);
+
+    function getDivision(pct) {
+      if (pct >= 75) {
+        return {
+          title: 'First Class with Distinction',
+          desc: 'Outstanding academic standing (Honours level).',
+          cardClass: 'border-emerald-200 bg-emerald-50/80',
+          dotClass: 'bg-emerald-600',
+          textClass: 'text-emerald-900'
+        };
+      }
+      if (pct >= 60) {
+        return {
+          title: 'First Class',
+          desc: 'Solid academic standing meeting major placement & degree prerequisites.',
+          cardClass: 'border-blue-200 bg-blue-50/80',
+          dotClass: 'bg-blue-600',
+          textClass: 'text-blue-900'
+        };
+      }
+      if (pct >= 50) {
+        return {
+          title: 'Second Class',
+          desc: 'Satisfactory academic performance.',
+          cardClass: 'border-amber-200 bg-amber-50/80',
+          dotClass: 'bg-amber-600',
+          textClass: 'text-amber-900'
+        };
+      }
+      if (pct >= 35) {
+        return {
+          title: 'Pass Class',
+          desc: 'Minimum pass criteria satisfied.',
+          cardClass: 'border-slate-200 bg-slate-50',
+          dotClass: 'bg-slate-500',
+          textClass: 'text-slate-800'
+        };
+      }
+      return {
+        title: 'Essential Repeat / Remedial',
+        desc: 'Below passing threshold.',
+        cardClass: 'border-rose-200 bg-rose-50/80',
+        dotClass: 'bg-rose-600',
+        textClass: 'text-rose-900'
+      };
+    }
+
+    function renderSemesters() {
+      if (!semList) return;
+      semList.innerHTML = '';
+      semesters.forEach((sem, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 sm:p-3 transition-colors focus-within:border-blue-400';
+        row.innerHTML = `
+          <span class="w-16 shrink-0 font-mono text-xs font-semibold text-slate-700">Sem ${sem.num}</span>
+          <div class="flex-1 min-w-0">
+            <label class="sr-only">SGPA</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="10"
+              value="${sem.sgpa}"
+              data-idx="${idx}"
+              data-field="sgpa"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-center font-mono text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-blue-500"
+              placeholder="SGPA (0-10)"
+            />
+          </div>
+          <div class="w-20 sm:w-24 shrink-0">
+            <label class="sr-only">Credits</label>
+            <input
+              type="number"
+              step="0.5"
+              min="1"
+              max="40"
+              value="${sem.credit}"
+              data-idx="${idx}"
+              data-field="credit"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-center font-mono text-xs sm:text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              placeholder="Credits"
+            />
+          </div>
+          <button
+            type="button"
+            data-remove="${idx}"
+            class="h-8 w-8 shrink-0 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-rose-600 transition-colors"
+            title="Remove Semester"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        `;
+        semList.appendChild(row);
+      });
+
+      const countEl = document.getElementById(`${idPrefix}-sem-count`);
+      if (countEl) countEl.textContent = `${semesters.length} Semester${semesters.length > 1 ? 's' : ''}`;
+    }
+
+    function renderSubjects() {
+      if (!subList) return;
+      subList.innerHTML = '';
+      const grades = UNI_CONFIGS[selectedUni]?.grades || UNI_CONFIGS.universal.grades;
+
+      subjects.forEach((sub, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 sm:p-3 transition-colors focus-within:border-blue-400';
+        
+        let gradeOptions = grades.map(g => `<option value="${g.points}" ${g.points === sub.points ? 'selected' : ''}>${g.grade} (${g.points} pts)</option>`).join('');
+
+        row.innerHTML = `
+          <div class="flex-1 min-w-0">
+            <input
+              type="text"
+              value="${sub.name}"
+              data-idx="${idx}"
+              data-field="name"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-xs sm:text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+              placeholder="Subject Name"
+            />
+          </div>
+          <div class="w-24 sm:w-28 shrink-0">
+            <select
+              data-idx="${idx}"
+              data-field="points"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:border-blue-500"
+            >
+              ${gradeOptions}
+            </select>
+          </div>
+          <div class="w-16 sm:w-20 shrink-0">
+            <input
+              type="number"
+              step="0.5"
+              min="0.5"
+              max="15"
+              value="${sub.credit}"
+              data-idx="${idx}"
+              data-field="credit"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-center font-mono text-xs sm:text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              placeholder="Credit"
+            />
+          </div>
+          <button
+            type="button"
+            data-remove-sub="${idx}"
+            class="h-8 w-8 shrink-0 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-rose-600 transition-colors"
+            title="Remove Course"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        `;
+        subList.appendChild(row);
+      });
+
+      const countEl = document.getElementById(`${idPrefix}-sub-count`);
+      if (countEl) countEl.textContent = `${subjects.length} Course${subjects.length > 1 ? 's' : ''}`;
+    }
+
+    function calculate() {
+      let totalWeighted = 0;
+      let totalCredits = 0;
+
+      if (activeMode === 'semesters') {
+        semesters.forEach(s => {
+          const c = Number(s.credit) || 0;
+          const g = Math.min(10, Math.max(0, Number(s.sgpa) || 0));
+          totalWeighted += g * c;
+          totalCredits += c;
+        });
+      } else {
+        subjects.forEach(s => {
+          const c = Number(s.credit) || 0;
+          const g = Math.min(10, Math.max(0, Number(s.points) || 0));
+          totalWeighted += g * c;
+          totalCredits += c;
+        });
+      }
+
+      const cgpa = totalCredits > 0 ? Math.round((totalWeighted / totalCredits) * 100) / 100 : 0;
+      const uniConfig = UNI_CONFIGS[selectedUni] || UNI_CONFIGS.universal;
+      const pct = uniConfig.toPercentage(cgpa);
+      const div = getDivision(pct);
+
+      if (cgpaDisplay) cgpaDisplay.textContent = cgpa.toFixed(2);
+      if (percentageDisplay) percentageDisplay.textContent = `${pct.toFixed(2)}%`;
+      if (gaugeBar) gaugeBar.style.width = `${Math.min(100, Math.max(0, (cgpa / 10) * 100))}%`;
+      if (gaugeLabel) gaugeLabel.textContent = `Score: ${cgpa.toFixed(2)}`;
+      if (statCredits) statCredits.textContent = totalCredits.toString();
+      if (statFormula) {
+        statFormula.textContent = uniConfig.formulaText;
+        statFormula.title = uniConfig.formulaText;
+      }
+
+      if (divisionCard && divisionTitle && divisionDesc) {
+        divisionCard.className = `rounded-xl border p-3.5 transition-colors ${div.cardClass}`;
+        divisionTitle.className = `text-xs font-bold uppercase tracking-wide ${div.textClass}`;
+        divisionTitle.textContent = div.title;
+        divisionDesc.textContent = div.desc;
+        const dot = divisionCard.querySelector('span[aria-hidden="true"]');
+        if (dot) dot.className = `h-2 w-2 rounded-full ${div.dotClass}`;
+      }
+    }
+
+    // Event Delegation
+    semList?.addEventListener('input', (e) => {
+      const target = e.target;
+      const idx = target.getAttribute('data-idx');
+      const field = target.getAttribute('data-field');
+      if (idx !== null && field && semesters[idx]) {
+        semesters[idx][field] = target.value;
+        calculate();
+      }
+    });
+
+    semList?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-remove]');
+      if (btn) {
+        const idx = parseInt(btn.getAttribute('data-remove'), 10);
+        if (semesters.length > 1) {
+          semesters.splice(idx, 1);
+          renderSemesters();
+          calculate();
+        }
+      }
+    });
+
+    subList?.addEventListener('input', (e) => {
+      const target = e.target;
+      const idx = target.getAttribute('data-idx');
+      const field = target.getAttribute('data-field');
+      if (idx !== null && field && subjects[idx]) {
+        subjects[idx][field] = target.value;
+        calculate();
+      }
+    });
+
+    subList?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-remove-sub]');
+      if (btn) {
+        const idx = parseInt(btn.getAttribute('data-remove-sub'), 10);
+        if (subjects.length > 1) {
+          subjects.splice(idx, 1);
+          renderSubjects();
+          calculate();
+        }
+      }
+    });
+
+    addSemBtn?.addEventListener('click', () => {
+      const nextNum = semesters.length + 1;
+      semesters.push({ num: nextNum, sgpa: 8.5, credit: 20 });
+      renderSemesters();
+      calculate();
+    });
+
+    addSubBtn?.addEventListener('click', () => {
+      subjects.push({ name: `Course ${subjects.length + 1}`, points: 9, credit: 3 });
+      renderSubjects();
+      calculate();
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      semesters = JSON.parse(JSON.stringify(defaultSemesters));
+      subjects = JSON.parse(JSON.stringify(defaultSubjects));
+      renderSemesters();
+      renderSubjects();
+      calculate();
+    });
+
+    uniSelect?.addEventListener('change', (e) => {
+      selectedUni = e.target.value;
+      if (activeMode === 'subjects') {
+        renderSubjects();
+      }
+      calculate();
+    });
+
+    tabSem?.addEventListener('click', () => {
+      activeMode = 'semesters';
+      tabSem.className = 'flex-1 rounded-lg bg-white py-2 text-center text-blue-700 shadow-xs transition-all font-semibold';
+      tabSub.className = 'flex-1 rounded-lg py-2 text-center text-slate-600 transition-all hover:text-slate-900 font-semibold';
+      semView?.classList.remove('hidden');
+      subView?.classList.add('hidden');
+      calculate();
+    });
+
+    tabSub?.addEventListener('click', () => {
+      activeMode = 'subjects';
+      tabSub.className = 'flex-1 rounded-lg bg-white py-2 text-center text-blue-700 shadow-xs transition-all font-semibold';
+      tabSem.className = 'flex-1 rounded-lg py-2 text-center text-slate-600 transition-all hover:text-slate-900 font-semibold';
+      subView?.classList.remove('hidden');
+      semView?.classList.add('hidden');
+      renderSubjects();
+      calculate();
+    });
+
+    copyBtn?.addEventListener('click', () => {
+      const cgpa = cgpaDisplay ? cgpaDisplay.textContent.trim() : '';
+      const pct = percentageDisplay ? percentageDisplay.textContent.trim() : '';
+      const divText = divisionTitle ? divisionTitle.textContent.trim() : '';
+      const textToCopy = `CGPA: ${cgpa}/10.00 | Equivalent Percentage: ${pct} | Division: ${divText} (via AllCutOff.com)`;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        if (copyText) copyText.textContent = 'Copied!';
+        setTimeout(() => {
+          if (copyText) copyText.textContent = 'Copy Result';
+        }, 2000);
+      });
+    });
+
+    // Initial render
+    renderSemesters();
+    calculate();
+  })();
+</script>

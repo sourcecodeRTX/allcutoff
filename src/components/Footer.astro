@@ -22,15 +22,15 @@ const footerList = 'mt-3 space-y-0.5 sm:space-y-2';
 
 <footer class="border-t border-slate-200 bg-slate-50 pt-16 pb-12 text-slate-700">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
-    <div class="grid grid-cols-1 gap-10 md:grid-cols-5">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-6">
       <!-- Col 1: Brand & Mission -->
-      <div class="md:col-span-2">
+      <div class="sm:col-span-2 md:col-span-2">
         <a href="/" class="group inline-flex items-center gap-2.5">
           <Logo class="h-7 w-7 shrink-0 transition-transform group-hover:scale-105" />
           <span class="text-base font-semibold text-slate-900">All Cut Off</span>
         </a>
         <p class="mt-3.5 max-w-sm text-sm leading-relaxed text-slate-600">
-          A student-focused platform delivering verified, rule-accurate online admission cutoff calculators for engineering, medical, agriculture, and university entrance examinations across India.
+          A student-focused platform delivering verified, rule-accurate online admission cutoff calculators and academic GPA tools for engineering, medical, and universities across India.
         </p>
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
@@ -48,7 +48,7 @@ const footerList = 'mt-3 space-y-0.5 sm:space-y-2';
 
       <!-- Col 2: Categories -->
       <nav aria-label="Footer categories">
-        <h2 class={footerHeading}>Categories</h2>
+        <h2 class={footerHeading}>Cutoff Categories</h2>
         <ul class={footerList}>
           {CATEGORIES.map(cat => (
             <li>
@@ -57,14 +57,61 @@ const footerList = 'mt-3 space-y-0.5 sm:space-y-2';
               </a>
             </li>
           ))}
+          <li>
+            <a href="/tools#cutoff-tools-section" class={`${footerLink} font-semibold text-blue-700`}>
+              All 12 Cutoffs &rarr;
+            </a>
+          </li>
         </ul>
       </nav>
 
-      <!-- Col 3: States Covered -->
-      <nav aria-label="Footer states and regions">
-        <h2 class={footerHeading}>By State / Region</h2>
+      <!-- Col 3: Academic Tools -->
+      <nav aria-label="Footer academic calculators">
+        <h2 class={footerHeading}>Academic Tools</h2>
         <ul class={footerList}>
-          {STATES.map(st => (
+          <li>
+            <a href="/calculator/cgpa-calculator" class={footerLink}>
+              CGPA Calculator
+            </a>
+          </li>
+          <li>
+            <a href="/calculator/sgpa-calculator" class={footerLink}>
+              SGPA Calculator
+            </a>
+          </li>
+          <li>
+            <a href="/calculator/cgpa-to-percentage-calculator" class={footerLink}>
+              CGPA to % Converter
+            </a>
+          </li>
+          <li>
+            <a href="/calculator/marks-percentage-calculator" class={footerLink}>
+              Marks Percentage
+            </a>
+          </li>
+          <li>
+            <a href="/calculator/attendance-percentage-calculator" class={footerLink}>
+              Attendance &amp; Bunks
+            </a>
+          </li>
+          <li>
+            <a href="/calculator/percentile-calculator" class={footerLink}>
+              Percentile &amp; Rank
+            </a>
+          </li>
+          <li>
+            <a href="/tools" class={`${footerLink} font-semibold text-blue-700`}>
+              All 29 Tools Hub &rarr;
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Col 4: States Covered -->
+      <nav aria-label="Footer states and regions">
+        <h2 class={footerHeading}>By State</h2>
+        <ul class={footerList}>
+          {STATES.slice(0, 6).map(st => (
             <li>
               <a href={`/state/${st.slug}`} class={footerLink}>
                 {st.name}
@@ -74,7 +121,7 @@ const footerList = 'mt-3 space-y-0.5 sm:space-y-2';
         </ul>
       </nav>
 
-      <!-- Col 4: Platform & Compliance -->
+      <!-- Col 5: Platform & Compliance -->
       <nav aria-label="Footer transparency and legal pages">
         <h2 class={footerHeading}>Transparency</h2>
         <ul class={footerList}>
@@ -100,12 +147,12 @@ const footerList = 'mt-3 space-y-0.5 sm:space-y-2';
           </li>
           <li>
             <a href="/disclaimer" class={footerLink}>
-              Disclaimer &amp; Conduct Policy
+              Official Disclaimer
             </a>
           </li>
           <li>
             <a href="/contact" class={footerLink}>
-              Contact &amp; Report a Formula Update
+              Contact &amp; Report Update
             </a>
           </li>
         </ul>

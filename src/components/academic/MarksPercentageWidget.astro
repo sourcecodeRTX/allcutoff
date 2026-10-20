@@ -1,0 +1,564 @@
+---
+interface Props {
+  idPrefix?: string;
+}
+
+const { idPrefix = 'marks-pct' } = Astro.props;
+---
+
+<div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Header -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-emerald-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-600" aria-hidden="true"></span>
+          10th, 12th &amp; College Marks Suite
+        </span>
+        <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Marks Percentage Calculator &amp; Target Planner
+        </h3>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="flex rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-semibold">
+        <button
+          type="button"
+          id={`${idPrefix}-tab-quick`}
+          class="rounded-lg bg-white px-3 py-1.5 text-center text-emerald-700 shadow-xs transition-all hover:text-emerald-900 font-bold"
+          data-mode="quick"
+        >
+          Quick Total
+        </button>
+        <button
+          type="button"
+          id={`${idPrefix}-tab-subjects`}
+          class="rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900"
+          data-mode="subjects"
+        >
+          Subject-Wise Breakdown
+        </button>
+      </div>
+    </div>
+    <p class="mt-2 text-xs text-slate-600">
+      Calculate aggregate marks percentage, academic honors division, and plan target marks required in remaining exams to hit your target goal.
+    </p>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT COLUMN: Inputs -->
+    <div class="lg:col-span-7 space-y-5">
+      <!-- Quick Total Mode View -->
+      <div id={`${idPrefix}-quick-view`} class="space-y-4">
+        <!-- Marks Obtained Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-emerald-500 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-obtained-input`} class="text-sm font-semibold text-slate-900">
+              Total Marks Obtained
+            </label>
+            <span class="font-mono text-xs text-slate-500">Scored</span>
+          </div>
+          <div class="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+              id={`${idPrefix}-btn-obt-minus`}
+              aria-label="Decrease obtained marks"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-obtained-input`}
+              min="0"
+              max="2000"
+              value="485"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tabular-nums text-slate-900 outline-none focus:border-emerald-500"
+            />
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+              id={`${idPrefix}-btn-obt-plus`}
+              aria-label="Increase obtained marks"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Maximum Marks Input -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors focus-within:border-emerald-500 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-max-input`} class="text-sm font-semibold text-slate-900">
+              Total Maximum Marks
+            </label>
+            <span class="font-mono text-xs text-slate-500">Out of</span>
+          </div>
+          <div class="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+              id={`${idPrefix}-btn-max-minus`}
+              aria-label="Decrease maximum marks"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-max-input`}
+              min="1"
+              max="2000"
+              value="600"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-2xl font-bold tabular-nums text-slate-900 outline-none focus:border-emerald-500"
+            />
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-lg font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors"
+              id={`${idPrefix}-btn-max-plus`}
+              aria-label="Increase maximum marks"
+            >
+              +
+            </button>
+          </div>
+
+          <!-- Quick Board Presets -->
+          <div class="mt-3 flex items-center gap-1.5 flex-wrap">
+            <span class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 mr-1">Presets:</span>
+            <button type="button" data-preset-max="500" class="preset-btn rounded border border-slate-200 bg-white px-2 py-0.5 font-mono text-[0.7rem] font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">500 (CBSE 5-Sub)</button>
+            <button type="button" data-preset-max="600" class="preset-btn rounded border border-slate-200 bg-white px-2 py-0.5 font-mono text-[0.7rem] font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">600 (State 6-Sub)</button>
+            <button type="button" data-preset-max="1000" class="preset-btn rounded border border-slate-200 bg-white px-2 py-0.5 font-mono text-[0.7rem] font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">1000</button>
+            <button type="button" data-preset-max="1200" class="preset-btn rounded border border-slate-200 bg-white px-2 py-0.5 font-mono text-[0.7rem] font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">1200 (TN +2)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject-Wise Mode View (Hidden by default) -->
+      <div id={`${idPrefix}-subjects-view`} class="hidden space-y-3">
+        <div class="flex items-center justify-between pb-1">
+          <span class="text-xs font-semibold text-slate-700">Add course / paper marks:</span>
+          <span class="font-mono text-xs text-slate-500" id={`${idPrefix}-sub-count`}>5 Subjects</span>
+        </div>
+
+        <div id={`${idPrefix}-subjects-list`} class="space-y-2.5">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            id={`${idPrefix}-add-subject-btn`}
+            class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Another Subject
+          </button>
+        </div>
+      </div>
+
+      <!-- Target Score Planner Section -->
+      <div class="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/60 to-indigo-50/40 p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">🎯</span>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-blue-900">
+              Target Score Planner (Upcoming Exams)
+            </h4>
+          </div>
+          <span class="rounded bg-blue-100 px-2 py-0.5 font-mono text-[0.65rem] font-bold text-blue-800">SMART GOAL</span>
+        </div>
+        <p class="mt-1 text-xs text-blue-800/80 leading-relaxed">
+          Want to achieve a desired overall percentage? Enter your target % and the remaining exam marks available to see what you must score.
+        </p>
+
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for={`${idPrefix}-target-pct`} class="text-[0.7rem] font-bold uppercase text-slate-600">
+              Desired Overall Target %:
+            </label>
+            <div class="mt-1 flex items-center gap-1">
+              <input
+                type="number"
+                id={`${idPrefix}-target-pct`}
+                min="35"
+                max="100"
+                value="85"
+                class="w-full rounded border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              />
+              <span class="font-mono text-xs font-bold text-slate-500">%</span>
+            </div>
+          </div>
+
+          <div>
+            <label for={`${idPrefix}-remaining-max`} class="text-[0.7rem] font-bold uppercase text-slate-600">
+              Remaining Marks in Next Tests:
+            </label>
+            <div class="mt-1 flex items-center gap-1">
+              <input
+                type="number"
+                id={`${idPrefix}-remaining-max`}
+                min="10"
+                max="1000"
+                value="200"
+                class="w-full rounded border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              />
+              <span class="font-mono text-xs font-bold text-slate-500">marks</span>
+            </div>
+          </div>
+        </div>
+
+        <div id={`${idPrefix}-planner-result`} class="mt-3 rounded-lg border border-blue-200 bg-white p-3">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Output & Division -->
+    <div class="lg:col-span-5 flex flex-col justify-between space-y-5">
+      <!-- Main Result Scorecard -->
+      <div class="rounded-2xl border-2 border-emerald-500 bg-gradient-to-br from-emerald-50/50 via-white to-slate-50 p-6 text-center shadow-xs">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">
+          Aggregated Percentage
+        </span>
+
+        <div class="mt-2 flex items-baseline justify-center gap-1.5">
+          <span id={`${idPrefix}-output-pct`} class="font-mono text-5xl font-extrabold tracking-tight text-slate-900">
+            80.83%
+          </span>
+        </div>
+
+        <div class="mt-2 text-xs font-mono text-slate-600" id={`${idPrefix}-score-summary`}>
+          485 / 600 Marks
+        </div>
+
+        <!-- Academic Division Classification -->
+        <div class="mt-4 flex justify-center">
+          <span
+            id={`${idPrefix}-division-badge`}
+            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 font-mono text-xs font-bold text-emerald-800"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
+            First Class with Distinction
+          </span>
+        </div>
+
+        <!-- Formula breakdown -->
+        <div class="mt-5 rounded-xl border border-slate-200 bg-white/80 p-3 text-left">
+          <span class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Formula Breakdown:</span>
+          <p id={`${idPrefix}-math-steps`} class="mt-1 font-mono text-xs text-slate-700 font-medium">
+            (485 ÷ 600) × 100 = 80.83%
+          </p>
+        </div>
+      </div>
+
+      <!-- Grading Scale Reference Card -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <h4 class="text-xs font-bold uppercase tracking-wide text-slate-900 pb-2 border-b border-slate-100">
+          Official Division Benchmarks
+        </h4>
+        <div class="mt-2 space-y-1.5 text-xs">
+          <div class="flex items-center justify-between py-1">
+            <span class="font-medium text-emerald-800">Distinction (≥ 75%)</span>
+            <span class="font-mono text-slate-600 font-semibold">Honours Grade</span>
+          </div>
+          <div class="flex items-center justify-between py-1 border-t border-slate-50">
+            <span class="font-medium text-blue-800">First Division (60% – 74.99%)</span>
+            <span class="font-mono text-slate-600 font-semibold">Grade A / 1st Class</span>
+          </div>
+          <div class="flex items-center justify-between py-1 border-t border-slate-50">
+            <span class="font-medium text-amber-800">Second Division (50% – 59.99%)</span>
+            <span class="font-mono text-slate-600 font-semibold">Grade B / 2nd Class</span>
+          </div>
+          <div class="flex items-center justify-between py-1 border-t border-slate-50">
+            <span class="font-medium text-slate-700">Third Division (35% – 49.99%)</span>
+            <span class="font-mono text-slate-600 font-semibold">Pass Class</span>
+          </div>
+          <div class="flex items-center justify-between py-1 border-t border-slate-50">
+            <span class="font-medium text-rose-700">Essential Repeat (&lt; 35%)</span>
+            <span class="font-mono text-rose-600 font-bold">Fail / Arrear</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix }}>
+  (function () {
+    const container = document.getElementById(`${idPrefix}-container`);
+    if (!container) return;
+
+    let mode = 'quick'; // 'quick' or 'subjects'
+
+    let subjects = [
+      { name: 'Mathematics', obtained: 88, max: 100 },
+      { name: 'Physics', obtained: 82, max: 100 },
+      { name: 'Chemistry', obtained: 79, max: 100 },
+      { name: 'English', obtained: 86, max: 100 },
+      { name: 'Computer Science', obtained: 92, max: 100 }
+    ];
+
+    // DOM Elements
+    const tabQuick = document.getElementById(`${idPrefix}-tab-quick`);
+    const tabSubjects = document.getElementById(`${idPrefix}-tab-subjects`);
+    const quickView = document.getElementById(`${idPrefix}-quick-view`);
+    const subjectsView = document.getElementById(`${idPrefix}-subjects-view`);
+
+    const obtainedInput = document.getElementById(`${idPrefix}-obtained-input`);
+    const maxInput = document.getElementById(`${idPrefix}-max-input`);
+    const btnObtMinus = document.getElementById(`${idPrefix}-btn-obt-minus`);
+    const btnObtPlus = document.getElementById(`${idPrefix}-btn-obt-plus`);
+    const btnMaxMinus = document.getElementById(`${idPrefix}-btn-max-minus`);
+    const btnMaxPlus = document.getElementById(`${idPrefix}-btn-max-plus`);
+
+    const subjectsList = document.getElementById(`${idPrefix}-subjects-list`);
+    const subCount = document.getElementById(`${idPrefix}-sub-count`);
+    const addSubjectBtn = document.getElementById(`${idPrefix}-add-subject-btn`);
+
+    const targetPctInput = document.getElementById(`${idPrefix}-target-pct`);
+    const remainingMaxInput = document.getElementById(`${idPrefix}-remaining-max`);
+    const plannerResult = document.getElementById(`${idPrefix}-planner-result`);
+
+    const outputPct = document.getElementById(`${idPrefix}-output-pct`);
+    const scoreSummary = document.getElementById(`${idPrefix}-score-summary`);
+    const divisionBadge = document.getElementById(`${idPrefix}-division-badge`);
+    const mathSteps = document.getElementById(`${idPrefix}-math-steps`);
+
+    function getDivision(pct) {
+      if (pct >= 75) return { label: 'First Class with Distinction', color: 'bg-emerald-100 text-emerald-800' };
+      if (pct >= 60) return { label: 'First Class', color: 'bg-blue-100 text-blue-800' };
+      if (pct >= 50) return { label: 'Second Class', color: 'bg-amber-100 text-amber-800' };
+      if (pct >= 35) return { label: 'Third Class / Pass Division', color: 'bg-slate-100 text-slate-800' };
+      return { label: 'Fail / Essential Repeat', color: 'bg-rose-100 text-rose-800' };
+    }
+
+    function renderSubjects() {
+      subjectsList.innerHTML = '';
+      subCount.textContent = `${subjects.length} Subjects`;
+
+      subjects.forEach((sub, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2.5 shadow-2xs';
+
+        const pct = sub.max > 0 ? (sub.obtained / sub.max) * 100 : 0;
+        const isPass = pct >= 35;
+
+        row.innerHTML = `
+          <input
+            type="text"
+            value="${sub.name}"
+            class="min-w-0 flex-1 rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500"
+            placeholder="Subject name"
+            data-idx="${idx}"
+            data-field="name"
+          />
+          <div class="flex items-center gap-1 shrink-0">
+            <input
+              type="number"
+              min="0"
+              max="200"
+              value="${sub.obtained}"
+              class="w-16 rounded border border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-bold text-slate-900 outline-none focus:border-emerald-500"
+              placeholder="Marks"
+              data-idx="${idx}"
+              data-field="obtained"
+            />
+            <span class="text-xs text-slate-400">/</span>
+            <input
+              type="number"
+              min="1"
+              max="200"
+              value="${sub.max}"
+              class="w-16 rounded border border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500"
+              placeholder="Max"
+              data-idx="${idx}"
+              data-field="max"
+            />
+          </div>
+          <span class="w-14 text-right font-mono text-xs font-bold ${isPass ? 'text-emerald-700' : 'text-rose-600'}">
+            ${pct.toFixed(1)}%
+          </span>
+          <button
+            type="button"
+            class="h-7 w-7 shrink-0 text-slate-400 hover:text-rose-600 rounded flex items-center justify-center transition-colors"
+            data-remove="${idx}"
+            ${subjects.length <= 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}
+            title="Remove subject"
+          >
+            ✕
+          </button>
+        `;
+
+        // Event listeners on row
+        row.querySelector('[data-field="name"]').addEventListener('input', (e) => {
+          subjects[idx].name = e.target.value;
+        });
+        row.querySelector('[data-field="obtained"]').addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          subjects[idx].obtained = isNaN(val) ? 0 : val;
+          calculate();
+        });
+        row.querySelector('[data-field="max"]').addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          subjects[idx].max = isNaN(val) || val <= 0 ? 100 : val;
+          calculate();
+        });
+        row.querySelector('[data-remove]').addEventListener('click', () => {
+          if (subjects.length > 1) {
+            subjects.splice(idx, 1);
+            renderSubjects();
+            calculate();
+          }
+        });
+
+        subjectsList.appendChild(row);
+      });
+    }
+
+    function calculate() {
+      let totalObtained = 0;
+      let totalMax = 0;
+
+      if (mode === 'quick') {
+        const obt = parseFloat(obtainedInput.value) || 0;
+        const max = parseFloat(maxInput.value) || 1;
+        totalObtained = Math.max(0, obt);
+        totalMax = Math.max(1, max);
+      } else {
+        subjects.forEach((s) => {
+          totalObtained += s.obtained;
+          totalMax += s.max;
+        });
+      }
+
+      const pct = Math.min(100, Math.max(0, (totalObtained / totalMax) * 100));
+      outputPct.textContent = `${pct.toFixed(2)}%`;
+      scoreSummary.textContent = `${totalObtained.toFixed(1).replace(/\.0$/, '')} / ${totalMax} Marks`;
+
+      const div = getDivision(pct);
+      divisionBadge.className = `inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 font-mono text-xs font-bold ${div.color}`;
+      divisionBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-current"></span> ${div.label}`;
+
+      mathSteps.textContent = `(${totalObtained.toFixed(1).replace(/\.0$/, '')} ÷ ${totalMax}) × 100 = ${pct.toFixed(2)}%`;
+
+      calculateTargetScore(totalObtained, totalMax);
+    }
+
+    function calculateTargetScore(currentObtained, currentMax) {
+      const targetPct = parseFloat(targetPctInput.value) || 85;
+      const remMax = parseFloat(remainingMaxInput.value) || 200;
+
+      const grandTotalMax = currentMax + remMax;
+      const totalMarksNeeded = (targetPct / 100) * grandTotalMax;
+      const marksNeededInRemaining = totalMarksNeeded - currentObtained;
+      const requiredRemainingPct = remMax > 0 ? (marksNeededInRemaining / remMax) * 100 : 0;
+
+      if (marksNeededInRemaining <= 0) {
+        plannerResult.innerHTML = `
+          <div class="flex items-center gap-2 text-emerald-800">
+            <span class="font-bold text-sm">🎉 Target Already Secured!</span>
+          </div>
+          <p class="mt-1 text-xs text-slate-600">
+            Your current score (${currentObtained}) already exceeds the total needed for ${targetPct}% (${Math.ceil(totalMarksNeeded)} marks).
+          </p>
+        `;
+      } else if (marksNeededInRemaining > remMax) {
+        plannerResult.innerHTML = `
+          <div class="flex items-center gap-2 text-rose-800 font-bold text-xs">
+            <span>⚠️ Mathematically Unattainable with Current Scope</span>
+          </div>
+          <p class="mt-1 text-xs text-slate-600">
+            You need <strong class="text-rose-700">${marksNeededInRemaining.toFixed(1)} marks</strong>, but only <strong>${remMax} marks</strong> remain (requires ${requiredRemainingPct.toFixed(1)}%).
+          </p>
+        `;
+      } else {
+        const isEasy = requiredRemainingPct <= 75;
+        plannerResult.innerHTML = `
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-slate-700">Marks Needed in Next Exams:</span>
+            <span class="font-mono text-base font-extrabold text-blue-700">${Math.ceil(marksNeededInRemaining)} / ${remMax}</span>
+          </div>
+          <div class="mt-1.5 flex items-center justify-between text-xs text-slate-600">
+            <span>Required Score in Upcoming Exams:</span>
+            <span class="font-mono font-bold ${isEasy ? 'text-emerald-700' : 'text-amber-700'}">${requiredRemainingPct.toFixed(1)}%</span>
+          </div>
+          <div class="mt-2 text-[0.7rem] text-slate-500">
+            Formula: Target Total (${Math.ceil(totalMarksNeeded)}) &minus; Current (${currentObtained}) = ${Math.ceil(marksNeededInRemaining)} marks needed.
+          </div>
+        `;
+      }
+    }
+
+    // Event Listeners
+    tabQuick.addEventListener('click', () => {
+      mode = 'quick';
+      tabQuick.className = 'rounded-lg bg-white px-3 py-1.5 text-center text-emerald-700 shadow-xs transition-all hover:text-emerald-900 font-bold';
+      tabSubjects.className = 'rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900';
+      quickView.classList.remove('hidden');
+      subjectsView.classList.add('hidden');
+      calculate();
+    });
+
+    tabSubjects.addEventListener('click', () => {
+      mode = 'subjects';
+      tabSubjects.className = 'rounded-lg bg-white px-3 py-1.5 text-center text-emerald-700 shadow-xs transition-all hover:text-emerald-900 font-bold';
+      tabQuick.className = 'rounded-lg px-3 py-1.5 text-center text-slate-600 transition-all hover:text-slate-900';
+      subjectsView.classList.remove('hidden');
+      quickView.classList.add('hidden');
+      renderSubjects();
+      calculate();
+    });
+
+    obtainedInput.addEventListener('input', calculate);
+    maxInput.addEventListener('input', calculate);
+
+    btnObtMinus.addEventListener('click', () => {
+      const cur = parseFloat(obtainedInput.value) || 0;
+      obtainedInput.value = Math.max(0, cur - 10).toString();
+      calculate();
+    });
+
+    btnObtPlus.addEventListener('click', () => {
+      const cur = parseFloat(obtainedInput.value) || 0;
+      obtainedInput.value = (cur + 10).toString();
+      calculate();
+    });
+
+    btnMaxMinus.addEventListener('click', () => {
+      const cur = parseFloat(maxInput.value) || 100;
+      maxInput.value = Math.max(10, cur - 50).toString();
+      calculate();
+    });
+
+    btnMaxPlus.addEventListener('click', () => {
+      const cur = parseFloat(maxInput.value) || 100;
+      maxInput.value = (cur + 50).toString();
+      calculate();
+    });
+
+    container.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const targetMax = e.currentTarget.getAttribute('data-preset-max');
+        maxInput.value = targetMax;
+        calculate();
+      });
+    });
+
+    addSubjectBtn.addEventListener('click', () => {
+      subjects.push({
+        name: `Subject ${subjects.length + 1}`,
+        obtained: 75,
+        max: 100
+      });
+      renderSubjects();
+      calculate();
+    });
+
+    targetPctInput.addEventListener('input', calculate);
+    remainingMaxInput.addEventListener('input', calculate);
+
+    // Initial load
+    calculate();
+  })();
+</script>

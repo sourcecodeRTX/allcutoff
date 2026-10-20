@@ -1,0 +1,408 @@
+---
+interface Props {
+  idPrefix?: string;
+}
+
+const { idPrefix = 'sgpa-to-cgpa' } = Astro.props;
+---
+
+<div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Header -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-indigo-600" aria-hidden="true"></span>
+          Multi-Semester Converter
+        </span>
+        <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          SGPA to CGPA Calculator
+        </h3>
+      </div>
+
+      <!-- Quick Semester Count Dropdown -->
+      <div class="flex items-center gap-2">
+        <label for={`${idPrefix}-sem-select`} class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Semesters Completed:
+        </label>
+        <select
+          id={`${idPrefix}-sem-select`}
+          class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
+        >
+          <option value="1">1 Semester</option>
+          <option value="2">2 Semesters (1st Year)</option>
+          <option value="3">3 Semesters</option>
+          <option value="4">4 Semesters (2nd Year)</option>
+          <option value="5">5 Semesters</option>
+          <option value="6" selected>6 Semesters (3rd Year)</option>
+          <option value="7">7 Semesters</option>
+          <option value="8">8 Semesters (Final Degree)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Credit Weighting Toggle -->
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs">
+      <span class="font-medium text-slate-700">Credit Weighting System:</span>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id={`${idPrefix}-mode-equal`}
+          class="rounded-lg bg-white px-3 py-1.5 font-semibold text-indigo-700 shadow-xs border border-slate-200"
+        >
+          Equal Credits (Quick Mode)
+        </button>
+        <button
+          type="button"
+          id={`${idPrefix}-mode-custom`}
+          class="rounded-lg px-3 py-1.5 font-medium text-slate-600 hover:text-slate-900"
+        >
+          Custom Credits per Semester
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT: Semester Inputs -->
+    <div class="lg:col-span-7">
+      <div class="flex items-center justify-between pb-2 text-xs font-semibold text-slate-500">
+        <span class="w-24">Semester</span>
+        <span class="flex-1 text-center">Semester SGPA</span>
+        <span class="w-24 text-center credit-col hidden">Credits</span>
+      </div>
+
+      <div id={`${idPrefix}-sem-rows`} class="space-y-3">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <button
+          type="button"
+          id={`${idPrefix}-reset-btn`}
+          class="text-xs font-medium text-slate-500 hover:text-slate-800"
+        >
+          Reset All Values
+        </button>
+        <span class="font-mono text-xs text-slate-400" id={`${idPrefix}-credit-summary`}>
+          Equal weights applied (1:1)
+        </span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results & Trajectory -->
+    <div class="lg:col-span-5">
+      <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5 sm:p-6 shadow-sm">
+        <span class="font-mono text-[0.7rem] font-bold uppercase tracking-wider text-indigo-700 block">
+          Cumulative Standing
+        </span>
+
+        <div class="mt-3 flex items-baseline justify-between">
+          <div>
+            <div class="flex items-baseline gap-2">
+              <span id={`${idPrefix}-cgpa-display`} class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+                8.65
+              </span>
+              <span class="text-sm font-semibold text-slate-500">/ 10.00</span>
+            </div>
+            <p class="mt-0.5 text-xs text-slate-500">Cumulative CGPA</p>
+          </div>
+
+          <div class="text-right">
+            <span id={`${idPrefix}-percentage-display`} class="text-2xl sm:text-3xl font-bold text-indigo-700 tabular-nums">
+              82.18%
+            </span>
+            <p class="mt-0.5 text-[0.7rem] font-medium text-slate-500">Equivalent Marks</p>
+          </div>
+        </div>
+
+        <!-- Progress Gauge -->
+        <div class="mt-5">
+          <div class="flex justify-between text-xs text-slate-500 mb-1">
+            <span>0.00</span>
+            <span id={`${idPrefix}-gauge-label`}>CGPA: 8.65</span>
+            <span>10.00</span>
+          </div>
+          <div class="h-3 w-full overflow-hidden rounded-full bg-slate-200/80">
+            <div
+              id={`${idPrefix}-gauge-bar`}
+              class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-300"
+              style="width: 86.5%;"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Division Card -->
+        <div class="mt-5">
+          <div id={`${idPrefix}-division-card`} class="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-600" aria-hidden="true"></span>
+              <span id={`${idPrefix}-division-title`} class="text-xs font-bold text-emerald-900 uppercase tracking-wide">
+                First Class with Distinction
+              </span>
+            </div>
+            <p id={`${idPrefix}-division-desc`} class="mt-1 text-xs text-emerald-800">
+              Honours grade profile across all evaluated semesters.
+            </p>
+          </div>
+        </div>
+
+        <!-- Semester-by-Semester Progression Log -->
+        <div class="mt-5 border-t border-slate-200 pt-4">
+          <span class="block text-xs font-semibold text-slate-700 mb-2">CGPA Trajectory:</span>
+          <div id={`${idPrefix}-trajectory-list`} class="max-h-40 overflow-y-auto space-y-1.5 text-xs pr-1">
+            <!-- Progression items via JS -->
+          </div>
+        </div>
+
+        <!-- Copy -->
+        <div class="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between">
+          <span class="text-[0.7rem] text-slate-400">Weighted credit formula</span>
+          <button
+            type="button"
+            id={`${idPrefix}-copy-btn`}
+            class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors"
+          >
+            <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span id={`${idPrefix}-copy-text`}>Copy CGPA</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ idPrefix }}>
+  (function () {
+    let semesterCount = 6;
+    let isCustomCredits = false;
+
+    let defaultSgpas = [8.2, 8.5, 8.4, 8.9, 8.8, 9.0, 8.7, 9.2];
+    let defaultCredits = [20, 20, 22, 22, 21, 21, 20, 20];
+
+    let currentSgpas = defaultSgpas.slice(0, semesterCount);
+    let currentCredits = defaultCredits.slice(0, semesterCount);
+
+    const semSelect = document.getElementById(`${idPrefix}-sem-select`);
+    const modeEqual = document.getElementById(`${idPrefix}-mode-equal`);
+    const modeCustom = document.getElementById(`${idPrefix}-mode-custom`);
+    const rowsContainer = document.getElementById(`${idPrefix}-sem-rows`);
+    const creditSummary = document.getElementById(`${idPrefix}-credit-summary`);
+    const resetBtn = document.getElementById(`${idPrefix}-reset-btn`);
+
+    const cgpaDisplay = document.getElementById(`${idPrefix}-cgpa-display`);
+    const percentageDisplay = document.getElementById(`${idPrefix}-percentage-display`);
+    const gaugeBar = document.getElementById(`${idPrefix}-gauge-bar`);
+    const gaugeLabel = document.getElementById(`${idPrefix}-gauge-label`);
+    const divisionCard = document.getElementById(`${idPrefix}-division-card`);
+    const divisionTitle = document.getElementById(`${idPrefix}-division-title`);
+    const divisionDesc = document.getElementById(`${idPrefix}-division-desc`);
+    const trajectoryList = document.getElementById(`${idPrefix}-trajectory-list`);
+    const copyBtn = document.getElementById(`${idPrefix}-copy-btn`);
+    const copyText = document.getElementById(`${idPrefix}-copy-text`);
+
+    function getDivision(pct) {
+      if (pct >= 75) {
+        return {
+          title: 'First Class with Distinction',
+          desc: 'Honours grade profile across all evaluated semesters.',
+          cardClass: 'border-emerald-200 bg-emerald-50/80',
+          dotClass: 'bg-emerald-600',
+          textClass: 'text-emerald-900'
+        };
+      }
+      if (pct >= 60) {
+        return {
+          title: 'First Class',
+          desc: 'Eligible for degree award with First Class.',
+          cardClass: 'border-blue-200 bg-blue-50/80',
+          dotClass: 'bg-blue-600',
+          textClass: 'text-blue-900'
+        };
+      }
+      if (pct >= 50) {
+        return {
+          title: 'Second Class',
+          desc: 'Second class graduation division.',
+          cardClass: 'border-amber-200 bg-amber-50/80',
+          dotClass: 'bg-amber-600',
+          textClass: 'text-amber-900'
+        };
+      }
+      return {
+        title: 'Pass Class',
+        desc: 'Satisfies basic degree requirements.',
+        cardClass: 'border-slate-200 bg-slate-50',
+        dotClass: 'bg-slate-500',
+        textClass: 'text-slate-800'
+      };
+    }
+
+    function renderRows() {
+      if (!rowsContainer) return;
+      rowsContainer.innerHTML = '';
+
+      const creditCols = document.querySelectorAll('.credit-col');
+      creditCols.forEach(el => {
+        if (isCustomCredits) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      });
+
+      for (let i = 0; i < semesterCount; i++) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 sm:p-3 transition-colors focus-within:border-indigo-400';
+
+        row.innerHTML = `
+          <span class="w-24 shrink-0 font-mono text-xs font-semibold text-slate-700">Semester ${i + 1}</span>
+          <div class="flex-1 min-w-0">
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="10"
+              value="${currentSgpas[i] !== undefined ? currentSgpas[i] : 8.5}"
+              data-idx="${i}"
+              data-field="sgpa"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-center font-mono text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-indigo-500"
+              placeholder="SGPA (0-10)"
+            />
+          </div>
+          <div class="w-24 shrink-0 ${isCustomCredits ? '' : 'hidden'}">
+            <input
+              type="number"
+              step="0.5"
+              min="1"
+              max="40"
+              value="${currentCredits[i] !== undefined ? currentCredits[i] : 20}"
+              data-idx="${i}"
+              data-field="credit"
+              class="w-full rounded-md border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-center font-mono text-xs sm:text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500"
+              placeholder="Credits"
+            />
+          </div>
+        `;
+        rowsContainer.appendChild(row);
+      }
+    }
+
+    function calculate() {
+      let totalWeighted = 0;
+      let totalCreds = 0;
+      let runningWeighted = 0;
+      let runningCreds = 0;
+      const trajectory = [];
+
+      for (let i = 0; i < semesterCount; i++) {
+        const sgpa = Math.min(10, Math.max(0, Number(currentSgpas[i]) || 0));
+        const cred = isCustomCredits ? Math.max(1, Number(currentCredits[i]) || 20) : 20;
+
+        totalWeighted += sgpa * cred;
+        totalCreds += cred;
+
+        runningWeighted += sgpa * cred;
+        runningCreds += cred;
+        const cumCgpa = runningCreds > 0 ? Math.round((runningWeighted / runningCreds) * 100) / 100 : 0;
+        trajectory.push({ sem: i + 1, sgpa, cumCgpa });
+      }
+
+      const cgpa = totalCreds > 0 ? Math.round((totalWeighted / totalCreds) * 100) / 100 : 0;
+      const pct = Math.min(100, Math.max(0, Math.round(cgpa * 9.5 * 100) / 100));
+      const div = getDivision(pct);
+
+      if (cgpaDisplay) cgpaDisplay.textContent = cgpa.toFixed(2);
+      if (percentageDisplay) percentageDisplay.textContent = `${pct.toFixed(2)}%`;
+      if (gaugeBar) gaugeBar.style.width = `${Math.min(100, Math.max(0, (cgpa / 10) * 100))}%`;
+      if (gaugeLabel) gaugeLabel.textContent = `CGPA: ${cgpa.toFixed(2)}`;
+
+      if (divisionCard && divisionTitle && divisionDesc) {
+        divisionCard.className = `rounded-xl border p-3.5 transition-colors ${div.cardClass}`;
+        divisionTitle.className = `text-xs font-bold uppercase tracking-wide ${div.textClass}`;
+        divisionTitle.textContent = div.title;
+        divisionDesc.textContent = div.desc;
+        const dot = divisionCard.querySelector('span[aria-hidden="true"]');
+        if (dot) dot.className = `h-2 w-2 rounded-full ${div.dotClass}`;
+      }
+
+      if (trajectoryList) {
+        trajectoryList.innerHTML = '';
+        trajectory.forEach(t => {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between py-1 border-b border-slate-100 last:border-0';
+          item.innerHTML = `
+            <span class="text-slate-600">Sem ${t.sem} (SGPA ${t.sgpa.toFixed(2)})</span>
+            <span class="font-mono font-semibold text-slate-900">Cum CGPA: ${t.cumCgpa.toFixed(2)}</span>
+          `;
+          trajectoryList.appendChild(item);
+        });
+      }
+
+      if (creditSummary) {
+        creditSummary.textContent = isCustomCredits
+          ? `Total Credits: ${totalCreds}`
+          : `Equal weights (${semesterCount} × 20 = ${totalCreds} credits)`;
+      }
+    }
+
+    rowsContainer?.addEventListener('input', (e) => {
+      const target = e.target;
+      const idx = parseInt(target.getAttribute('data-idx'), 10);
+      const field = target.getAttribute('data-field');
+      if (!isNaN(idx)) {
+        if (field === 'sgpa') currentSgpas[idx] = target.value;
+        if (field === 'credit') currentCredits[idx] = target.value;
+        calculate();
+      }
+    });
+
+    semSelect?.addEventListener('change', (e) => {
+      semesterCount = parseInt(e.target.value, 10);
+      while (currentSgpas.length < semesterCount) {
+        currentSgpas.push(8.5);
+        currentCredits.push(20);
+      }
+      renderRows();
+      calculate();
+    });
+
+    modeEqual?.addEventListener('click', () => {
+      isCustomCredits = false;
+      modeEqual.className = 'rounded-lg bg-white px-3 py-1.5 font-semibold text-indigo-700 shadow-xs border border-slate-200';
+      modeCustom.className = 'rounded-lg px-3 py-1.5 font-medium text-slate-600 hover:text-slate-900';
+      renderRows();
+      calculate();
+    });
+
+    modeCustom?.addEventListener('click', () => {
+      isCustomCredits = true;
+      modeCustom.className = 'rounded-lg bg-white px-3 py-1.5 font-semibold text-indigo-700 shadow-xs border border-slate-200';
+      modeEqual.className = 'rounded-lg px-3 py-1.5 font-medium text-slate-600 hover:text-slate-900';
+      renderRows();
+      calculate();
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      currentSgpas = defaultSgpas.slice(0, semesterCount);
+      currentCredits = defaultCredits.slice(0, semesterCount);
+      renderRows();
+      calculate();
+    });
+
+    copyBtn?.addEventListener('click', () => {
+      const cgpa = cgpaDisplay ? cgpaDisplay.textContent.trim() : '';
+      const pct = percentageDisplay ? percentageDisplay.textContent.trim() : '';
+      const divText = divisionTitle ? divisionTitle.textContent.trim() : '';
+      const textToCopy = `Cumulative CGPA: ${cgpa}/10.00 | Equivalent Marks: ${pct} | Class: ${divText} (via AllCutOff.com)`;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        if (copyText) copyText.textContent = 'Copied!';
+        setTimeout(() => {
+          if (copyText) copyText.textContent = 'Copy CGPA';
+        }, 2000);
+      });
+    });
+
+    renderRows();
+    calculate();
+  })();
+</script>

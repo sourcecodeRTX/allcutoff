@@ -8,6 +8,7 @@ import Layout, {
 } from '../../layouts/Layout.astro';
 import CalculatorWidget from '../../components/CalculatorWidget.astro';
 import CalculatorCard from '../../components/CalculatorCard.astro';
+import AcademicCalculatorPage from '../../components/academic/AcademicCalculatorPage.astro';
 import {
   CALCULATORS,
   CATEGORIES,
@@ -15,15 +16,30 @@ import {
   getCalculatorsByCategory,
   getCalculatorsByState
 } from '../../data/calculators';
+import {
+  ACADEMIC_CALCULATORS,
+  type AcademicCalculatorMeta
+} from '../../data/academicCalculators';
 
 export function getStaticPaths() {
-  return CALCULATORS.map((calc) => ({
+  const cutoffPaths = CALCULATORS.map((calc) => ({
     params: { slug: calc.slug },
-    props: { calculator: calc },
+    props: { isAcademic: false, calculator: calc, academicCalculator: null },
   }));
+  const academicPaths = ACADEMIC_CALCULATORS.map((calc) => ({
+    params: { slug: calc.slug },
+    props: { isAcademic: true, calculator: null, academicCalculator: calc },
+  }));
+  return [...cutoffPaths, ...academicPaths];
 }
 
-const { calculator } = Astro.props as { calculator: (typeof CALCULATORS)[number] };
+const { isAcademic = false, calculator: rawCalc = null, academicCalculator = null } = Astro.props as {
+  isAcademic?: boolean;
+  calculator?: (typeof CALCULATORS)[number] | null;
+  academicCalculator?: AcademicCalculatorMeta | null;
+};
+
+const calculator = rawCalc ?? CALCULATORS[0];
 
 const siteUrl = SITE_URL;
 const websiteId = `${siteUrl}/#website`;
@@ -239,14 +255,17 @@ const sameExamFamily = getCalculatorsByCategory(calculator.categorySlug).length;
 const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
 ---
 
-<Layout
-  title={title}
-  description={description}
-  currentCategory={calculator.categorySlug}
-  canonicalUrl={canonical}
-  dateModified={FORMULA_REVIEWED}
-  extraSchema={extraSchema}
->
+{isAcademic && academicCalculator ? (
+  <AcademicCalculatorPage calculator={academicCalculator} />
+) : (
+  <Layout
+    title={title}
+    description={description}
+    currentCategory={calculator.categorySlug}
+    canonicalUrl={canonical}
+    dateModified={FORMULA_REVIEWED}
+    extraSchema={extraSchema}
+  >
   <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -769,3 +788,4 @@ const sameStateCount = getCalculatorsByState(calculator.stateSlug).length;
     </section>
   </article>
 </Layout>
+)}

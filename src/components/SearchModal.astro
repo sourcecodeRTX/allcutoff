@@ -1,5 +1,6 @@
 ---
 import { CALCULATORS } from '../data/calculators';
+import { ACADEMIC_CALCULATORS } from '../data/academicCalculators';
 
 /**
  * Search vocabulary per calculator, in two tiers.
@@ -55,7 +56,7 @@ function tokens(value: string): string[] {
     .filter((t) => t.length > 1);
 }
 
-const searchIndex = CALCULATORS.map((c) => {
+const cutoffSearchEntries = CALCULATORS.map((c) => {
   const identity = (IDENTITY_TOKENS[c.id] ?? []).map((t) => t.toLowerCase());
   const aliases = Array.from(
     new Set(
@@ -65,12 +66,6 @@ const searchIndex = CALCULATORS.map((c) => {
     )
   );
 
-  /*
-   * Only what the client actually reads (`item.*` in the script below).
-   * `shortName` and `exam` were shipped here but never read: both are already
-   * folded into `searchAliases` by `tokens(...)` above, so they were pure
-   * duplicate bytes inflating the payload on all 30 pages.
-   */
   return {
     id: c.id,
     slug: c.slug,
@@ -85,11 +80,36 @@ const searchIndex = CALCULATORS.map((c) => {
   };
 });
 
+const academicSearchEntries = ACADEMIC_CALCULATORS.map((ac) => {
+  const aliases = Array.from(
+    new Set(
+      tokens(`${ac.name} ${ac.shortName} ${ac.badge} ${ac.summary} ${ac.keywords.join(' ')}`)
+    )
+  );
+
+  return {
+    id: ac.id,
+    slug: ac.slug,
+    name: ac.name,
+    category: 'Academic Tools',
+    state: ac.badge,
+    targetCourse: ac.summary,
+    authority: 'University / Board Ordinance',
+    identityTokens: [ac.shortName.toLowerCase(), ac.toolType, ...(ac.universityKey ? [ac.universityKey] : []), ...(ac.examKey ? [ac.examKey] : [])],
+    searchAliases: aliases,
+    primary: ac.shortName.toLowerCase()
+  };
+});
+
+const searchIndex = [...cutoffSearchEntries, ...academicSearchEntries];
+
 const QUICK_FILTERS = [
-  { label: 'TNEA (Tamil Nadu)', query: 'tnea' },
-  { label: 'KCET (Karnataka)', query: 'kcet' },
-  { label: 'NEET UG (Medical)', query: 'neet' },
-  { label: 'TNAU (Agriculture)', query: 'tnau' }
+  { label: 'TNEA', query: 'tnea' },
+  { label: 'KCET', query: 'kcet' },
+  { label: 'NEET UG', query: 'neet' },
+  { label: 'CGPA', query: 'cgpa' },
+  { label: 'Attendance', query: 'attendance' },
+  { label: 'Percentile', query: 'percentile' }
 ];
 ---
 

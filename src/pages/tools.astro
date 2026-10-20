@@ -1,0 +1,271 @@
+---
+import Layout, { SITE_URL } from '../layouts/Layout.astro';
+import { CALCULATORS, CATEGORIES } from '../data/calculators';
+import { ACADEMIC_CALCULATORS } from '../data/academicCalculators';
+
+const canonical = `${SITE_URL}/tools`;
+const FORMULA_REVIEWED = '2026-10-18';
+
+const title = 'All Calculators & Academic Tools Directory | All Cut Off';
+const description =
+  'Browse all 29 free admission cutoff calculators, GPA/CGPA tools, percentage converters, attendance planners, and percentile predictors on All Cut Off.';
+
+const collectionSchema = {
+  '@type': 'CollectionPage',
+  '@id': `${canonical}#collection`,
+  url: canonical,
+  name: title,
+  description,
+  isPartOf: { '@id': `${SITE_URL}/#website` },
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'All Tools Directory', item: canonical }
+    ]
+  }
+};
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={FORMULA_REVIEWED}
+  extraSchema={[collectionSchema]}
+>
+  <!-- Breadcrumb -->
+  <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <ol class="flex items-center gap-x-2 text-xs text-slate-500">
+        <li><a href="/" class="rounded transition-colors hover:text-blue-600">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="font-semibold text-slate-900">All Tools Directory</li>
+      </ol>
+    </div>
+  </nav>
+
+  <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+    <!-- Header -->
+    <div class="text-center max-w-3xl mx-auto">
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 font-mono text-xs font-semibold text-blue-700">
+        <svg class="h-3.5 w-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+        Complete Tools Directory
+      </span>
+
+      <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+        All Calculators &amp; Academic Tools
+      </h1>
+
+      <p class="mt-3 text-base text-slate-600 leading-relaxed">
+        Quickly discover and launch any official entrance cutoff calculator, college GPA tool, percentage converter, or attendance planner.
+      </p>
+
+      <!-- Live Search Bar -->
+      <div class="mt-6 relative max-w-xl mx-auto">
+        <input
+          type="text"
+          id="tools-search"
+          placeholder="Filter tools by exam, university, or keyword (e.g. TNEA, VIT, KTU, Attendance)..."
+          class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pl-11 text-sm text-slate-900 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+        <svg class="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
+      <!-- Filter Category Buttons -->
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          data-filter="all"
+          class="filter-pill-btn active-pill rounded-full bg-blue-600 px-3.5 py-1 text-xs font-semibold text-white shadow-xs transition-colors"
+        >
+          All Tools ({CALCULATORS.length + ACADEMIC_CALCULATORS.length})
+        </button>
+        <button
+          type="button"
+          data-filter="cutoff"
+          class="filter-pill-btn rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          Cut Off Calculators ({CALCULATORS.length})
+        </button>
+        <button
+          type="button"
+          data-filter="academic"
+          class="filter-pill-btn rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          Academic &amp; Grade Tools ({ACADEMIC_CALCULATORS.length})
+        </button>
+      </div>
+    </div>
+
+    <!-- SECTION 1: Academic & Grade Calculators -->
+    <section id="academic-tools-section" class="mt-12">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-bold">🎓</span>
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900">
+              Academic &amp; College GPA Calculators
+            </h2>
+            <p class="text-xs text-slate-500">CGPA, SGPA, attendance, marks percentage, and rank percentiles</p>
+          </div>
+        </div>
+        <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 font-mono text-xs font-bold text-indigo-700">
+          {ACADEMIC_CALCULATORS.length} Tools
+        </span>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="academic-cards-grid">
+        {ACADEMIC_CALCULATORS.map((calc) => (
+          <a
+            href={`/calculator/${calc.slug}`}
+            class="tool-card surface-card group rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-indigo-400 hover:shadow-md flex flex-col justify-between"
+            data-search={`${calc.name} ${calc.shortName} ${calc.badge} ${calc.summary} ${calc.keywords.join(' ')}`.toLowerCase()}
+            data-type="academic"
+          >
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 font-mono text-[0.6875rem] font-semibold text-indigo-700">
+                  {calc.badge}
+                </span>
+                <span class="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors font-bold">&rarr;</span>
+              </div>
+              <h3 class="mt-2.5 text-base font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                {calc.name}
+              </h3>
+              <p class="mt-1.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                {calc.summary}
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[0.7rem] text-slate-500 font-mono">
+              <span>{calc.toolType.toUpperCase()}</span>
+              <span class="font-semibold text-indigo-600 group-hover:underline">Launch Tool &rarr;</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- SECTION 2: Entrance Exam Cutoff Calculators -->
+    <section id="cutoff-tools-section" class="mt-14">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-bold">🏛️</span>
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900">
+              Admission Cut Off Calculators
+            </h2>
+            <p class="text-xs text-slate-500">Official state entrance and college admission score merit tools</p>
+          </div>
+        </div>
+        <span class="rounded-full bg-blue-50 px-2.5 py-0.5 font-mono text-xs font-bold text-blue-700">
+          {CALCULATORS.length} Calculators
+        </span>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="cutoff-cards-grid">
+        {CALCULATORS.map((calc) => (
+          <a
+            href={`/calculator/${calc.slug}`}
+            class="tool-card surface-card group rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+            data-search={`${calc.name} ${calc.shortName} ${calc.exam} ${calc.state} ${calc.category} ${calc.targetCourse}`.toLowerCase()}
+            data-type="cutoff"
+          >
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="rounded-full bg-blue-50 px-2.5 py-0.5 font-mono text-[0.6875rem] font-semibold text-blue-700">
+                  {calc.category}
+                </span>
+                <span class="rounded border border-slate-200 px-1.5 py-0.2 font-mono text-[0.65rem] text-slate-500">
+                  Max: {calc.maxScore}
+                </span>
+              </div>
+              <h3 class="mt-2.5 text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                {calc.name}
+              </h3>
+              <p class="mt-1.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                {calc.summary}
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[0.7rem] text-slate-500 font-mono">
+              <span>{calc.state}</span>
+              <span class="font-semibold text-blue-600 group-hover:underline">Calculate Cutoff &rarr;</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Empty search notice -->
+    <div id="no-tools-found" class="mt-12 hidden text-center py-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+      <p class="text-base font-semibold text-slate-700">No calculators matched your search query.</p>
+      <p class="mt-1 text-xs text-slate-500">Try searching for an exam code like "JEE", "TNEA", "KCET", or tool name like "CGPA" or "Attendance".</p>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const searchInput = document.getElementById('tools-search') as HTMLInputElement | null;
+    const cards = document.querySelectorAll('.tool-card') as NodeListOf<HTMLElement>;
+    const filterButtons = document.querySelectorAll('.filter-pill-btn') as NodeListOf<HTMLButtonElement>;
+    const academicSection = document.getElementById('academic-tools-section');
+    const cutoffSection = document.getElementById('cutoff-tools-section');
+    const noResults = document.getElementById('no-tools-found');
+
+    let currentFilter = 'all';
+
+    function filterTools() {
+      const q = (searchInput?.value || '').toLowerCase().trim();
+      let visibleCount = 0;
+      let visibleAcademic = 0;
+      let visibleCutoff = 0;
+
+      cards.forEach((card) => {
+        const text = card.getAttribute('data-search') || '';
+        const type = card.getAttribute('data-type') || '';
+
+        const matchesQuery = !q || text.includes(q);
+        const matchesFilter = currentFilter === 'all' || currentFilter === type;
+
+        if (matchesQuery && matchesFilter) {
+          card.style.display = 'flex';
+          visibleCount++;
+          if (type === 'academic') visibleAcademic++;
+          if (type === 'cutoff') visibleCutoff++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (academicSection) {
+        academicSection.style.display = visibleAcademic > 0 ? 'block' : 'none';
+      }
+      if (cutoffSection) {
+        cutoffSection.style.display = visibleCutoff > 0 ? 'block' : 'none';
+      }
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', filterTools);
+    }
+
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach((b) => {
+          b.className = 'filter-pill-btn rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors';
+        });
+        btn.className = 'filter-pill-btn active-pill rounded-full bg-blue-600 px-3.5 py-1 text-xs font-semibold text-white shadow-xs transition-colors';
+        currentFilter = btn.getAttribute('data-filter') || 'all';
+        filterTools();
+      });
+    });
+  })();
+</script>
