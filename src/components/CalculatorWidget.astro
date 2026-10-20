@@ -135,6 +135,7 @@ const stepDecimals = (input: { step?: number }) =>
             value={input.defaultValue}
             class="calc-slider focus-ring mt-2"
             aria-labelledby={`label-${calculator.id}-${input.id}`}
+            style={`--slider-progress: ${input.max > input.min ? (((input.defaultValue - input.min) / (input.max - input.min)) * 100).toFixed(2) : '50'}%;`}
           />
 
           <p class="mt-1 flex items-baseline justify-between gap-2 font-mono text-xs text-slate-500">
@@ -802,8 +803,13 @@ const stepDecimals = (input: { step?: number }) =>
 
         slider.addEventListener('input', function () {
           if (numEl) numEl.value = slider.value;
+          syncSliderProgress(slider);
           refreshSteppers();
           runCalculation();
+        });
+
+        slider.addEventListener('change', function () {
+          syncSliderProgress(slider);
         });
       }
 

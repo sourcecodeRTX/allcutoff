@@ -653,9 +653,14 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
           '<button type="button" class="stepper-btn focus-ring" data-hero-step="' + esc(stepper) + '" data-hero-for="' +
           esc(input.id) + '" aria-label="Increase ' + esc(input.name) + '">+</button>' +
           '</div>' +
-          '<input type="range" id="hero-range-' + esc(input.id) + '" min="' + esc(input.min) + '" max="' +
-          esc(input.max) + '" step="' + esc(step) + '" value="' + esc(initial) + '" class="calc-slider focus-ring mt-1.5" aria-labelledby="' +
-          labelId + '" />' +
+          (function () {
+            var spanProg = num(input.max) > num(input.min)
+              ? (((num(initial) - num(input.min)) / (num(input.max) - num(input.min))) * 100).toFixed(2)
+              : '50';
+            return '<input type="range" id="hero-range-' + esc(input.id) + '" min="' + esc(input.min) + '" max="' +
+              esc(input.max) + '" step="' + esc(step) + '" value="' + esc(initial) + '" class="calc-slider focus-ring mt-1.5" aria-labelledby="' +
+              labelId + '" style="--slider-progress: ' + spanProg + '%;" />';
+          })() +
           '<p class="mt-0.5 flex items-baseline justify-between gap-2 font-mono text-xs text-slate-500">' +
           '<span>Min ' + esc(input.min) + '</span><span>Max ' + esc(input.max) + '</span></p>';
 
@@ -1010,7 +1015,12 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
 
     inputsWrap.addEventListener('change', function (event) {
       var target = event.target;
-      if (!target || target.type !== 'number') return;
+      if (!target) return;
+      if (target.type === 'range') {
+        syncSlider(target);
+        return;
+      }
+      if (target.type !== 'number') return;
 
       var input = safeInputs(calculators[activeId]).find(function (candidate) {
         return 'hero-num-' + candidate.id === target.id;

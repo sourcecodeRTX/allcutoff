@@ -774,8 +774,10 @@
     border-radius: 9999px;
     background: linear-gradient(
       to right,
-      var(--color-link) 0 var(--slider-progress),
-      var(--color-hairline) var(--slider-progress) 100%
+      var(--color-link) 0%,
+      var(--color-link) var(--slider-progress),
+      var(--color-hairline) var(--slider-progress),
+      var(--color-hairline) 100%
     );
   }
 
