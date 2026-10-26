@@ -1,0 +1,30 @@
+# ==============================================================================
+# Cloudflare Pages Redirects - AllCutOff.com
+# Technical SEO Canonicalization and Clean URL Enforcement
+# ==============================================================================
+
+# 1. Hostname Canonicalization (Apex Domain Enforcement)
+# Ensures requests to www or plain http redirect permanently to canonical https://allcutoff.com
+https://www.allcutoff.com/* https://allcutoff.com/:splat 301
+http://www.allcutoff.com/* https://allcutoff.com/:splat 301
+http://allcutoff.com/* https://allcutoff.com/:splat 301
+
+# 2. Legacy Page Path Aliases (301 Permanent Redirects)
+/about-us /about 301
+/contact-us /contact 301
+/privacy-policy /privacy 301
+/terms-and-conditions /terms 301
+
+# 3. Trailing-Slash Normalization for Utility and Hub Pages
+/calculator/ /calculator 301
+/tools/ /tools 301
+/about/ /about 301
+/contact/ /contact 301
+/privacy/ /privacy 301
+/terms/ /terms 301
+/disclaimer/ /disclaimer 301
+
+# 4. Trailing-Slash Normalization for Deep Dynamic Routes
+/calculator/:slug/ /calculator/:slug 301
+/state/:slug/ /state/:slug 301
+/category/:slug/ /category/:slug 301

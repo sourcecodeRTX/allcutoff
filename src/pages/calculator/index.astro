@@ -1,0 +1,348 @@
+---
+import Layout, { SITE_URL } from '../../layouts/Layout.astro';
+import { CALCULATORS, CATEGORIES, STATES } from '../../data/calculators';
+import { ACADEMIC_CALCULATORS } from '../../data/academicCalculators';
+
+const canonical = `${SITE_URL}/calculator`;
+const DIRECTORY_REVIEWED = '2026-10-26';
+
+const title = 'All Admission Cutoff Calculators & Merit Score Directory | All Cut Off';
+const description =
+  'Browse official cutoff calculators for TNEA, KCET, NEET UG, MHT CET, KEAM, GUJCET, AP & TS EAPCET, and DU CSAS. Free instant merit score computation.';
+
+const breadcrumbSchema = {
+  '@type': 'BreadcrumbList',
+  '@id': `${canonical}#breadcrumb`,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+    { '@type': 'ListItem', position: 2, name: 'Calculators Directory', item: canonical }
+  ]
+};
+
+const listSchema = {
+  '@type': 'ItemList',
+  '@id': `${canonical}#calculators`,
+  name: 'Official Admission Cutoff Calculators',
+  description,
+  numberOfItems: CALCULATORS.length,
+  itemListOrder: 'https://schema.org/ItemListOrderAscending',
+  itemListElement: CALCULATORS.map((calc, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: calc.name,
+    url: `${SITE_URL}/calculator/${calc.slug}`
+  }))
+};
+
+const collectionSchema = {
+  '@type': 'CollectionPage',
+  '@id': `${canonical}#webpage`,
+  url: canonical,
+  name: title,
+  description,
+  inLanguage: 'en-IN',
+  dateModified: DIRECTORY_REVIEWED,
+  isPartOf: { '@id': `${SITE_URL}/#website` },
+  breadcrumb: { '@id': `${canonical}#breadcrumb` },
+  mainEntity: { '@id': `${canonical}#calculators` }
+};
+
+const faqs = [
+  {
+    question: 'What is an admission cutoff calculator?',
+    answer:
+      'An admission cutoff calculator computes your official merit score according to the exact mathematical formula published by state entrance authorities and universities (such as DOTE for TNEA, KEA for KCET, and State CET Cell for MHT CET). This merit score determines your rank in state quota counseling.'
+  },
+  {
+    question: 'How are engineering cutoff scores calculated across different states?',
+    answer:
+      'Each state uses its own published regulation. For example, Tamil Nadu (TNEA) calculates engineering cutoff out of 200 (Maths out of 100 + Physics out of 50 + Chemistry out of 50). Karnataka (KCET) combines 50% board marks and 50% KCET entrance marks. KEAM (Kerala) computes a 50:50 standardized index out of 600.'
+  },
+  {
+    question: 'Do these cutoff calculators save or collect my marks?',
+    answer:
+      'No. All calculations run 100% client-side inside your web browser. No marks, scores, or personal data are ever transmitted to our servers or stored in any database.'
+  },
+  {
+    question: 'Where can I find college GPA, SGPA, and semester tools?',
+    answer:
+      'In addition to entrance cutoff calculators, All Cut Off provides academic tools including CGPA, SGPA, attendance percentage, and percentile predictors accessible directly via our academic tools section and top navigation.'
+  }
+];
+
+const faqSchema = {
+  '@type': 'FAQPage',
+  '@id': `${canonical}#faq`,
+  isPartOf: { '@id': `${canonical}#webpage` },
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: { '@type': 'Answer', text: f.answer }
+  }))
+};
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalUrl={canonical}
+  dateModified={DIRECTORY_REVIEWED}
+  extraSchema={[breadcrumbSchema, listSchema, collectionSchema, faqSchema]}
+>
+  <!-- Breadcrumb -->
+  <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <ol class="flex items-center gap-x-2 text-xs text-slate-500">
+        <li><a href="/" class="rounded transition-colors hover:text-blue-600">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="font-semibold text-slate-900">Calculators Directory</li>
+      </ol>
+    </div>
+  </nav>
+
+  <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+    <!-- Header Block -->
+    <div class="text-center max-w-3xl mx-auto">
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 font-mono text-xs font-semibold text-blue-700">
+        <svg class="h-3.5 w-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+        Admission Cut Off Tools 2025 - 2026
+      </span>
+
+      <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+        Admission Cut Off Calculators &amp; Directory
+      </h1>
+
+      <p class="mt-3 text-base text-slate-600 leading-relaxed">
+        Official state entrance and college admission merit calculators for Indian universities. Select your exam or state below to calculate your verified counseling score.
+      </p>
+
+      <!-- Live Search Bar -->
+      <div class="mt-6 relative max-w-xl mx-auto">
+        <input
+          type="text"
+          id="calc-search"
+          placeholder="Search by exam code, state, or course (e.g. TNEA, KCET, NEET, MHT CET)..."
+          class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pl-11 text-sm text-slate-900 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+        <svg class="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
+      <!-- Filter Category Buttons -->
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          data-category="all"
+          class="calc-filter-pill active-pill rounded-full bg-blue-600 px-3.5 py-1 text-xs font-semibold text-white shadow-xs transition-colors"
+        >
+          All Calculators ({CALCULATORS.length})
+        </button>
+        {CATEGORIES.map((cat) => (
+          <button
+            type="button"
+            data-category={cat.slug}
+            class="calc-filter-pill rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            {cat.name.replace(/\s+Cutoffs?$/i, '')}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Calculators Grid Section -->
+    <section class="mt-12">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-bold">🏛️</span>
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900">
+              Official Admission Merit Calculators
+            </h2>
+            <p class="text-xs text-slate-500">Instant client-side score computation from published counseling circulars</p>
+          </div>
+        </div>
+        <span class="rounded-full bg-blue-50 px-2.5 py-0.5 font-mono text-xs font-bold text-blue-700">
+          {CALCULATORS.length} Tools
+        </span>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="calculators-grid">
+        {CALCULATORS.map((calc) => (
+          <a
+            href={`/calculator/${calc.slug}`}
+            class="calc-card surface-card group rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+            data-search={`${calc.name} ${calc.shortName} ${calc.exam} ${calc.state} ${calc.category} ${calc.targetCourse} ${calc.conductingAuthority}`.toLowerCase()}
+            data-cat={calc.categorySlug}
+          >
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="rounded-full bg-blue-50 px-2.5 py-0.5 font-mono text-[0.6875rem] font-semibold text-blue-700">
+                  {calc.category}
+                </span>
+                <span class="rounded border border-slate-200 px-1.5 py-0.2 font-mono text-[0.65rem] text-slate-500">
+                  Max: {calc.maxScore}
+                </span>
+              </div>
+              <h3 class="mt-2.5 text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                {calc.name}
+              </h3>
+              <p class="mt-1.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                {calc.summary}
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[0.7rem] text-slate-500 font-mono">
+              <span>{calc.state}</span>
+              <span class="font-semibold text-blue-600 group-hover:underline">Calculate Score &rarr;</span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <!-- Empty state -->
+      <div id="no-calc-found" class="mt-12 hidden text-center py-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+        <p class="text-base font-semibold text-slate-700">No calculators matched your search query.</p>
+        <p class="mt-1 text-xs text-slate-500">Try searching by state (e.g., "Tamil Nadu", "Karnataka", "Maharashtra") or exam (e.g., "NEET", "TNEA", "KCET").</p>
+      </div>
+    </section>
+
+    <!-- SECTION: Browse by State -->
+    <section class="mt-16 border-t border-slate-200 pt-10">
+      <div class="flex items-center justify-between pb-3">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Browse Cutoffs by State &amp; Region</h2>
+          <p class="text-xs text-slate-500">Find counseling rules and formulas specific to your state admission authority</p>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {STATES.map((st) => (
+          <a
+            href={`/state/${st.slug}`}
+            class="surface-card group rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-blue-300 hover:shadow-xs"
+          >
+            <span class="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors block">
+              {st.name}
+            </span>
+            <span class="mt-1 text-[0.7rem] text-slate-500 block">
+              View {st.slug === 'all-india' ? 'National' : st.name} Cutoffs &rarr;
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- SECTION: Academic & Grade Tools Bridge -->
+    <section class="mt-16 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-6 sm:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-white text-xs">🎓</span>
+            <h2 class="text-lg font-bold text-slate-900 sm:text-xl">Looking for College CGPA &amp; Academic Tools?</h2>
+          </div>
+          <p class="mt-1.5 text-xs sm:text-sm text-slate-600 max-w-2xl">
+            In addition to entrance cutoff calculators, All Cut Off provides {ACADEMIC_CALCULATORS.length} specialized university GPA tools, percentage converters, attendance planners, and percentile predictors.
+          </p>
+        </div>
+        <a
+          href="/tools"
+          class="shrink-0 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-indigo-700"
+        >
+          Explore All Tools Directory &rarr;
+        </a>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {ACADEMIC_CALCULATORS.slice(0, 6).map((tool) => (
+          <a
+            href={`/calculator/${tool.slug}`}
+            class="surface-card rounded-xl border border-indigo-100 bg-white p-3.5 transition-all hover:border-indigo-300 hover:shadow-xs"
+          >
+            <span class="text-[0.65rem] font-bold uppercase tracking-wider text-indigo-600 font-mono">
+              {tool.badge}
+            </span>
+            <h3 class="mt-1 text-xs font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+              {tool.name}
+            </h3>
+            <p class="mt-1 text-[0.7rem] text-slate-500 line-clamp-1">{tool.summary}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="mt-16 border-t border-slate-200 pt-10">
+      <h2 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        Frequently Asked Questions
+      </h2>
+      <div class="mt-6 space-y-3">
+        {faqs.map((faq) => (
+          <details class="surface-card group rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-2xs">
+            <summary class="focus-ring flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
+              <span class="text-sm sm:text-base">{faq.question}</span>
+              <svg class="h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p class="mt-3 text-xs sm:text-sm leading-relaxed text-slate-700 border-t border-slate-100 pt-3">
+              {faq.answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const searchInput = document.getElementById('calc-search') as HTMLInputElement | null;
+    const cards = document.querySelectorAll('.calc-card') as NodeListOf<HTMLElement>;
+    const pills = document.querySelectorAll('.calc-filter-pill') as NodeListOf<HTMLButtonElement>;
+    const noResults = document.getElementById('no-calc-found');
+
+    let currentCat = 'all';
+
+    function filterCalculators() {
+      const query = (searchInput?.value || '').toLowerCase().trim();
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const text = card.getAttribute('data-search') || '';
+        const cat = card.getAttribute('data-cat') || '';
+
+        const matchesQuery = !query || text.includes(query);
+        const matchesCat = currentCat === 'all' || currentCat === cat;
+
+        if (matchesQuery && matchesCat) {
+          card.style.display = 'flex';
+          visible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (noResults) {
+        noResults.style.display = visible === 0 ? 'block' : 'none';
+      }
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', filterCalculators);
+    }
+
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        pills.forEach((p) => {
+          p.className =
+            'calc-filter-pill rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors';
+        });
+        pill.className =
+          'calc-filter-pill active-pill rounded-full bg-blue-600 px-3.5 py-1 text-xs font-semibold text-white shadow-xs transition-colors';
+        currentCat = pill.getAttribute('data-category') || 'all';
+        filterCalculators();
+      });
+    });
+  })();
+</script>

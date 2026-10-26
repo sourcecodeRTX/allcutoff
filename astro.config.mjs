@@ -59,17 +59,26 @@ const captureOutDir = {
  */
 const lastmodFromPage = (/** @type {string} */ canonical) => {
   const { pathname } = new URL(canonical);
-  const file = pathname === '/'
-    ? join(outDir, 'index.html')
-    : join(outDir, pathname.replace(/^\//, ''), 'index.html');
+  const cleanPath = pathname.replace(/^\//, '').replace(/\/+$/, '');
+  const candidateFiles = cleanPath === ''
+    ? [join(outDir, 'index.html')]
+    : [
+        join(outDir, `${cleanPath}.html`),
+        join(outDir, cleanPath, 'index.html'),
+      ];
 
-  try {
-    const html = readFileSync(file, 'utf8');
-    const match = /"dateModified"\s*:\s*"(\d{4}-\d{2}-\d{2})"/.exec(html);
-    return match ? match[1] : undefined;
-  } catch {
-    return undefined;
+  for (const file of candidateFiles) {
+    try {
+      if (existsSync(file)) {
+        const html = readFileSync(file, 'utf8');
+        const match = /"dateModified"\s*:\s*"(\d{4}-\d{2}-\d{2})"/.exec(html);
+        if (match) return match[1];
+      }
+    } catch {
+      // Continue to next candidate
+    }
   }
+  return undefined;
 };
 
 /**
@@ -98,6 +107,11 @@ const syncSitemapXml = {
 
 export default defineConfig({
   site: SITE,
+  build: {
+    // Generates clean file-based HTML (/about.html served as /about on Cloudflare Pages)
+    // preventing Cloudflare from issuing 308 redirects to trailing-slash directories.
+    format: 'file',
+  },
   // One canonical, one sitemap URL, one dev-server behaviour per page.
   trailingSlash: 'never',
   devToolbar: {
