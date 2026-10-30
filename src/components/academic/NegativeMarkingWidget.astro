@@ -1,0 +1,1008 @@
+---
+import { NEGATIVE_MARKING_PRESETS } from '../../data/academicCalculators';
+
+interface Props {
+  idPrefix?: string;
+}
+
+const { idPrefix = 'neg-calc' } = Astro.props;
+---
+
+<div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
+  <!-- Widget Header -->
+  <div class="border-b border-slate-200 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-teal-800">
+          <span class="h-1.5 w-1.5 rounded-full bg-teal-600" aria-hidden="true"></span>
+          Competitive Exam &amp; Recruitment Suite
+        </span>
+        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Negative Marking Calculator &amp; Penalty Analyzer
+        </h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="rounded-full bg-slate-100 px-3 py-1 font-mono text-xs font-semibold text-slate-700">
+          Academic Year 2025–2026
+        </span>
+      </div>
+    </div>
+    <p class="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
+      Estimate your exam score precisely and understand how accuracy, mistakes, and negative marking influence your final outcome. Built for serious exam preparation across UPSC, RRB, NEET, SSC, Banking, State PSCs, and JEE.
+    </p>
+
+    <!-- Quick Exam Preset Chips (Top horizontal bar) -->
+    <div class="mt-5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          Tap an exam to auto fill the ratio:
+        </span>
+        <span class="text-[0.6875rem] text-slate-500 hidden sm:inline">Click any preset to load exam specs</span>
+      </div>
+      <div class="mt-2.5 flex flex-wrap gap-2" role="tablist" aria-label="Exam Presets">
+        {NEGATIVE_MARKING_PRESETS.map((preset, index) => (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={index === 0 ? 'true' : 'false'}
+            data-preset-id={preset.id}
+            class={`preset-chip rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              index === 0
+                ? 'bg-teal-700 text-white shadow-xs border border-teal-800'
+                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            {preset.shortName}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Calculator Grid: Dual-Column Responsive Dashboard -->
+  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <!-- LEFT COLUMN: Exam Inputs -->
+    <div class="lg:col-span-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-base font-bold text-slate-900">Exam Inputs</h3>
+        <span id={`${idPrefix}-preset-tag`} class="font-mono text-xs text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded">
+          UPSC GS Paper 1
+        </span>
+      </div>
+
+      <!-- Total Questions -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label for={`${idPrefix}-total-questions`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Total Questions
+          </label>
+          <span class="font-mono text-xs text-slate-500">In Test Paper</span>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            data-step="-5"
+            data-target={`${idPrefix}-total-questions`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Decrease total questions"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-total-questions`}
+            min="1"
+            max="500"
+            value="100"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
+          />
+          <button
+            type="button"
+            data-step="5"
+            data-target={`${idPrefix}-total-questions`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Increase total questions"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Maximum Marks -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label for={`${idPrefix}-max-marks`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Maximum Marks
+          </label>
+          <span id={`${idPrefix}-mpq-preview`} class="font-mono text-xs text-slate-500">2.00 marks / Q</span>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            data-step="-10"
+            data-target={`${idPrefix}-max-marks`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Decrease maximum marks"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-max-marks`}
+            min="1"
+            max="1500"
+            value="200"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
+          />
+          <button
+            type="button"
+            data-step="10"
+            data-target={`${idPrefix}-max-marks`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Increase maximum marks"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Questions Attempted -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label for={`${idPrefix}-attempted`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Questions Attempted
+          </label>
+          <span id={`${idPrefix}-attempt-pct`} class="font-mono text-xs text-slate-500">50% of total</span>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            data-step="-1"
+            data-target={`${idPrefix}-attempted`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Decrease attempted questions"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-attempted`}
+            min="0"
+            max="500"
+            value="50"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
+          />
+          <button
+            type="button"
+            data-step="1"
+            data-target={`${idPrefix}-attempted`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Increase attempted questions"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Wrong Answers -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-rose-600 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <label for={`${idPrefix}-wrong`} class="text-xs font-bold text-rose-800 uppercase tracking-wide">
+            Wrong Answers (Mistakes)
+          </label>
+          <span id={`${idPrefix}-correct-preview`} class="font-mono text-xs font-semibold text-emerald-700">40 Correct</span>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            data-step="-1"
+            data-target={`${idPrefix}-wrong`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Decrease wrong answers"
+          >
+            &minus;
+          </button>
+          <input
+            type="number"
+            id={`${idPrefix}-wrong`}
+            min="0"
+            max="500"
+            value="10"
+            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-rose-700 outline-none focus:border-rose-500"
+          />
+          <button
+            type="button"
+            data-step="1"
+            data-target={`${idPrefix}-wrong`}
+            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+            aria-label="Increase wrong answers"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Negative Marking Ratio Dropdown -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <label for={`${idPrefix}-ratio-select`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+              Negative Marking Ratio
+            </label>
+            <!-- Info tooltip trigger -->
+            <button
+              type="button"
+              id={`${idPrefix}-tooltip-btn`}
+              class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[0.625rem] font-bold text-slate-600 hover:bg-slate-300"
+              title="Click to view marking ratio rules"
+              aria-label="Marking ratio explanation"
+            >
+              ?
+            </button>
+          </div>
+          <span id={`${idPrefix}-penalty-per-wrong`} class="font-mono text-xs font-semibold text-rose-700">-0.66 marks/wrong</span>
+        </div>
+
+        <select
+          id={`${idPrefix}-ratio-select`}
+          class="mt-2.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+        >
+          <option value="0.3333333333333333" selected>1/3 (UPSC, RRB, CDS, UPPSC)</option>
+          <option value="0.25">1/4 (SSC, Banking, NEET, JEE)</option>
+          <option value="0.2">1/5 (State PSC 5-Option Tests)</option>
+          <option value="0.5">1/2 (High Penalty Exams)</option>
+          <option value="0">No Penalty (MHT CET, KCET, State BEd)</option>
+          <option value="custom">Custom Deduction Marks</option>
+        </select>
+
+        <!-- Custom Deduction Input (Revealed only when 'custom' selected) -->
+        <div id={`${idPrefix}-custom-deduction-wrap`} class="mt-3 hidden">
+          <label for={`${idPrefix}-custom-penalty-input`} class="block text-[0.6875rem] font-semibold text-slate-600">
+            Deduction Marks Per Incorrect Answer:
+          </label>
+          <input
+            type="number"
+            id={`${idPrefix}-custom-penalty-input`}
+            step="0.01"
+            min="0"
+            max="50"
+            value="0.66"
+            class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-semibold text-slate-900 outline-none focus:border-teal-600"
+          />
+        </div>
+
+        <!-- Tooltip Explainer Popover -->
+        <div id={`${idPrefix}-tooltip-popover`} class="mt-2 hidden rounded-lg border border-slate-200 bg-slate-900 p-3 text-xs text-white shadow-lg">
+          <p class="font-semibold text-amber-300">Marks Deducted per Wrong Answer:</p>
+          <p class="mt-1 leading-relaxed text-slate-200">
+            Expressed as a fraction of marks awarded per question. UPSC and Railway use 1/3, SSC and Banks use 1/4, and NEET uses 1/4 (-1 mark out of 4). Unattempted questions carry zero penalty.
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <button
+          type="button"
+          id={`${idPrefix}-calc-btn`}
+          class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-xs hover:bg-teal-800 transition-colors cursor-pointer"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          Calculate My Score
+        </button>
+
+        <button
+          type="button"
+          id={`${idPrefix}-clear-btn`}
+          class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+        >
+          Clear Inputs
+        </button>
+      </div>
+
+      <!-- Secondary Action Utilities (Print & Share) -->
+      <div class="flex items-center gap-2 pt-1">
+        <button
+          type="button"
+          id={`${idPrefix}-print-btn`}
+          class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-white hover:border-slate-300 transition-all cursor-pointer"
+          title="Print or save as PDF"
+        >
+          <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Download PDF / Print
+        </button>
+
+        <button
+          type="button"
+          id={`${idPrefix}-whatsapp-btn`}
+          class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer"
+          title="Share results on WhatsApp"
+        >
+          <svg class="h-3.5 w-3.5 text-emerald-600 fill-current" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.979-.276-.1-.477-.15-.678.15-.201.3-.778.979-.954 1.18-.176.2-.351.226-.653.075-.301-.15-1.272-.469-2.423-1.496-.897-.8-1.503-1.788-1.68-2.089-.176-.301-.019-.464.132-.614.136-.135.301-.351.452-.527.15-.176.201-.301.301-.502.1-.2.05-.376-.025-.526-.075-.15-.678-1.635-.929-2.239-.245-.589-.494-.509-.679-.519l-.579-.01c-.2 0-.527.075-.803.376s-1.054 1.03-1.054 2.511c0 1.481 1.079 2.91 1.23 3.111.15.201 2.124 3.243 5.145 4.548.719.311 1.28.497 1.718.636.722.23 1.378.197 1.9-.12.57-.348 1.78-7.27 2.03-1.43.251-.703.251-1.305.176-1.43-.075-.126-.276-.201-.577-.351z"/>
+            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 21.95l4.908-1.287A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.182c-1.63 0-3.15-.477-4.43-1.3l-.317-.206-3.29.863.878-3.208-.225-.333A8.136 8.136 0 013.818 12C3.818 7.489 7.489 3.818 12 3.818 16.511 3.818 20.182 7.489 20.182 12c0 4.511-3.671 8.182-8.182 8.182z"/>
+          </svg>
+          Share on WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Instant Results Dashboard -->
+    <div class="lg:col-span-6 space-y-5">
+      <!-- NET SCORE Hero Card -->
+      <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 shadow-xs transition-all">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs font-bold uppercase tracking-wider text-slate-500">
+            NET SCORE
+          </span>
+          <span id={`${idPrefix}-score-pct-badge`} class="rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-xs font-bold text-teal-800">
+            40.0%
+          </span>
+        </div>
+
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id={`${idPrefix}-net-score-display`} class="font-mono text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+            80.00
+          </span>
+          <span id={`${idPrefix}-out-of-display`} class="font-mono text-sm font-semibold text-slate-500">
+            / 200
+          </span>
+        </div>
+
+        <!-- Score Visual Progress Bar -->
+        <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div
+            id={`${idPrefix}-progress-bar`}
+            class="h-full rounded-full bg-teal-600 transition-all duration-300"
+            style="width: 40%;"
+            role="progressbar"
+            aria-valuenow="40"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Penalty Status Banner -->
+      <div id={`${idPrefix}-penalty-banner`} class="rounded-xl border border-teal-200 bg-teal-50/80 p-4 transition-all">
+        <div class="flex items-start gap-3">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white text-xs font-bold">
+            ✓
+          </span>
+          <div>
+            <div id={`${idPrefix}-banner-title`} class="text-xs font-bold uppercase tracking-wider text-teal-900">
+              Score Analysis &amp; Deduction
+            </div>
+            <p id={`${idPrefix}-banner-text`} class="mt-1 text-xs leading-relaxed text-teal-800">
+              Negative marking deducted <strong id={`${idPrefix}-banner-lost-marks`}>6.60 marks</strong> from your gross score of 80.00. Accuracy: 80.0%.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6-Metric Stats Grid -->
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-2">
+        <!-- 1. Correct -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+          <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Correct</div>
+          <div id={`${idPrefix}-stat-correct`} class="mt-1 font-mono text-2xl font-bold text-emerald-600">40</div>
+          <div id={`${idPrefix}-stat-gross`} class="text-[0.6875rem] text-slate-500 font-mono">+80.00 marks gross</div>
+        </div>
+
+        <!-- 2. Wrong -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+          <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Wrong</div>
+          <div id={`${idPrefix}-stat-wrong`} class="mt-1 font-mono text-2xl font-bold text-rose-600">10</div>
+          <div id={`${idPrefix}-stat-deduction`} class="text-[0.6875rem] text-rose-600 font-mono">-6.60 marks penalty</div>
+        </div>
+
+        <!-- 3. Unattempted -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+          <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Unattempted</div>
+          <div id={`${idPrefix}-stat-unattempted`} class="mt-1 font-mono text-2xl font-bold text-slate-700">50</div>
+          <div class="text-[0.6875rem] text-slate-500 font-mono">0 marks (No risk)</div>
+        </div>
+
+        <!-- 4. Accuracy -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Accuracy</span>
+            <span id={`${idPrefix}-stat-accuracy-tag`} class="text-[0.625rem] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+              Good
+            </span>
+          </div>
+          <div id={`${idPrefix}-stat-accuracy`} class="mt-1 font-mono text-2xl font-bold text-slate-900">80.0%</div>
+          <div class="text-[0.6875rem] text-slate-500 font-mono">Correct / Attempted</div>
+        </div>
+
+        <!-- 5. Break-Even Accuracy -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Break-Even Accuracy</span>
+            <span class="text-[0.625rem] font-mono text-slate-400" title="Accuracy needed for expected return > 0">ⓘ</span>
+          </div>
+          <div id={`${idPrefix}-stat-breakeven`} class="mt-1 font-mono text-2xl font-bold text-slate-900">25.0%</div>
+          <div class="text-[0.6875rem] text-slate-500 font-mono">Min guessing hurdle</div>
+        </div>
+
+        <!-- 6. Marks per Attempt -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Marks per Attempt</span>
+            <span class="text-[0.625rem] font-mono text-slate-400" title="Average net marks earned per question attempted">ⓘ</span>
+          </div>
+          <div id={`${idPrefix}-stat-mpa`} class="mt-1 font-mono text-2xl font-bold text-teal-700">1.60</div>
+          <div class="text-[0.6875rem] text-slate-500 font-mono">Efficiency metric</div>
+        </div>
+      </div>
+
+      <!-- Step-by-Step Calculation Formula Card -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs">
+        <div class="font-bold text-slate-900 uppercase tracking-wider">
+          Step-by-Step Mathematical Calculation:
+        </div>
+        <div class="mt-2 space-y-1.5 font-mono text-[0.8125rem] text-slate-800">
+          <div class="flex items-center justify-between border-b border-slate-200/60 pb-1">
+            <span>Positive Marks (Gross):</span>
+            <span id={`${idPrefix}-step-gross`} class="font-bold text-emerald-700">40 × 2.00 = +80.00</span>
+          </div>
+          <div class="flex items-center justify-between border-b border-slate-200/60 pb-1">
+            <span>Negative Penalty Deducted:</span>
+            <span id={`${idPrefix}-step-penalty`} class="font-bold text-rose-700">10 × 0.66 = -6.60</span>
+          </div>
+          <div class="flex items-center justify-between pt-1">
+            <span class="font-bold text-slate-900">Net Calculated Score:</span>
+            <span id={`${idPrefix}-step-net`} class="font-bold text-teal-800 text-sm">80.00 - 6.60 = 73.40</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save this result / History Section -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-900">Session Test History</span>
+            <span class="rounded-full bg-blue-600 px-1.5 py-0.2 text-[0.5625rem] font-bold text-white uppercase">New</span>
+          </div>
+          <button
+            type="button"
+            id={`${idPrefix}-save-result-btn`}
+            class="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-100 transition-colors cursor-pointer"
+          >
+            Save this result
+          </button>
+        </div>
+
+        <div id={`${idPrefix}-history-list`} class="mt-3 space-y-2 text-xs">
+          <p class="text-slate-400 italic text-[0.6875rem]">No saved attempts yet. Click "Save this result" to compare mock scores.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEO & AEO Strategy Section: Authoritative Exam Rules Comparison Table -->
+  <section class="mt-12 border-t border-slate-200 pt-8" aria-labelledby={`${idPrefix}-comparison-heading`}>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <span class="rounded bg-teal-100 px-2 py-0.5 font-mono text-[0.6875rem] font-bold text-teal-800 uppercase">
+          Official Reference Table
+        </span>
+        <h3 id={`${idPrefix}-comparison-heading`} class="mt-2 text-lg sm:text-xl font-bold text-slate-900">
+          Negative Marking Schemes Across Major Indian Competitive Exams
+        </h3>
+      </div>
+      <span class="text-xs text-slate-500">Updated for 2025–2026 Examination Cycles</span>
+    </div>
+    <p class="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl">
+      Every national and state examining body applies distinct marking ratios. Review the verified breakdown below to calibrate your mock test guessing strategy:
+    </p>
+
+    <div class="mt-5 overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+      <table class="w-full border-collapse text-left text-xs">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50/90 font-bold uppercase tracking-wider text-slate-700">
+            <th class="px-3.5 py-3">Examination Body &amp; Exam</th>
+            <th class="px-3 py-3 text-center">Questions</th>
+            <th class="px-3 py-3 text-center">Total Marks</th>
+            <th class="px-3 py-3 text-center">Marks / Correct</th>
+            <th class="px-3 py-3 text-center text-rose-700">Penalty / Wrong</th>
+            <th class="px-3 py-3 text-center">Penalty Ratio</th>
+            <th class="px-3.5 py-3 text-center text-teal-800">Break-Even Acc.</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white font-mono text-[0.75rem]">
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">UPSC Civil Services Prelims (GS 1)</td>
+            <td class="px-3 py-2.5 text-center">100</td>
+            <td class="px-3 py-2.5 text-center">200</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.00</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.66</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">UPSC CSAT (Prelims Paper 2)</td>
+            <td class="px-3 py-2.5 text-center">80</td>
+            <td class="px-3 py-2.5 text-center">200</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.50</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.83</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">NEET UG (NTA Medical Entrance)</td>
+            <td class="px-3 py-2.5 text-center">180 (of 200)</td>
+            <td class="px-3 py-2.5 text-center">720</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+4.00</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-1.00</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">JEE Main (NTA Engineering)</td>
+            <td class="px-3 py-2.5 text-center">75 (of 90)</td>
+            <td class="px-3 py-2.5 text-center">300</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+4.00</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-1.00</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">SSC CGL / CHSL (Tier 1)</td>
+            <td class="px-3 py-2.5 text-center">100</td>
+            <td class="px-3 py-2.5 text-center">200</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.00</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.50</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">Banking (IBPS PO / SBI PO Prelims)</td>
+            <td class="px-3 py-2.5 text-center">100</td>
+            <td class="px-3 py-2.5 text-center">100</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.00</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.25</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">Railway RRB NTPC / Group D</td>
+            <td class="px-3 py-2.5 text-center">100</td>
+            <td class="px-3 py-2.5 text-center">100</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.00</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.33</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">State PSC (UPPSC / BPSC Prelims)</td>
+            <td class="px-3 py-2.5 text-center">150</td>
+            <td class="px-3 py-2.5 text-center">200</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.33</td>
+            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.44</td>
+            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+          </tr>
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">MHT CET &amp; KCET (State CETs)</td>
+            <td class="px-3 py-2.5 text-center">150–180</td>
+            <td class="px-3 py-2.5 text-center">180–200</td>
+            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1 / +2</td>
+            <td class="px-3 py-2.5 text-center text-slate-400 font-bold">0.00</td>
+            <td class="px-3 py-2.5 text-center font-sans text-emerald-700 font-semibold">No Penalty</td>
+            <td class="px-3.5 py-2.5 text-center font-bold text-emerald-600">0.0%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- The Mathematics of Option Elimination Callout -->
+    <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4 sm:p-5">
+      <div class="flex items-start gap-3">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white font-mono text-xs font-bold">
+          Σ
+        </span>
+        <div class="text-xs text-slate-700 space-y-2 leading-relaxed">
+          <div class="font-bold text-slate-900 text-sm">The Mathematics of Option Elimination (Expected Value Strategy):</div>
+          <p>
+            In any 4-option multiple-choice question with 1/3 negative marking, blind guessing has a probability of p = 0.25 (25%) and an expected return of:
+            <code class="block font-mono text-[0.75rem] font-bold text-slate-800 my-1 bg-white p-2 rounded border border-blue-100">Expected Value = (0.25 × +M) - (0.75 × 0.333M) = 0.00 marks</code>
+          </p>
+          <p>
+            However, when you <strong>eliminate 2 incorrect options</strong>, your probability of picking the correct answer jumps to p = 0.50 (50%). With M = 2.00 marks and penalty P = 0.66 marks:
+            <code class="block font-mono text-[0.75rem] font-bold text-teal-800 my-1 bg-white p-2 rounded border border-blue-100">Expected Value = (0.50 × +2.00) - (0.50 × 0.66) = +1.00 - 0.33 = +0.67 marks per question</code>
+            Intelligent guessing on 10 two-option eliminated questions yields a statistically expected net gain of approximately <strong>+6.70 marks</strong>, which can decisively alter selection cutoffs.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Reactive Client-Side Calculator Engine -->
+<script define:vars={{ idPrefix, presets: NEGATIVE_MARKING_PRESETS }}>
+  (function initNegativeMarkingWidget() {
+    const totalQInput = document.getElementById(`${idPrefix}-total-questions`);
+    const maxMarksInput = document.getElementById(`${idPrefix}-max-marks`);
+    const attemptedInput = document.getElementById(`${idPrefix}-attempted`);
+    const wrongInput = document.getElementById(`${idPrefix}-wrong`);
+    const ratioSelect = document.getElementById(`${idPrefix}-ratio-select`);
+    const customDeductionWrap = document.getElementById(`${idPrefix}-custom-deduction-wrap`);
+    const customPenaltyInput = document.getElementById(`${idPrefix}-custom-penalty-input`);
+    const tooltipBtn = document.getElementById(`${idPrefix}-tooltip-btn`);
+    const tooltipPopover = document.getElementById(`${idPrefix}-tooltip-popover`);
+
+    const presetTag = document.getElementById(`${idPrefix}-preset-tag`);
+    const mpqPreview = document.getElementById(`${idPrefix}-mpq-preview`);
+    const attemptPct = document.getElementById(`${idPrefix}-attempt-pct`);
+    const correctPreview = document.getElementById(`${idPrefix}-correct-preview`);
+    const penaltyPerWrong = document.getElementById(`${idPrefix}-penalty-per-wrong`);
+
+    // Output elements
+    const netScoreDisplay = document.getElementById(`${idPrefix}-net-score-display`);
+    const outOfDisplay = document.getElementById(`${idPrefix}-out-of-display`);
+    const scorePctBadge = document.getElementById(`${idPrefix}-score-pct-badge`);
+    const progressBar = document.getElementById(`${idPrefix}-progress-bar`);
+    const banner = document.getElementById(`${idPrefix}-penalty-banner`);
+    const bannerTitle = document.getElementById(`${idPrefix}-banner-title`);
+    const bannerText = document.getElementById(`${idPrefix}-banner-text`);
+    const bannerLostMarks = document.getElementById(`${idPrefix}-banner-lost-marks`);
+
+    const statCorrect = document.getElementById(`${idPrefix}-stat-correct`);
+    const statGross = document.getElementById(`${idPrefix}-stat-gross`);
+    const statWrong = document.getElementById(`${idPrefix}-stat-wrong`);
+    const statDeduction = document.getElementById(`${idPrefix}-stat-deduction`);
+    const statUnattempted = document.getElementById(`${idPrefix}-stat-unattempted`);
+    const statAccuracy = document.getElementById(`${idPrefix}-stat-accuracy`);
+    const statAccuracyTag = document.getElementById(`${idPrefix}-stat-accuracy-tag`);
+    const statBreakeven = document.getElementById(`${idPrefix}-stat-breakeven`);
+    const statMpa = document.getElementById(`${idPrefix}-stat-mpa`);
+
+    const stepGross = document.getElementById(`${idPrefix}-step-gross`);
+    const stepPenalty = document.getElementById(`${idPrefix}-step-penalty`);
+    const stepNet = document.getElementById(`${idPrefix}-step-net`);
+
+    const calcBtn = document.getElementById(`${idPrefix}-calc-btn`);
+    const clearBtn = document.getElementById(`${idPrefix}-clear-btn`);
+    const printBtn = document.getElementById(`${idPrefix}-print-btn`);
+    const whatsappBtn = document.getElementById(`${idPrefix}-whatsapp-btn`);
+    const saveResultBtn = document.getElementById(`${idPrefix}-save-result-btn`);
+    const historyList = document.getElementById(`${idPrefix}-history-list`);
+
+    let currentPreset = presets[0];
+
+    function calculate() {
+      const totalQ = Math.max(1, parseInt(totalQInput.value, 10) || 100);
+      const maxMarks = Math.max(1, parseFloat(maxMarksInput.value) || 100);
+      let attempted = parseInt(attemptedInput.value, 10);
+      if (isNaN(attempted)) attempted = 0;
+      attempted = Math.max(0, Math.min(totalQ, attempted));
+
+      let wrong = parseInt(wrongInput.value, 10);
+      if (isNaN(wrong)) wrong = 0;
+      wrong = Math.max(0, Math.min(attempted, wrong));
+
+      const correct = Math.max(0, attempted - wrong);
+      const unattempted = Math.max(0, totalQ - attempted);
+
+      const mpq = Math.round((maxMarks / totalQ) * 1000) / 1000;
+      let penalty = 0;
+
+      if (ratioSelect.value === 'custom') {
+        penalty = Math.max(0, parseFloat(customPenaltyInput.value) || 0);
+      } else {
+        const ratio = parseFloat(ratioSelect.value) || 0;
+        penalty = Math.round(mpq * ratio * 1000) / 1000;
+      }
+
+      const gross = Math.round(correct * mpq * 100) / 100;
+      const deduction = Math.round(wrong * penalty * 100) / 100;
+      const net = Math.round((gross - deduction) * 100) / 100;
+      const scorePct = Math.round((net / maxMarks) * 10000) / 100;
+      const accuracy = attempted > 0 ? Math.round((correct / attempted) * 10000) / 100 : 0;
+      const breakeven = (mpq + penalty) > 0 ? Math.round((penalty / (mpq + penalty)) * 10000) / 100 : 0;
+      const mpa = attempted > 0 ? Math.round((net / attempted) * 100) / 100 : 0;
+
+      // Update previews in input labels
+      if (mpqPreview) mpqPreview.textContent = `${mpq.toFixed(2)} marks / Q`;
+      if (attemptPct) attemptPct.textContent = `${Math.round((attempted / totalQ) * 100)}% of total`;
+      if (correctPreview) correctPreview.textContent = `${correct} Correct`;
+      if (penaltyPerWrong) penaltyPerWrong.textContent = penalty > 0 ? `-${penalty.toFixed(2)} marks/wrong` : 'No deduction';
+
+      // Update Net Score Hero
+      if (netScoreDisplay) netScoreDisplay.textContent = net.toFixed(2);
+      if (outOfDisplay) outOfDisplay.textContent = `/ ${maxMarks}`;
+      if (scorePctBadge) {
+        scorePctBadge.textContent = `${scorePct.toFixed(1)}%`;
+        if (scorePct >= 60) {
+          scorePctBadge.className = 'rounded-full bg-emerald-100 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-800';
+        } else if (scorePct >= 35) {
+          scorePctBadge.className = 'rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-xs font-bold text-teal-800';
+        } else {
+          scorePctBadge.className = 'rounded-full bg-rose-100 px-2.5 py-0.5 font-mono text-xs font-bold text-rose-800';
+        }
+      }
+
+      if (progressBar) {
+        const barWidth = Math.max(0, Math.min(100, scorePct));
+        progressBar.style.width = `${barWidth}%`;
+        progressBar.setAttribute('aria-valuenow', String(barWidth));
+        if (scorePct >= 60) {
+          progressBar.className = 'h-full rounded-full bg-emerald-600 transition-all duration-300';
+        } else if (scorePct >= 35) {
+          progressBar.className = 'h-full rounded-full bg-teal-600 transition-all duration-300';
+        } else {
+          progressBar.className = 'h-full rounded-full bg-rose-600 transition-all duration-300';
+        }
+      }
+
+      // Update banner
+      if (banner && bannerText && bannerTitle) {
+        if (penalty === 0) {
+          banner.className = 'rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 transition-all';
+          bannerTitle.className = 'text-xs font-bold uppercase tracking-wider text-emerald-900';
+          bannerTitle.textContent = 'NO PENALTY: FULL REWARD';
+          bannerText.className = 'mt-1 text-xs leading-relaxed text-emerald-800';
+          bannerText.innerHTML = `No negative marking on this exam! Every attempt adds to your score without any penalty risk. Attempt all ${totalQ} questions.`;
+        } else if (attempted === 0) {
+          banner.className = 'rounded-xl border border-slate-200 bg-slate-50 p-4 transition-all';
+          bannerTitle.className = 'text-xs font-bold uppercase tracking-wider text-slate-700';
+          bannerTitle.textContent = 'TEST SPECIFICATIONS READY';
+          bannerText.className = 'mt-1 text-xs leading-relaxed text-slate-600';
+          bannerText.textContent = `Enter your questions attempted and wrong answers to view negative marking deductions.`;
+        } else if (accuracy >= breakeven) {
+          banner.className = 'rounded-xl border border-teal-200 bg-teal-50/80 p-4 transition-all';
+          bannerTitle.className = 'text-xs font-bold uppercase tracking-wider text-teal-900';
+          bannerTitle.textContent = 'POSITIVE GUESSING RETURN';
+          bannerText.className = 'mt-1 text-xs leading-relaxed text-teal-800';
+          bannerText.innerHTML = `Negative marking deducted <strong>${deduction.toFixed(2)} marks</strong> (${Math.round((deduction / (gross || 1)) * 100)}% of gross score). Accuracy: <strong>${accuracy.toFixed(1)}%</strong> exceeds break-even (${breakeven.toFixed(1)}%).`;
+        } else {
+          banner.className = 'rounded-xl border border-rose-200 bg-rose-50/80 p-4 transition-all';
+          bannerTitle.className = 'text-xs font-bold uppercase tracking-wider text-rose-900';
+          bannerTitle.textContent = 'CRITICAL PENALTY IMPACT';
+          bannerText.className = 'mt-1 text-xs leading-relaxed text-rose-800';
+          bannerText.innerHTML = `Negative marking severely eroded your score! <strong>${deduction.toFixed(2)} marks deducted</strong>. Your accuracy (${accuracy.toFixed(1)}%) is below the ${breakeven.toFixed(1)}% break-even mark.`;
+        }
+      }
+
+      // Stats grid
+      if (statCorrect) statCorrect.textContent = String(correct);
+      if (statGross) statGross.textContent = `+${gross.toFixed(2)} marks gross`;
+      if (statWrong) statWrong.textContent = String(wrong);
+      if (statDeduction) statDeduction.textContent = `-${deduction.toFixed(2)} marks penalty`;
+      if (statUnattempted) statUnattempted.textContent = String(unattempted);
+      if (statAccuracy) statAccuracy.textContent = `${accuracy.toFixed(1)}%`;
+      if (statAccuracyTag) {
+        if (accuracy >= 80) {
+          statAccuracyTag.textContent = 'High';
+          statAccuracyTag.className = 'text-[0.625rem] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800';
+        } else if (accuracy >= breakeven) {
+          statAccuracyTag.textContent = 'Solid';
+          statAccuracyTag.className = 'text-[0.625rem] font-bold px-1.5 py-0.2 rounded bg-teal-100 text-teal-800';
+        } else {
+          statAccuracyTag.textContent = 'Risk';
+          statAccuracyTag.className = 'text-[0.625rem] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800';
+        }
+      }
+      if (statBreakeven) statBreakeven.textContent = `${breakeven.toFixed(1)}%`;
+      if (statMpa) statMpa.textContent = mpa.toFixed(2);
+
+      // Formula breakdown
+      if (stepGross) stepGross.textContent = `${correct} × ${mpq.toFixed(2)} = +${gross.toFixed(2)}`;
+      if (stepPenalty) stepPenalty.textContent = `${wrong} × ${penalty.toFixed(2)} = -${deduction.toFixed(2)}`;
+      if (stepNet) stepNet.textContent = `${gross.toFixed(2)} - ${deduction.toFixed(2)} = ${net.toFixed(2)}`;
+
+      return { totalQ, maxMarks, attempted, wrong, correct, unattempted, net, scorePct, accuracy, deduction };
+    }
+
+    // Step button handlers (+ / -)
+    document.querySelectorAll('.step-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const step = parseFloat(btn.getAttribute('data-step') || '1');
+        const input = document.getElementById(targetId);
+        if (input) {
+          const val = (parseFloat(input.value) || 0) + step;
+          const min = parseFloat(input.min || '0');
+          const max = parseFloat(input.max || '10000');
+          input.value = String(Math.max(min, Math.min(max, val)));
+          calculate();
+        }
+      });
+    });
+
+    // Input change listeners
+    [totalQInput, maxMarksInput, attemptedInput, wrongInput, customPenaltyInput].forEach((inp) => {
+      if (inp) {
+        inp.addEventListener('input', calculate);
+        inp.addEventListener('change', calculate);
+      }
+    });
+
+    // Ratio dropdown change
+    if (ratioSelect) {
+      ratioSelect.addEventListener('change', () => {
+        if (ratioSelect.value === 'custom') {
+          if (customDeductionWrap) customDeductionWrap.classList.remove('hidden');
+        } else {
+          if (customDeductionWrap) customDeductionWrap.classList.add('hidden');
+        }
+        calculate();
+      });
+    }
+
+    // Preset chips click
+    document.querySelectorAll('.preset-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const presetId = chip.getAttribute('data-preset-id');
+        const found = presets.find((p) => p.id === presetId);
+        if (!found) return;
+
+        currentPreset = found;
+
+        // Update active chip classes
+        document.querySelectorAll('.preset-chip').forEach((c) => {
+          c.classList.remove('bg-teal-700', 'text-white', 'shadow-xs', 'border-teal-800');
+          c.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+          c.setAttribute('aria-selected', 'false');
+        });
+        chip.classList.add('bg-teal-700', 'text-white', 'shadow-xs', 'border-teal-800');
+        chip.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
+        chip.setAttribute('aria-selected', 'true');
+
+        // Populate fields
+        totalQInput.value = String(found.totalQuestions);
+        maxMarksInput.value = String(found.maximumMarks);
+        attemptedInput.value = String(found.defaultAttempted);
+        wrongInput.value = String(found.defaultWrong);
+
+        if (presetTag) presetTag.textContent = found.name;
+
+        if (found.customPenalty !== undefined) {
+          // Check if ratio matches standard options or custom
+          const matchOpt = Array.from(ratioSelect.options).find(
+            (opt) => Math.abs(parseFloat(opt.value) - found.penaltyRatio) < 0.001
+          );
+          if (matchOpt) {
+            ratioSelect.value = matchOpt.value;
+            if (customDeductionWrap) customDeductionWrap.classList.add('hidden');
+          } else {
+            ratioSelect.value = 'custom';
+            if (customPenaltyInput) customPenaltyInput.value = String(found.customPenalty);
+            if (customDeductionWrap) customDeductionWrap.classList.remove('hidden');
+          }
+        } else {
+          const matchOpt = Array.from(ratioSelect.options).find(
+            (opt) => Math.abs(parseFloat(opt.value) - found.penaltyRatio) < 0.001
+          );
+          if (matchOpt) {
+            ratioSelect.value = matchOpt.value;
+            if (customDeductionWrap) customDeductionWrap.classList.add('hidden');
+          }
+        }
+
+        calculate();
+      });
+    });
+
+    // Tooltip toggle
+    if (tooltipBtn && tooltipPopover) {
+      tooltipBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tooltipPopover.classList.toggle('hidden');
+      });
+      document.addEventListener('click', (e) => {
+        if (!tooltipPopover.contains(e.target) && e.target !== tooltipBtn) {
+          tooltipPopover.classList.add('hidden');
+        }
+      });
+    }
+
+    // Action button triggers
+    if (calcBtn) {
+      calcBtn.addEventListener('click', () => {
+        calculate();
+        const heroCard = document.getElementById(`${idPrefix}-net-score-display`);
+        if (heroCard) heroCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        attemptedInput.value = '0';
+        wrongInput.value = '0';
+        calculate();
+      });
+    }
+
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        window.print();
+      });
+    }
+
+    if (whatsappBtn) {
+      whatsappBtn.addEventListener('click', () => {
+        const res = calculate();
+        const text = `📊 Exam Score Report (${currentPreset.shortName}):\n` +
+          `• Questions Attempted: ${res.attempted} / ${res.totalQ}\n` +
+          `• Correct: ${res.correct} | Wrong: ${res.wrong}\n` +
+          `• Accuracy: ${res.accuracy.toFixed(1)}%\n` +
+          `• Negative Penalty: -${res.deduction.toFixed(2)} marks\n` +
+          `• Net Final Score: ${res.net.toFixed(2)} / ${res.maxMarks} (${res.scorePct.toFixed(1)}%)\n\n` +
+          `Calculate yours at: https://allcutoff.com/calculator/negative-marking-calculator`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+      });
+    }
+
+    // Session History storage in localStorage
+    const STORAGE_KEY = 'allcutoff_neg_marking_history';
+
+    function renderHistory() {
+      if (!historyList) return;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        if (!list || list.length === 0) {
+          historyList.innerHTML = '<p class="text-slate-400 italic text-[0.6875rem]">No saved attempts yet. Click "Save this result" to compare mock scores.</p>';
+          return;
+        }
+
+        historyList.innerHTML = list.slice(0, 5).map((item, idx) => `
+          <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/80 px-2.5 py-1.5">
+            <div>
+              <span class="font-bold text-slate-800">${item.exam}</span>
+              <span class="text-[0.625rem] text-slate-500 ml-1.5">${item.date}</span>
+            </div>
+            <div class="font-mono text-xs font-bold text-teal-800">
+              ${item.score} <span class="text-[0.625rem] text-slate-500">(${item.accuracy}%)</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        // Safe fallback
+      }
+    }
+
+    if (saveResultBtn) {
+      saveResultBtn.addEventListener('click', () => {
+        const res = calculate();
+        const entry = {
+          exam: currentPreset.shortName,
+          date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          score: `${res.net.toFixed(2)} / ${res.maxMarks}`,
+          accuracy: res.accuracy.toFixed(1)
+        };
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const list = raw ? JSON.parse(raw) : [];
+          list.unshift(entry);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 10)));
+          renderHistory();
+        } catch (e) {}
+      });
+    }
+
+    // Initial calculation and history render
+    calculate();
+    renderHistory();
+  })();
+</script>
+
+<style>
+  @media print {
+    .step-btn,
+    .preset-chip,
+    #neg-calc-calc-btn,
+    #neg-calc-clear-btn,
+    #neg-calc-print-btn,
+    #neg-calc-whatsapp-btn,
+    #neg-calc-save-result-btn {
+      display: none !important;
+    }
+  }
+</style>

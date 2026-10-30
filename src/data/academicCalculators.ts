@@ -19,7 +19,8 @@ export type AcademicToolType =
   | 'cgpa-to-percentage'
   | 'marks-percentage'
   | 'attendance'
-  | 'percentile';
+  | 'percentile'
+  | 'negative-marking';
 
 export type UniversityKey =
   | 'universal'
@@ -986,6 +987,245 @@ export function predictExamPercentile(examKey: ExamKey, score: number): ExamPred
 }
 
 /* ==========================================================================
+   Negative Marking Calculator Engine & Exam Presets
+   ========================================================================== */
+
+export interface NegativeMarkingInput {
+  totalQuestions: number;
+  maximumMarks: number;
+  attempted: number;
+  wrong: number;
+  penaltyRatio: number; // e.g. 1/3, 1/4, 1/5, 0.5, 0
+  customPenalty?: number; // optional direct deduction per wrong answer
+}
+
+export interface NegativeMarkingResult {
+  totalQuestions: number;
+  maximumMarks: number;
+  attempted: number;
+  correct: number;
+  wrong: number;
+  unattempted: number;
+  marksPerQuestion: number;
+  penaltyPerWrong: number;
+  grossScore: number;
+  penaltyDeduction: number;
+  netScore: number;
+  scorePercentage: number;
+  accuracyRate: number;
+  breakEvenAccuracy: number;
+  marksPerAttempt: number;
+  penaltyRatioText: string;
+  status: 'high_performance' | 'good' | 'average' | 'critical_penalty';
+  advice: string;
+}
+
+export interface NegativeMarkingPreset {
+  id: string;
+  name: string;
+  shortName: string;
+  totalQuestions: number;
+  maximumMarks: number;
+  penaltyRatio: number;
+  customPenalty?: number;
+  ratioLabel: string;
+  defaultAttempted: number;
+  defaultWrong: number;
+  description: string;
+}
+
+export const NEGATIVE_MARKING_PRESETS: NegativeMarkingPreset[] = [
+  {
+    id: 'upsc',
+    name: 'UPSC Civil Services Prelims (GS Paper 1)',
+    shortName: 'UPSC',
+    totalQuestions: 100,
+    maximumMarks: 200,
+    penaltyRatio: 1 / 3,
+    ratioLabel: '1/3 (-0.66 marks)',
+    defaultAttempted: 85,
+    defaultWrong: 18,
+    description: '100 Questions, 200 Marks. Each correct answer earns 2 marks; each incorrect answer deducts 1/3rd (0.66 marks).'
+  },
+  {
+    id: 'rrb',
+    name: 'Railway RRB NTPC / Group D',
+    shortName: 'RRB',
+    totalQuestions: 100,
+    maximumMarks: 100,
+    penaltyRatio: 1 / 3,
+    ratioLabel: '1/3 (-0.33 marks)',
+    defaultAttempted: 80,
+    defaultWrong: 15,
+    description: '100 Questions, 100 Marks. Each question carries 1 mark with 1/3rd (0.33 marks) deduction for wrong answers.'
+  },
+  {
+    id: 'neet',
+    name: 'NEET UG Medical Entrance Exam',
+    shortName: 'NEET',
+    totalQuestions: 180,
+    maximumMarks: 720,
+    penaltyRatio: 1 / 4,
+    customPenalty: 1,
+    ratioLabel: '1/4 (-1.00 mark)',
+    defaultAttempted: 160,
+    defaultWrong: 20,
+    description: '180 attempted out of 200 questions, 720 Marks. Correct answer +4 marks, wrong answer -1 mark (1/4th penalty).'
+  },
+  {
+    id: 'ssc',
+    name: 'SSC CGL / CHSL Tier 1 Exam',
+    shortName: 'SSC',
+    totalQuestions: 100,
+    maximumMarks: 200,
+    penaltyRatio: 1 / 4,
+    customPenalty: 0.5,
+    ratioLabel: '1/4 (-0.50 marks)',
+    defaultAttempted: 78,
+    defaultWrong: 12,
+    description: '100 Questions, 200 Marks. Each question carries 2 marks; 0.50 marks deducted per incorrect answer.'
+  },
+  {
+    id: 'banking',
+    name: 'Banking Exams (IBPS PO/Clerk, SBI PO)',
+    shortName: 'Banking',
+    totalQuestions: 100,
+    maximumMarks: 100,
+    penaltyRatio: 1 / 4,
+    customPenalty: 0.25,
+    ratioLabel: '1/4 (-0.25 marks)',
+    defaultAttempted: 75,
+    defaultWrong: 10,
+    description: '100 Questions, 100 Marks. 1 mark per question with 0.25 marks penalty per wrong attempt.'
+  },
+  {
+    id: 'state-psc',
+    name: 'State PSC (UPPSC, BPSC Prelims)',
+    shortName: 'State PSC',
+    totalQuestions: 150,
+    maximumMarks: 200,
+    penaltyRatio: 1 / 3,
+    ratioLabel: '1/3 (-0.44 marks)',
+    defaultAttempted: 110,
+    defaultWrong: 25,
+    description: '150 Questions, 200 Marks (~1.33 marks/Q). 1/3rd of the marks per question deducted per wrong attempt.'
+  },
+  {
+    id: 'jee',
+    name: 'JEE Main Engineering Entrance',
+    shortName: 'JEE',
+    totalQuestions: 75,
+    maximumMarks: 300,
+    penaltyRatio: 1 / 4,
+    customPenalty: 1,
+    ratioLabel: '1/4 (-1.00 mark)',
+    defaultAttempted: 55,
+    defaultWrong: 10,
+    description: '75 attempted out of 90 questions, 300 Marks. +4 for correct, -1 for wrong response across MCQs and numerical questions.'
+  },
+  {
+    id: 'custom',
+    name: 'Custom Exam Scheme',
+    shortName: 'Custom',
+    totalQuestions: 100,
+    maximumMarks: 100,
+    penaltyRatio: 1 / 4,
+    ratioLabel: 'Customizable',
+    defaultAttempted: 70,
+    defaultWrong: 15,
+    description: 'Fully customizable configuration for any competitive or entrance examination.'
+  }
+];
+
+/**
+ * Calculates net score, deductions, accuracy, break-even accuracy, and guessing risk.
+ */
+export function calculateNegativeMarking(input: NegativeMarkingInput): NegativeMarkingResult {
+  const totalQuestions = Math.max(1, Math.round(Number(input.totalQuestions) || 100));
+  const maximumMarks = Math.max(1, Number(input.maximumMarks) || 100);
+  const attempted = Math.max(0, Math.min(totalQuestions, Math.round(Number(input.attempted) || 0)));
+  const wrong = Math.max(0, Math.min(attempted, Math.round(Number(input.wrong) || 0)));
+  const correct = Math.max(0, attempted - wrong);
+  const unattempted = Math.max(0, totalQuestions - attempted);
+
+  const marksPerQuestion = Math.round((maximumMarks / totalQuestions) * 1000) / 1000;
+  
+  let penaltyPerWrong: number;
+  if (input.customPenalty !== undefined && input.customPenalty >= 0) {
+    penaltyPerWrong = Number(input.customPenalty);
+  } else {
+    const ratio = Math.max(0, Number(input.penaltyRatio) || 0);
+    penaltyPerWrong = Math.round(marksPerQuestion * ratio * 1000) / 1000;
+  }
+
+  const grossScore = Math.round(correct * marksPerQuestion * 100) / 100;
+  const penaltyDeduction = Math.round(wrong * penaltyPerWrong * 100) / 100;
+  const netScore = Math.round((grossScore - penaltyDeduction) * 100) / 100;
+  const scorePercentage = Math.round((netScore / maximumMarks) * 10000) / 100;
+  const accuracyRate = attempted > 0 ? Math.round((correct / attempted) * 10000) / 100 : 0;
+
+  // Break-even accuracy p* = P / (M + P)
+  const breakEvenAccuracy = (marksPerQuestion + penaltyPerWrong) > 0
+    ? Math.round((penaltyPerWrong / (marksPerQuestion + penaltyPerWrong)) * 10000) / 100
+    : 0;
+
+  const marksPerAttempt = attempted > 0 ? Math.round((netScore / attempted) * 100) / 100 : 0;
+
+  let penaltyRatioText = 'No Penalty';
+  if (penaltyPerWrong > 0) {
+    if (Math.abs(penaltyPerWrong - marksPerQuestion / 3) < 0.02) penaltyRatioText = '1/3rd Negative';
+    else if (Math.abs(penaltyPerWrong - marksPerQuestion / 4) < 0.02) penaltyRatioText = '1/4th Negative';
+    else if (Math.abs(penaltyPerWrong - marksPerQuestion / 5) < 0.02) penaltyRatioText = '1/5th Negative';
+    else if (Math.abs(penaltyPerWrong - marksPerQuestion / 2) < 0.02) penaltyRatioText = '1/2 Negative';
+    else penaltyRatioText = `-${penaltyPerWrong.toFixed(2)} marks / wrong`;
+  }
+
+  let status: NegativeMarkingResult['status'] = 'good';
+  let advice = '';
+
+  if (attempted === 0) {
+    status = 'average';
+    advice = 'Enter your test attempts to calculate net score, accuracy, and penalty analysis.';
+  } else if (penaltyPerWrong === 0) {
+    status = 'high_performance';
+    advice = 'No negative marking on this exam. Every attempt adds to your score without any risk of penalty!';
+  } else if (accuracyRate >= 85) {
+    status = 'high_performance';
+    advice = `Outstanding accuracy (${accuracyRate}%)! You lost only ${penaltyDeduction} marks to negative marking, maximizing your competitive ranking.`;
+  } else if (accuracyRate >= 70) {
+    status = 'good';
+    advice = `Solid performance! Your accuracy (${accuracyRate}%) comfortably beats the ${breakEvenAccuracy}% break-even threshold. Tightening guesses could save ${penaltyDeduction} marks.`;
+  } else if (accuracyRate >= breakEvenAccuracy) {
+    status = 'average';
+    advice = `Caution: While your attempts yielded a positive net return, wrong answers cost you ${penaltyDeduction} marks. Avoid uncalculated guesses in upcoming mocks.`;
+  } else {
+    status = 'critical_penalty';
+    advice = `Negative marking hazard: Your accuracy (${accuracyRate}%) fell below the break-even threshold (${breakEvenAccuracy}%). Negative deductions severely eroded your score.`;
+  }
+
+  return {
+    totalQuestions,
+    maximumMarks,
+    attempted,
+    correct,
+    wrong,
+    unattempted,
+    marksPerQuestion,
+    penaltyPerWrong,
+    grossScore,
+    penaltyDeduction,
+    netScore,
+    scorePercentage,
+    accuracyRate,
+    breakEvenAccuracy,
+    marksPerAttempt,
+    penaltyRatioText,
+    status,
+    advice
+  };
+}
+
+/* ==========================================================================
    Tool Metadata Registry & SEO Content Models
    ========================================================================== */
 
@@ -1493,6 +1733,62 @@ export const ACADEMIC_CALCULATORS: AcademicCalculatorMeta[] = [
       { question: 'How is MHT CET percentile calculated?', answer: 'The State CET Cell normalizes scores using the formula: Percentile = (100 × Candidates with score <= Raw Score) / Total Candidates in session.' }
     ],
     relatedSlugs: ['percentile-calculator', 'jee-main-percentile-calculator', 'marks-percentage-calculator']
+  },
+
+  // 18. Negative Marking Calculator
+  {
+    id: 'negative-marking-calculator',
+    slug: 'negative-marking-calculator',
+    name: 'Negative Marking Calculator (Net Exam Score & Penalty)',
+    shortName: 'Negative Marking Calculator',
+    toolType: 'negative-marking',
+    badge: 'UPSC, NEET, SSC, Banking & State PSC',
+    title: 'Negative Marking Calculator - Calculate Net Exam Score Online',
+    metaDescription: 'Calculate your net exam score after negative marking. Instant calculator for UPSC, NEET, SSC, Banking, JEE & State PSC with accuracy & penalty analysis.',
+    keywords: [
+      'negative marking calculator',
+      'upsc negative marking calculator',
+      'neet negative marking calculator',
+      'ssc negative marking calculator',
+      'negative marking formula',
+      'net marks calculator',
+      'negative marking calculation'
+    ],
+    summary: 'Calculate your exact net examination score after accounting for wrong answer penalties. Built for UPSC Prelims, NEET UG, SSC CGL, Banking (IBPS/SBI), JEE Main, RRB NTPC, and State PSCs with live accuracy rate, penalty breakdown, and break-even guessing analysis.',
+    formulaDisplay: '\\text{Net Score} = (\\text{Correct} \\times M) - (\\text{Wrong} \\times P), \\quad P = M \\times \\text{Ratio}',
+    verifiedFormulaText: 'Net Score = (Correct Answers × Marks Per Question) - (Wrong Answers × Penalty Per Question)',
+    howToUse: [
+      { stepNumber: 1, title: 'Choose Exam Preset or Custom', description: 'Tap an exam chip (UPSC, RRB, NEET, SSC, Banking, State PSC, JEE) to auto-fill official question counts, marks, and negative marking ratios.' },
+      { stepNumber: 2, title: 'Enter Questions Attempted & Mistakes', description: 'Input how many questions you attempted and how many wrong answers you marked according to your official answer key.' },
+      { stepNumber: 3, title: 'Review Net Score & Accuracy Analysis', description: 'Instantly view your net final score, percentage, penalty marks lost, accuracy rate, and break-even threshold to evaluate your guessing strategy.' }
+    ],
+    faqs: [
+      {
+        question: 'How is negative marking calculated in competitive exams?',
+        answer: 'The standard formula is: Net Score = (Correct Answers × Marks per Question) - (Wrong Answers × Penalty per Question). Unattempted questions carry zero marks and no penalty.'
+      },
+      {
+        question: 'What does 1/3 negative marking mean in UPSC?',
+        answer: 'In UPSC Civil Services Prelims GS Paper 1, each question carries 2 marks. If you mark an incorrect answer, 1/3rd of 2 marks (0.66 marks) is deducted. For CSAT (Paper 2), each question carries 2.5 marks, so a wrong answer deducts 0.83 marks.'
+      },
+      {
+        question: 'How does 1/4 negative marking work in NEET UG and SSC CGL?',
+        answer: 'In NEET UG, each correct answer earns +4 marks while each incorrect answer deducts 1 mark (which is 1/4th of 4). In SSC CGL Tier 1, each correct answer earns +2 marks and a wrong answer deducts 0.50 marks (1/4th of 2).'
+      },
+      {
+        question: 'What is break-even accuracy in multiple-choice exams?',
+        answer: 'Break-even accuracy is the minimum accuracy rate you must achieve on attempted questions so that the expected return from answering is greater than zero. For 1/3 negative marking (with 4 options), the break-even accuracy is 25%. For 1/4 negative marking, it is 20%.'
+      },
+      {
+        question: 'Is guessing answers beneficial or harmful in exams with negative marking?',
+        answer: 'Blind guessing among 4 options yields a mathematical expected value of zero under 1/3 negative marking. However, if you can eliminate even 1 or 2 incorrect options, your probability of getting the answer right jumps to 33.3% or 50%, which is well above the break-even threshold and makes intelligent guessing mathematically advantageous.'
+      },
+      {
+        question: 'Can a candidate receive a negative total score in an exam?',
+        answer: 'Yes. If a candidate marks very few correct answers and a very high number of incorrect answers, the penalty deduction can exceed the gross score, resulting in a negative net score (e.g., -5.33 marks).'
+      }
+    ],
+    relatedSlugs: ['percentile-calculator', 'marks-percentage-calculator', 'jee-main-percentile-calculator']
   }
 ];
 

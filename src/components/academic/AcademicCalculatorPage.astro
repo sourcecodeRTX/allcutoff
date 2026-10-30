@@ -7,6 +7,7 @@ import AttendanceWidget from './AttendanceWidget.astro';
 import CgpaToPercentageWidget from './CgpaToPercentageWidget.astro';
 import MarksPercentageWidget from './MarksPercentageWidget.astro';
 import PercentileWidget from './PercentileWidget.astro';
+import NegativeMarkingWidget from './NegativeMarkingWidget.astro';
 import {
   type AcademicCalculatorMeta,
   getAcademicCalculatorBySlug,
@@ -184,6 +185,9 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
       )}
       {calculator.toolType === 'percentile' && (
         <PercentileWidget initialExam={calculator.examKey} />
+      )}
+      {calculator.toolType === 'negative-marking' && (
+        <NegativeMarkingWidget />
       )}
     </section>
 

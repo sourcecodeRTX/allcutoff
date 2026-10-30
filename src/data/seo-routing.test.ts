@@ -119,10 +119,10 @@ describe('Cloudflare _redirects Configuration', () => {
 });
 
 describe('Calculator & Tools Route Inventory', () => {
-  it('has 12 entrance cutoff calculators and 17 academic calculators (total 29)', () => {
+  it('has 12 entrance cutoff calculators and 18 academic calculators (total 30)', () => {
     expect(CALCULATORS.length).toBe(12);
-    expect(ACADEMIC_CALCULATORS.length).toBe(17);
-    expect(CALCULATORS.length + ACADEMIC_CALCULATORS.length).toBe(29);
+    expect(ACADEMIC_CALCULATORS.length).toBe(18);
+    expect(CALCULATORS.length + ACADEMIC_CALCULATORS.length).toBe(30);
   });
 
   it('ensures all calculator slugs are unique and URL-safe', () => {

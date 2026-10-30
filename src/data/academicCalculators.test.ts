@@ -14,6 +14,8 @@ import {
   calculateRankToPercentile,
   calculatePercentileToRank,
   predictExamPercentile,
+  calculateNegativeMarking,
+  NEGATIVE_MARKING_PRESETS,
   getAcademicCalculatorBySlug,
   getAcademicCalculatorsByType,
   getAllAcademicCalculatorSlugs,
@@ -364,8 +366,8 @@ describe('Percentile and Rank Calculations', () => {
 });
 
 describe('Academic Calculator Metadata Registry', () => {
-  it('registers all 17 planned calculator tools and variants', () => {
-    expect(ACADEMIC_CALCULATORS.length).toBe(17);
+  it('registers all 18 planned calculator tools and variants', () => {
+    expect(ACADEMIC_CALCULATORS.length).toBe(18);
 
     const expectedSlugs = [
       'cgpa-calculator',
@@ -384,7 +386,8 @@ describe('Academic Calculator Metadata Registry', () => {
       'percentile-calculator',
       'jee-main-percentile-calculator',
       'cat-percentile-calculator',
-      'mht-cet-percentile-calculator'
+      'mht-cet-percentile-calculator',
+      'negative-marking-calculator'
     ];
 
     const actualSlugs = getAllAcademicCalculatorSlugs();
@@ -417,5 +420,103 @@ describe('Academic Calculator Metadata Registry', () => {
 
     const percentileTools = getAcademicCalculatorsByType('percentile');
     expect(percentileTools.length).toBe(4); // universal, jee-main, cat, mht-cet
+
+    const negTools = getAcademicCalculatorsByType('negative-marking');
+    expect(negTools.length).toBe(1);
+    expect(negTools[0].id).toBe('negative-marking-calculator');
+  });
+});
+
+describe('Negative Marking Calculator Engine', () => {
+  it('calculates UPSC Prelims net score correctly with 1/3rd penalty', () => {
+    const res = calculateNegativeMarking({
+      totalQuestions: 100,
+      maximumMarks: 200,
+      attempted: 50,
+      wrong: 10,
+      penaltyRatio: 1 / 3
+    });
+
+    expect(res.totalQuestions).toBe(100);
+    expect(res.maximumMarks).toBe(200);
+    expect(res.attempted).toBe(50);
+    expect(res.correct).toBe(40);
+    expect(res.wrong).toBe(10);
+    expect(res.unattempted).toBe(50);
+    expect(res.marksPerQuestion).toBe(2.0);
+    expect(res.penaltyPerWrong).toBeCloseTo(0.667, 2);
+    expect(res.grossScore).toBe(80.0);
+    expect(res.penaltyDeduction).toBeCloseTo(6.67, 1);
+    expect(res.netScore).toBeCloseTo(73.33, 1);
+    expect(res.accuracyRate).toBe(80.0);
+    expect(res.breakEvenAccuracy).toBeCloseTo(25.0, 1);
+    expect(res.marksPerAttempt).toBeGreaterThan(1.4);
+    expect(res.status).toBe('good');
+  });
+
+  it('calculates NEET UG net score correctly with 1/4th penalty (-1 mark)', () => {
+    const res = calculateNegativeMarking({
+      totalQuestions: 180,
+      maximumMarks: 720,
+      attempted: 160,
+      wrong: 20,
+      penaltyRatio: 1 / 4,
+      customPenalty: 1
+    });
+
+    expect(res.correct).toBe(140);
+    expect(res.unattempted).toBe(20);
+    expect(res.marksPerQuestion).toBe(4.0);
+    expect(res.penaltyPerWrong).toBe(1.0);
+    expect(res.grossScore).toBe(560.0);
+    expect(res.penaltyDeduction).toBe(20.0);
+    expect(res.netScore).toBe(540.0);
+    expect(res.accuracyRate).toBe(87.5);
+    expect(res.breakEvenAccuracy).toBe(20.0);
+    expect(res.status).toBe('high_performance');
+  });
+
+  it('handles zero penalty exams (KCET / MHT CET) without deductions', () => {
+    const res = calculateNegativeMarking({
+      totalQuestions: 100,
+      maximumMarks: 100,
+      attempted: 100,
+      wrong: 30,
+      penaltyRatio: 0
+    });
+
+    expect(res.correct).toBe(70);
+    expect(res.grossScore).toBe(70);
+    expect(res.penaltyDeduction).toBe(0);
+    expect(res.netScore).toBe(70);
+    expect(res.breakEvenAccuracy).toBe(0);
+  });
+
+  it('handles severe negative marks when wrong answers exceed break-even', () => {
+    const res = calculateNegativeMarking({
+      totalQuestions: 100,
+      maximumMarks: 100,
+      attempted: 50,
+      wrong: 45,
+      penaltyRatio: 1 / 3
+    });
+
+    expect(res.correct).toBe(5);
+    expect(res.grossScore).toBe(5);
+    expect(res.penaltyDeduction).toBeCloseTo(15, 0);
+    expect(res.netScore).toBeLessThan(0);
+    expect(res.status).toBe('critical_penalty');
+  });
+
+  it('verifies all negative marking presets are well-formed', () => {
+    expect(NEGATIVE_MARKING_PRESETS.length).toBeGreaterThanOrEqual(7);
+    const upsc = NEGATIVE_MARKING_PRESETS.find((p) => p.id === 'upsc');
+    expect(upsc).toBeDefined();
+    expect(upsc?.totalQuestions).toBe(100);
+    expect(upsc?.maximumMarks).toBe(200);
+
+    const neet = NEGATIVE_MARKING_PRESETS.find((p) => p.id === 'neet');
+    expect(neet).toBeDefined();
+    expect(neet?.maximumMarks).toBe(720);
   });
 });
