@@ -1074,11 +1074,14 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
       if (!applied) return;
 
       // `scroll-mt-24` on the root keeps the sticky header from covering it.
-      try {
-        root.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
-      } catch (err) {
-        window.scrollTo(0, 0);
-      }
+      // Small timeout ensures the search modal's DOM cleanup finishes before scrolling.
+      window.setTimeout(function () {
+        try {
+          root.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+        } catch (err) {
+          window.scrollTo(0, 0);
+        }
+      }, 50);
 
       rememberInUrl(id);
     });
@@ -1090,8 +1093,17 @@ const defaultCalc = CALCULATORS.find((c) => c.id === DEFAULT_ID) ?? CALCULATORS[
         statusDetail.textContent = 'This calculator could not be loaded. Please reload the page.';
       }
     } else {
-      var initialId = requestedIdFromUrl() || DEFAULT_ID;
-      selectExam(initialId, { flash: false });
+      var requested = requestedIdFromUrl();
+      var initialId = requested || DEFAULT_ID;
+      var hasRequested = Boolean(requested);
+      selectExam(initialId, { flash: hasRequested });
+      if (hasRequested || (typeof window !== 'undefined' && window.location && window.location.hash === '#hero-calculator')) {
+        window.setTimeout(function () {
+          try {
+            root.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+          } catch (err) {}
+        }, 80);
+      }
       if (initialId !== DEFAULT_ID) rememberInUrl(initialId);
     }
   })();

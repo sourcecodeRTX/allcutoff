@@ -76,7 +76,9 @@ const cutoffSearchEntries = CALCULATORS.map((c) => {
     authority: c.conductingAuthority,
     identityTokens: identity,
     searchAliases: aliases,
-    primary: c.shortName.toLowerCase()
+    primary: c.shortName.toLowerCase(),
+    isAcademic: false,
+    toolType: null
   };
 });
 
@@ -97,7 +99,9 @@ const academicSearchEntries = ACADEMIC_CALCULATORS.map((ac) => {
     authority: 'University / Board Ordinance',
     identityTokens: [ac.shortName.toLowerCase(), ac.toolType, ...(ac.universityKey ? [ac.universityKey] : []), ...(ac.examKey ? [ac.examKey] : [])],
     searchAliases: aliases,
-    primary: ac.shortName.toLowerCase()
+    primary: ac.shortName.toLowerCase(),
+    isAcademic: true,
+    toolType: ac.toolType
   };
 });
 
@@ -346,14 +350,23 @@ const QUICK_FILTERS = [
     function resultMarkup(item) {
       var href = '/calculator/' + encodeURIComponent(item.slug);
 
-      var secondaryLabel = hasHeroCalculator ? 'Load in Hero Calculator' : 'Use on home calculator';
-      var secondaryHref = '/?calc=' + encodeURIComponent(item.id);
+      var actionsHtml = '';
+      if (item.isAcademic) {
+        var academicLabel = hasHeroCalculator ? 'Jump to Academic Section' : 'View in Academic Section';
+        var academicHref = '/#academic-calculators';
+        actionsHtml =
+          '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+          '<a href="' + academicHref + '" data-search-academic data-tool-type="' + escapeHtml(item.toolType || '') +
+          '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(academicLabel) + '</a>';
+      } else {
+        var secondaryLabel = 'Load in hero section';
+        var secondaryHref = '/?calc=' + encodeURIComponent(item.id) + '#hero-calculator';
+        actionsHtml =
+          '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+          '<a href="' + secondaryHref + '" data-search-load data-calc-id="' + escapeHtml(item.id) +
+          '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(secondaryLabel) + '</a>';
+      }
 
-      // One anchor owns the row's title and description, so "clicked the link"
-      // and "clicked the text" are the same action with no delegated guesswork.
-      // The hero shortcut is a separate sibling link — an anchor may not contain
-      // interactive descendants, which is also what ruled out the old
-      // role="option" wrapper.
       return (
         '<li class="rounded-xl border border-transparent p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50">' +
         '<a href="' + href + '" data-search-open class="block rounded-lg">' +
@@ -367,9 +380,7 @@ const QUICK_FILTERS = [
         '</span>' +
         '</a>' +
         '<span class="mt-2.5 flex flex-wrap gap-2">' +
-        '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
-        '<a href="' + secondaryHref + '" data-search-load data-calc-id="' + escapeHtml(item.id) +
-        '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(secondaryLabel) + '</a>' +
+        actionsHtml +
         '</span>' +
         '</li>'
       );
@@ -429,16 +440,47 @@ const QUICK_FILTERS = [
       if (!id) return;
 
       if (hasHeroCalculator) {
-        // Close first: the page behind is scroll-locked and inert while the
-        // modal is open, so the hero's scrollIntoView would be a no-op.
-        closeSearch();
+        // Close search WITHOUT restoring focus to header search trigger,
+        // because focusing #search-btn in header resets scroll to top
+        // and cancels the smooth scroll to the hero calculator!
+        closeSearch({ restoreFocus: false });
         window.dispatchEvent(
           new CustomEvent('allcutoff:load-calculator', { detail: { id: id } })
         );
         return;
       }
 
-      window.location.href = '/?calc=' + encodeURIComponent(id);
+      window.location.href = '/?calc=' + encodeURIComponent(id) + '#hero-calculator';
+    }
+
+    function loadAcademic(toolType) {
+      if (hasHeroCalculator) {
+        closeSearch({ restoreFocus: false });
+        var section = document.getElementById('academic-calculators');
+        if (section) {
+          try {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (e) {
+            window.location.hash = 'academic-calculators';
+          }
+        }
+        if (toolType) {
+          var tabMap = {
+            'cgpa': 'panel-cgpa',
+            'sgpa': 'panel-sgpa',
+            'sgpa-to-cgpa': 'panel-sgpa-to-cgpa',
+            'attendance': 'panel-attendance'
+          };
+          var targetPanel = tabMap[toolType];
+          if (targetPanel) {
+            var tabBtn = document.querySelector('.academic-tab-btn[data-target="' + targetPanel + '"]');
+            if (tabBtn) tabBtn.click();
+          }
+        }
+        return;
+      }
+
+      window.location.href = '/#academic-calculators';
     }
 
     searchResults.addEventListener('click', function (event) {
@@ -446,9 +488,17 @@ const QUICK_FILTERS = [
       if (loadLink) {
         event.preventDefault();
         loadCalculator(loadLink.getAttribute('data-calc-id'));
+        return;
       }
-      // Plain `<a>` rows navigate natively — no delegated href assignment and
-      // no "the description text was outside the link" ambiguity.
+
+      var academicLink = event.target.closest('[data-search-academic]');
+      if (academicLink) {
+        if (hasHeroCalculator) {
+          event.preventDefault();
+          loadAcademic(academicLink.getAttribute('data-tool-type'));
+        }
+        return;
+      }
     });
 
     /* ------------------------------------------------------------------ *
@@ -517,15 +567,20 @@ const QUICK_FILTERS = [
       setBackgroundInert(true);
     }
 
-    function closeSearch() {
+    function closeSearch(options) {
+      var shouldRestore = !options || options.restoreFocus !== false;
       backdrop.classList.add('hidden');
       backdrop.setAttribute('inert', '');
       backdrop.setAttribute('aria-hidden', 'true');
       searchInput.value = '';
       setBackgroundInert(false);
       unlockPage();
-      if (lastFocused && typeof lastFocused.focus === 'function') {
-        lastFocused.focus();
+      if (shouldRestore && lastFocused && typeof lastFocused.focus === 'function') {
+        try {
+          lastFocused.focus({ preventScroll: true });
+        } catch (err) {
+          lastFocused.focus();
+        }
       }
       lastFocused = null;
     }
