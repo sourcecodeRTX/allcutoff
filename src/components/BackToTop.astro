@@ -13,7 +13,8 @@ const { threshold = 150 } = Astro.props;
   title="Back to top"
   data-threshold={threshold}
   aria-hidden="true"
-  class="no-print group fixed z-50 flex items-center gap-2 rounded-full border border-slate-300 bg-white/95 px-3.5 py-2.5 text-xs font-semibold text-slate-800 shadow-lg backdrop-blur-md transition-all duration-200 hover:border-blue-500 hover:bg-white hover:text-blue-600 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 sm:px-4 sm:py-2.5"
+  tabindex="-1"
+  class="group fixed z-50 flex items-center gap-2 rounded-full border border-slate-300 bg-white/95 px-3.5 py-2.5 text-xs font-semibold text-slate-800 shadow-lg backdrop-blur-md transition-all duration-200 hover:border-blue-500 hover:bg-white hover:text-blue-600 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 sm:px-4 sm:py-2.5"
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -36,10 +37,10 @@ const { threshold = 150 } = Astro.props;
 
 <style>
   #back-to-top {
-    position: fixed !important;
+    position: fixed;
     bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     right: calc(1.5rem + env(safe-area-inset-right, 0px));
-    z-index: 9999 !important;
+    z-index: 50;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -48,102 +49,70 @@ const { threshold = 150 } = Astro.props;
   }
 
   #back-to-top.is-visible {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    transform: translateY(0) !important;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  @media print {
+    #back-to-top {
+      display: none !important;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     #back-to-top {
-      transition: none !important;
-      transform: none !important;
+      transition: none;
+      transform: none;
     }
     #back-to-top.is-visible {
-      transform: none !important;
+      transform: none;
     }
   }
 </style>
 
-<script is:inline>
-  (function () {
-    function initBackToTop() {
-      var btn = document.getElementById('back-to-top');
-      if (!btn) return;
+<script>
+  function initBackToTop() {
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
 
-      var rawThreshold = btn.getAttribute('data-threshold');
-      var SCROLL_THRESHOLD = rawThreshold ? parseInt(rawThreshold, 10) : 150;
+    const threshold = Number(btn.getAttribute('data-threshold')) || 150;
+    let ticking = false;
 
-      function updateVisibility() {
-        var scrollY =
-          window.scrollY ||
-          window.pageYOffset ||
-          (document.documentElement ? document.documentElement.scrollTop : 0) ||
-          (document.body ? document.body.scrollTop : 0) ||
-          0;
+    function update() {
+      ticking = false;
+      const isOver = window.scrollY > threshold;
+      btn.classList.toggle('is-visible', isOver);
+      btn.setAttribute('aria-hidden', isOver ? 'false' : 'true');
+      btn.tabIndex = isOver ? 0 : -1;
+    }
 
-        if (scrollY > SCROLL_THRESHOLD) {
-          btn.classList.add('is-visible');
-          btn.style.opacity = '1';
-          btn.style.visibility = 'visible';
-          btn.style.pointerEvents = 'auto';
-          btn.style.transform = 'translateY(0)';
-          btn.removeAttribute('aria-hidden');
-        } else {
-          btn.classList.remove('is-visible');
-          btn.style.opacity = '0';
-          btn.style.visibility = 'hidden';
-          btn.style.pointerEvents = 'none';
-          btn.style.transform = 'translateY(12px)';
-          btn.setAttribute('aria-hidden', 'true');
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          window.requestAnimationFrame(update);
+          ticking = true;
         }
-      }
+      },
+      { passive: true }
+    );
 
-      window.addEventListener('scroll', updateVisibility, { passive: true });
-      document.addEventListener('scroll', updateVisibility, { passive: true });
-      if (document.body) {
-        document.body.addEventListener('scroll', updateVisibility, { passive: true });
-      }
-
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var prefersReducedMotion =
-          window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var behavior = prefersReducedMotion ? 'auto' : 'smooth';
-
-        try {
-          window.scrollTo({ top: 0, behavior: behavior });
-        } catch (err) {
-          window.scrollTo(0, 0);
-        }
-
-        if (document.documentElement) {
-          try {
-            document.documentElement.scrollTo({ top: 0, behavior: behavior });
-          } catch (err) {
-            document.documentElement.scrollTop = 0;
-          }
-        }
-
-        if (document.body) {
-          try {
-            document.body.scrollTo({ top: 0, behavior: behavior });
-          } catch (err) {
-            document.body.scrollTop = 0;
-          }
-        }
+    btn.addEventListener('click', () => {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({
+        top: 0,
+        behavior: prefersReduced ? 'auto' : 'smooth',
       });
+    });
 
-      // Run on initial load in case user refreshed mid-page
-      updateVisibility();
-      setTimeout(updateVisibility, 100);
-      setTimeout(updateVisibility, 500);
-    }
+    update();
+  }
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initBackToTop);
-    } else {
-      initBackToTop();
-    }
-  })();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBackToTop, { once: true });
+  } else {
+    initBackToTop();
+  }
 </script>

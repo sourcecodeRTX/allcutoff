@@ -25,7 +25,7 @@ const { calculator } = Astro.props;
  * the browser). The previous build passed the whole registry object —
  * every `formulaSteps`, `faqs`, `officialRules` and `tieBreakingRules` array,
  * which the server already renders as visible HTML. That was ~26 KB of prose
- * duplicated inside a `<script>` on all twelve pages.
+ * duplicated inside a script tag on all twelve pages.
  */
 const payload = {
   slug: calculator.slug,

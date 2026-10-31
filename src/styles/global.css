@@ -972,10 +972,6 @@
    Print — clean, black-on-white score summary.
    ========================================================================== */
 
-/* Screen-only helper (declared first so @media print wins). */
-.no-print {
-  display: none !important;
-}
 
 @media print {
   @page {
