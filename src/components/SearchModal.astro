@@ -351,13 +351,19 @@ const QUICK_FILTERS = [
       var href = '/calculator/' + encodeURIComponent(item.slug);
 
       var actionsHtml = '';
-      if (item.isAcademic) {
-        var academicLabel = hasHeroCalculator ? 'Jump to Academic Section' : 'View in Academic Section';
-        var academicHref = '/#academic-calculators';
-        actionsHtml =
-          '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
-          '<a href="' + academicHref + '" data-search-academic data-tool-type="' + escapeHtml(item.toolType || '') +
-          '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(academicLabel) + '</a>';
+            if (item.isAcademic) {
+        var hasHomeTab = item.toolType && ['cgpa', 'sgpa', 'sgpa-to-cgpa', 'attendance'].indexOf(item.toolType) !== -1;
+        if (hasHomeTab) {
+          var academicLabel = hasHeroCalculator ? 'Jump to Academic Section' : 'View in Academic Section';
+          var academicHref = '/?academic=' + encodeURIComponent(item.toolType) + '#academic-calculators';
+          actionsHtml =
+            '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>' +
+            '<a href="' + academicHref + '" data-search-academic data-tool-type="' + escapeHtml(item.toolType || '') +
+            '" class="btn-ghost-soft focus-ring min-h-9 px-3 py-1.5 text-xs">' + escapeHtml(academicLabel) + '</a>';
+        } else {
+          actionsHtml =
+            '<a href="' + href + '" class="btn-accent focus-ring min-h-9 px-3 py-1.5 text-xs">Open full page</a>';
+        }
       } else {
         var secondaryLabel = 'Load in hero section';
         var secondaryHref = '/?calc=' + encodeURIComponent(item.id) + '#hero-calculator';
@@ -466,10 +472,10 @@ const QUICK_FILTERS = [
         }
         if (toolType) {
           var tabMap = {
-            'cgpa': 'panel-cgpa',
-            'sgpa': 'panel-sgpa',
-            'sgpa-to-cgpa': 'panel-sgpa-to-cgpa',
-            'attendance': 'panel-attendance'
+            'cgpa': 'academic-panel-cgpa',
+            'sgpa': 'academic-panel-sgpa',
+            'sgpa-to-cgpa': 'academic-panel-sgpa-cgpa',
+            'attendance': 'academic-panel-attendance'
           };
           var targetPanel = tabMap[toolType];
           if (targetPanel) {
@@ -480,7 +486,7 @@ const QUICK_FILTERS = [
         return;
       }
 
-      window.location.href = '/#academic-calculators';
+      window.location.href = '/?academic=' + encodeURIComponent(toolType || '') + '#academic-calculators';
     }
 
     searchResults.addEventListener('click', function (event) {

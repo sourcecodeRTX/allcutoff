@@ -2,18 +2,7 @@
 import InstallApp from './InstallApp.astro';
 import Logo from './Logo.astro';
 
-interface Props {
-  currentCategory?: string;
-}
 
-const { currentCategory = '' } = Astro.props;
-
-const navLinkBase =
-  'inline-flex items-center min-h-9 px-2.5 py-1.5 text-[0.8125rem] font-medium rounded-md transition-colors whitespace-nowrap';
-const navLinkActive = `${navLinkBase} bg-blue-600 text-white`;
-const navLinkIdle = `${navLinkBase} text-slate-700 hover:text-slate-900 hover:bg-slate-100`;
-
-const catLink = (slug: string) => (currentCategory === slug ? navLinkActive : navLinkIdle);
 ---
 
 <header id="site-header" class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 shadow-xs">

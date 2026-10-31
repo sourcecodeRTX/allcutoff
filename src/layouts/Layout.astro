@@ -269,15 +269,19 @@ const jsonLd = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Google tag (gtag.js) -->
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-YR8MT8P1FZ"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+    <!-- Google tag (gtag.js) - loaded in production only -->
+    {import.meta.env.PROD && (
+      <>
+        <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-YR8MT8P1FZ"></script>
+        <script is:inline>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
 
-      gtag('config', 'G-YR8MT8P1FZ');
-    </script>
+          gtag('config', 'G-YR8MT8P1FZ');
+        </script>
+      </>
+    )}
 
     <!-- Favicon & App Icons -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
@@ -341,7 +345,7 @@ const jsonLd = {
        winning; gating `dvh` behind `@supports` is what actually makes the
        fallback work (same pattern SearchModal uses for its own dvh cap). -->
   <body class="flex min-h-screen supports-[height:100dvh]:min-h-dvh flex-col bg-slate-50 text-slate-700 antialiased">
-    <Header currentCategory={currentCategory} />
+    <Header />
     <main class="flex-1">
       <slot />
     </main>

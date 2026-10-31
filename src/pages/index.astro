@@ -869,6 +869,23 @@ const extraSchema = [faqSchema, itemListSchema];
       const tabBtns = document.querySelectorAll('.academic-tab-btn');
       const panels = document.querySelectorAll('.academic-panel');
 
+      try {
+        const academicParam = new URLSearchParams(window.location.search).get('academic');
+        if (academicParam) {
+          const academicTargetMap: Record<string, string> = {
+            'cgpa': 'academic-panel-cgpa',
+            'sgpa': 'academic-panel-sgpa',
+            'sgpa-to-cgpa': 'academic-panel-sgpa-cgpa',
+            'attendance': 'academic-panel-attendance'
+          };
+          const initialTarget = academicTargetMap[academicParam];
+          if (initialTarget) {
+            const targetBtn = document.querySelector<HTMLButtonElement>(`.academic-tab-btn[data-target="${initialTarget}"]`);
+            if (targetBtn) targetBtn.click();
+          }
+        }
+      } catch (e) {}
+
       tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           const targetId = btn.getAttribute('data-target');
