@@ -9,621 +9,895 @@ const { idPrefix = 'neg-calc' } = Astro.props;
 ---
 
 <div id={`${idPrefix}-container`} class="surface-card card-accent rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200 bg-white">
-  <!-- Widget Header -->
-  <div class="border-b border-slate-200 pb-5">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-teal-800">
-          <span class="h-1.5 w-1.5 rounded-full bg-teal-600" aria-hidden="true"></span>
-          Competitive Exam &amp; Recruitment Suite
-        </span>
-        <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-          Negative Marking Calculator &amp; Penalty Analyzer
-        </h2>
+  <!-- =========================================================================
+       SCREEN DASHBOARD VIEW (Interactive Web UI, Hidden During Print)
+       ========================================================================= -->
+  <div id={`${idPrefix}-screen-view`} class="no-print">
+    <!-- Widget Header -->
+    <div class="border-b border-slate-200 pb-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-teal-800">
+            <span class="h-1.5 w-1.5 rounded-full bg-teal-600" aria-hidden="true"></span>
+            Competitive Exam &amp; Recruitment Suite
+          </span>
+          <h2 class="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Negative Marking Calculator &amp; Penalty Analyzer
+          </h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="rounded-full bg-slate-100 px-3 py-1 font-mono text-xs font-semibold text-slate-700">
+            Academic Year 2025–2026
+          </span>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="rounded-full bg-slate-100 px-3 py-1 font-mono text-xs font-semibold text-slate-700">
-          Academic Year 2025–2026
-        </span>
-      </div>
-    </div>
-    <p class="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
-      Estimate your exam score precisely and understand how accuracy, mistakes, and negative marking influence your final outcome. Built for serious exam preparation across UPSC, RRB, NEET, SSC, Banking, State PSCs, and JEE.
-    </p>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
+        Estimate your exam score precisely and understand how accuracy, mistakes, and negative marking influence your final outcome. Built for serious exam preparation across UPSC, RRB, NEET, SSC, Banking, State PSCs, and JEE.
+      </p>
 
-    <!-- Quick Exam Preset Chips (Top horizontal bar) -->
-    <div class="mt-5">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Tap an exam to auto fill the ratio:
-        </span>
-        <span class="text-[0.6875rem] text-slate-500 hidden sm:inline">Click any preset to load exam specs</span>
-      </div>
-      <div class="mt-2.5 flex flex-wrap gap-2" role="tablist" aria-label="Exam Presets">
-        {NEGATIVE_MARKING_PRESETS.map((preset, index) => (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={index === 0 ? 'true' : 'false'}
-            data-preset-id={preset.id}
-            class={`preset-chip rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-              index === 0
-                ? 'bg-teal-700 text-white shadow-xs border border-teal-800'
-                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            {preset.shortName}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Calculator Grid: Dual-Column Responsive Dashboard -->
-  <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
-    <!-- LEFT COLUMN: Exam Inputs -->
-    <div class="lg:col-span-6 space-y-5">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-        <h3 class="text-base font-bold text-slate-900">Exam Inputs</h3>
-        <span id={`${idPrefix}-preset-tag`} class="font-mono text-xs text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded">
-          UPSC GS Paper 1
-        </span>
-      </div>
-
-      <!-- Total Questions -->
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+      <!-- Quick Exam Preset Chips (Top horizontal bar) -->
+      <div class="mt-5">
         <div class="flex items-center justify-between">
-          <label for={`${idPrefix}-total-questions`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Total Questions
-          </label>
-          <span class="font-mono text-xs text-slate-500">In Test Paper</span>
+          <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            Tap an exam to auto fill the ratio:
+          </span>
+          <span class="text-[0.6875rem] text-slate-500 hidden sm:inline">Click any preset to load exam specs</span>
         </div>
-        <div class="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            data-step="-5"
-            data-target={`${idPrefix}-total-questions`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Decrease total questions"
-          >
-            &minus;
-          </button>
-          <input
-            type="number"
-            id={`${idPrefix}-total-questions`}
-            min="1"
-            max="500"
-            value="100"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
-          />
-          <button
-            type="button"
-            data-step="5"
-            data-target={`${idPrefix}-total-questions`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Increase total questions"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <!-- Maximum Marks -->
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
-        <div class="flex items-center justify-between">
-          <label for={`${idPrefix}-max-marks`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Maximum Marks
-          </label>
-          <span id={`${idPrefix}-mpq-preview`} class="font-mono text-xs text-slate-500">2.00 marks / Q</span>
-        </div>
-        <div class="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            data-step="-10"
-            data-target={`${idPrefix}-max-marks`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Decrease maximum marks"
-          >
-            &minus;
-          </button>
-          <input
-            type="number"
-            id={`${idPrefix}-max-marks`}
-            min="1"
-            max="1500"
-            value="200"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
-          />
-          <button
-            type="button"
-            data-step="10"
-            data-target={`${idPrefix}-max-marks`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Increase maximum marks"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <!-- Questions Attempted -->
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
-        <div class="flex items-center justify-between">
-          <label for={`${idPrefix}-attempted`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Questions Attempted
-          </label>
-          <span id={`${idPrefix}-attempt-pct`} class="font-mono text-xs text-slate-500">50% of total</span>
-        </div>
-        <div class="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            data-step="-1"
-            data-target={`${idPrefix}-attempted`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Decrease attempted questions"
-          >
-            &minus;
-          </button>
-          <input
-            type="number"
-            id={`${idPrefix}-attempted`}
-            min="0"
-            max="500"
-            value="50"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
-          />
-          <button
-            type="button"
-            data-step="1"
-            data-target={`${idPrefix}-attempted`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Increase attempted questions"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <!-- Wrong Answers -->
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-rose-600 focus-within:bg-white">
-        <div class="flex items-center justify-between">
-          <label for={`${idPrefix}-wrong`} class="text-xs font-bold text-rose-800 uppercase tracking-wide">
-            Wrong Answers (Mistakes)
-          </label>
-          <span id={`${idPrefix}-correct-preview`} class="font-mono text-xs font-semibold text-emerald-700">40 Correct</span>
-        </div>
-        <div class="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            data-step="-1"
-            data-target={`${idPrefix}-wrong`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Decrease wrong answers"
-          >
-            &minus;
-          </button>
-          <input
-            type="number"
-            id={`${idPrefix}-wrong`}
-            min="0"
-            max="500"
-            value="10"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-rose-700 outline-none focus:border-rose-500"
-          />
-          <button
-            type="button"
-            data-step="1"
-            data-target={`${idPrefix}-wrong`}
-            class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-            aria-label="Increase wrong answers"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <!-- Negative Marking Ratio Dropdown -->
-      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-1.5">
-            <label for={`${idPrefix}-ratio-select`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
-              Negative Marking Ratio
-            </label>
-            <!-- Info tooltip trigger -->
+        <div class="mt-2.5 flex flex-wrap gap-2" role="tablist" aria-label="Exam Presets">
+          {NEGATIVE_MARKING_PRESETS.map((preset, index) => (
             <button
               type="button"
-              id={`${idPrefix}-tooltip-btn`}
-              class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[0.625rem] font-bold text-slate-600 hover:bg-slate-300"
-              title="Click to view marking ratio rules"
-              aria-label="Marking ratio explanation"
+              role="tab"
+              aria-selected={index === 0 ? 'true' : 'false'}
+              data-preset-id={preset.id}
+              class={`preset-chip rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                index === 0
+                  ? 'bg-teal-700 text-white shadow-xs border border-teal-800'
+                  : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+              }`}
             >
-              ?
+              {preset.shortName}
             </button>
-          </div>
-          <span id={`${idPrefix}-penalty-per-wrong`} class="font-mono text-xs font-semibold text-rose-700">-0.66 marks/wrong</span>
+          ))}
         </div>
-
-        <select
-          id={`${idPrefix}-ratio-select`}
-          class="mt-2.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
-        >
-          <option value="0.3333333333333333" selected>1/3 (UPSC, RRB, CDS, UPPSC)</option>
-          <option value="0.25">1/4 (SSC, Banking, NEET, JEE)</option>
-          <option value="0.2">1/5 (State PSC 5-Option Tests)</option>
-          <option value="0.5">1/2 (High Penalty Exams)</option>
-          <option value="0">No Penalty (MHT CET, KCET, State BEd)</option>
-          <option value="custom">Custom Deduction Marks</option>
-        </select>
-
-        <!-- Custom Deduction Input (Revealed only when 'custom' selected) -->
-        <div id={`${idPrefix}-custom-deduction-wrap`} class="mt-3 hidden">
-          <label for={`${idPrefix}-custom-penalty-input`} class="block text-[0.6875rem] font-semibold text-slate-600">
-            Deduction Marks Per Incorrect Answer:
-          </label>
-          <input
-            type="number"
-            id={`${idPrefix}-custom-penalty-input`}
-            step="0.01"
-            min="0"
-            max="50"
-            value="0.66"
-            class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-semibold text-slate-900 outline-none focus:border-teal-600"
-          />
-        </div>
-
-        <!-- Tooltip Explainer Popover -->
-        <div id={`${idPrefix}-tooltip-popover`} class="mt-2 hidden rounded-lg border border-slate-200 bg-slate-900 p-3 text-xs text-white shadow-lg">
-          <p class="font-semibold text-amber-300">Marks Deducted per Wrong Answer:</p>
-          <p class="mt-1 leading-relaxed text-slate-200">
-            Expressed as a fraction of marks awarded per question. UPSC and Railway use 1/3, SSC and Banks use 1/4, and NEET uses 1/4 (-1 mark out of 4). Unattempted questions carry zero penalty.
-          </p>
-        </div>
-      </div>
-
-      <!-- Action Buttons Row -->
-      <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-        <button
-          type="button"
-          id={`${idPrefix}-calc-btn`}
-          class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-xs hover:bg-teal-800 transition-colors cursor-pointer"
-        >
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-          </svg>
-          Calculate My Score
-        </button>
-
-        <button
-          type="button"
-          id={`${idPrefix}-clear-btn`}
-          class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-        >
-          Clear Inputs
-        </button>
-      </div>
-
-      <!-- Secondary Action Utilities (Print & Share) -->
-      <div class="flex items-center gap-2 pt-1">
-        <button
-          type="button"
-          id={`${idPrefix}-print-btn`}
-          class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-white hover:border-slate-300 transition-all cursor-pointer"
-          title="Print or save as PDF"
-        >
-          <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Download PDF / Print
-        </button>
-
-        <button
-          type="button"
-          id={`${idPrefix}-whatsapp-btn`}
-          class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer"
-          title="Share results on WhatsApp"
-        >
-          <svg class="h-3.5 w-3.5 text-emerald-600 fill-current" viewBox="0 0 24 24">
-            <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.979-.276-.1-.477-.15-.678.15-.201.3-.778.979-.954 1.18-.176.2-.351.226-.653.075-.301-.15-1.272-.469-2.423-1.496-.897-.8-1.503-1.788-1.68-2.089-.176-.301-.019-.464.132-.614.136-.135.301-.351.452-.527.15-.176.201-.301.301-.502.1-.2.05-.376-.025-.526-.075-.15-.678-1.635-.929-2.239-.245-.589-.494-.509-.679-.519l-.579-.01c-.2 0-.527.075-.803.376s-1.054 1.03-1.054 2.511c0 1.481 1.079 2.91 1.23 3.111.15.201 2.124 3.243 5.145 4.548.719.311 1.28.497 1.718.636.722.23 1.378.197 1.9-.12.57-.348 1.78-7.27 2.03-1.43.251-.703.251-1.305.176-1.43-.075-.126-.276-.201-.577-.351z"/>
-            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 21.95l4.908-1.287A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.182c-1.63 0-3.15-.477-4.43-1.3l-.317-.206-3.29.863.878-3.208-.225-.333A8.136 8.136 0 013.818 12C3.818 7.489 7.489 3.818 12 3.818 16.511 3.818 20.182 7.489 20.182 12c0 4.511-3.671 8.182-8.182 8.182z"/>
-          </svg>
-          Share on WhatsApp
-        </button>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Instant Results Dashboard -->
-    <div class="lg:col-span-6 space-y-5">
-      <!-- NET SCORE Hero Card -->
-      <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 shadow-xs transition-all">
-        <div class="flex items-center justify-between">
-          <span class="font-mono text-xs font-bold uppercase tracking-wider text-slate-500">
-            NET SCORE
-          </span>
-          <span id={`${idPrefix}-score-pct-badge`} class="rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-xs font-bold text-teal-800">
-            40.0%
+    <!-- Main Calculator Grid: Dual-Column Responsive Dashboard -->
+    <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+      <!-- LEFT COLUMN: Exam Inputs -->
+      <div class="lg:col-span-6 space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 class="text-base font-bold text-slate-900">Exam Inputs</h3>
+          <span id={`${idPrefix}-preset-tag`} class="font-mono text-xs text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded">
+            UPSC GS Paper 1
           </span>
         </div>
 
-        <div class="mt-2 flex items-baseline gap-2">
-          <span id={`${idPrefix}-net-score-display`} class="font-mono text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
-            80.00
-          </span>
-          <span id={`${idPrefix}-out-of-display`} class="font-mono text-sm font-semibold text-slate-500">
-            / 200
-          </span>
+        <!-- Total Questions -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-total-questions`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+              Total Questions
+            </label>
+            <span class="font-mono text-xs text-slate-500">In Test Paper</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-step="-5"
+              data-target={`${idPrefix}-total-questions`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Decrease total questions"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-total-questions`}
+              min="1"
+              max="500"
+              value="100"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
+            />
+            <button
+              type="button"
+              data-step="5"
+              data-target={`${idPrefix}-total-questions`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Increase total questions"
+            >
+              +
+            </button>
+          </div>
         </div>
 
-        <!-- Score Visual Progress Bar -->
-        <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-          <div
-            id={`${idPrefix}-progress-bar`}
-            class="h-full rounded-full bg-teal-600 transition-all duration-300"
-            style="width: 40%;"
-            role="progressbar"
-            aria-valuenow="40"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          ></div>
+        <!-- Maximum Marks -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-max-marks`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+              Maximum Marks
+            </label>
+            <span id={`${idPrefix}-mpq-preview`} class="font-mono text-xs text-slate-500">2.00 marks / Q</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-step="-10"
+              data-target={`${idPrefix}-max-marks`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Decrease maximum marks"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-max-marks`}
+              min="1"
+              max="1500"
+              value="200"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
+            />
+            <button
+              type="button"
+              data-step="10"
+              data-target={`${idPrefix}-max-marks`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Increase maximum marks"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Questions Attempted -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-attempted`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+              Questions Attempted
+            </label>
+            <span id={`${idPrefix}-attempt-pct`} class="font-mono text-xs text-slate-500">50% of total</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-step="-1"
+              data-target={`${idPrefix}-attempted`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Decrease attempted questions"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-attempted`}
+              min="0"
+              max="500"
+              value="50"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-slate-900 outline-none focus:border-teal-600"
+            />
+            <button
+              type="button"
+              data-step="1"
+              data-target={`${idPrefix}-attempted`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Increase attempted questions"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Wrong Answers -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-rose-600 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <label for={`${idPrefix}-wrong`} class="text-xs font-bold text-rose-800 uppercase tracking-wide">
+              Wrong Answers (Mistakes)
+            </label>
+            <span id={`${idPrefix}-correct-preview`} class="font-mono text-xs font-semibold text-emerald-700">40 Correct</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-step="-1"
+              data-target={`${idPrefix}-wrong`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Decrease wrong answers"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              id={`${idPrefix}-wrong`}
+              min="0"
+              max="500"
+              value="10"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-mono text-xl font-bold tabular-nums text-rose-700 outline-none focus:border-rose-500"
+            />
+            <button
+              type="button"
+              data-step="1"
+              data-target={`${idPrefix}-wrong`}
+              class="step-btn h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white font-mono text-base font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
+              aria-label="Increase wrong answers"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Negative Marking Ratio Dropdown -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-colors focus-within:border-teal-600 focus-within:bg-white">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <label for={`${idPrefix}-ratio-select`} class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                Negative Marking Ratio
+              </label>
+              <!-- Info tooltip trigger -->
+              <button
+                type="button"
+                id={`${idPrefix}-tooltip-btn`}
+                class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[0.625rem] font-bold text-slate-600 hover:bg-slate-300"
+                title="Click to view marking ratio rules"
+                aria-label="Marking ratio explanation"
+              >
+                ?
+              </button>
+            </div>
+            <span id={`${idPrefix}-penalty-per-wrong`} class="font-mono text-xs font-semibold text-rose-700">-0.66 marks/wrong</span>
+          </div>
+
+          <select
+            id={`${idPrefix}-ratio-select`}
+            class="mt-2.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+          >
+            <option value="0.3333333333333333" selected>1/3 (UPSC, RRB, CDS, UPPSC)</option>
+            <option value="0.25">1/4 (SSC, Banking, NEET, JEE)</option>
+            <option value="0.2">1/5 (State PSC 5-Option Tests)</option>
+            <option value="0.5">1/2 (High Penalty Exams)</option>
+            <option value="0">No Penalty (MHT CET, KCET, State BEd)</option>
+            <option value="custom">Custom Deduction Marks</option>
+          </select>
+
+          <!-- Custom Deduction Input (Revealed only when 'custom' selected) -->
+          <div id={`${idPrefix}-custom-deduction-wrap`} class="mt-3 hidden">
+            <label for={`${idPrefix}-custom-penalty-input`} class="block text-[0.6875rem] font-semibold text-slate-600">
+              Deduction Marks Per Incorrect Answer:
+            </label>
+            <input
+              type="number"
+              id={`${idPrefix}-custom-penalty-input`}
+              step="0.01"
+              min="0"
+              max="50"
+              value="0.66"
+              class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm font-semibold text-slate-900 outline-none focus:border-teal-600"
+            />
+          </div>
+
+          <!-- Tooltip Explainer Popover -->
+          <div id={`${idPrefix}-tooltip-popover`} class="mt-2 hidden rounded-lg border border-slate-200 bg-slate-900 p-3 text-xs text-white shadow-lg">
+            <p class="font-semibold text-amber-300">Marks Deducted per Wrong Answer:</p>
+            <p class="mt-1 leading-relaxed text-slate-200">
+              Expressed as a fraction of marks awarded per question. UPSC and Railway use 1/3, SSC and Banks use 1/4, and NEET uses 1/4 (-1 mark out of 4). Unattempted questions carry zero penalty.
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <button
+            type="button"
+            id={`${idPrefix}-calc-btn`}
+            class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-xs hover:bg-teal-800 transition-colors cursor-pointer"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Calculate My Score
+          </button>
+
+          <button
+            type="button"
+            id={`${idPrefix}-clear-btn`}
+            class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            Clear Inputs
+          </button>
+        </div>
+
+        <!-- Secondary Action Utilities (Print/PDF & WhatsApp Share) -->
+        <div class="flex items-center gap-2.5 pt-1">
+          <button
+            type="button"
+            id={`${idPrefix}-print-btn`}
+            class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-teal-600 hover:text-teal-900 transition-all cursor-pointer group"
+            title="Download structured A4 PDF Scorecard or Print (Select 'Save as PDF' in the destination)"
+          >
+            <svg class="h-4 w-4 text-rose-600 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Download PDF / Print</span>
+          </button>
+
+          <button
+            type="button"
+            id={`${idPrefix}-whatsapp-btn`}
+            class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs sm:text-sm font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer"
+            title="Share results on WhatsApp"
+          >
+            <svg class="h-4 w-4 text-emerald-600 fill-current" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.979-.276-.1-.477-.15-.678.15-.201.3-.778.979-.954 1.18-.176.2-.351.226-.653.075-.301-.15-1.272-.469-2.423-1.496-.897-.8-1.503-1.788-1.68-2.089-.176-.301-.019-.464.132-.614.136-.135.301-.351.452-.527.15-.176.201-.301.301-.502.1-.2.05-.376-.025-.526-.075-.15-.678-1.635-.929-2.239-.245-.589-.494-.509-.679-.519l-.579-.01c-.2 0-.527.075-.803.376s-1.054 1.03-1.054 2.511c0 1.481 1.079 2.91 1.23 3.111.15.201 2.124 3.243 5.145 4.548.719.311 1.28.497 1.718.636.722.23 1.378.197 1.9-.12.57-.348 1.78-7.27 2.03-1.43.251-.703.251-1.305.176-1.43-.075-.126-.276-.201-.577-.351z"/>
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.05 21.95l4.908-1.287A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.182c-1.63 0-3.15-.477-4.43-1.3l-.317-.206-3.29.863.878-3.208-.225-.333A8.136 8.136 0 013.818 12C3.818 7.489 7.489 3.818 12 3.818 16.511 3.818 20.182 7.489 20.182 12c0 4.511-3.671 8.182-8.182 8.182z"/>
+            </svg>
+            <span>Share on WhatsApp</span>
+          </button>
         </div>
       </div>
 
-      <!-- Penalty Status Banner -->
-      <div id={`${idPrefix}-penalty-banner`} class="rounded-xl border border-teal-200 bg-teal-50/80 p-4 transition-all">
-        <div class="flex items-start gap-3">
-          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white text-xs font-bold">
-            ✓
-          </span>
-          <div>
-            <div id={`${idPrefix}-banner-title`} class="text-xs font-bold uppercase tracking-wider text-teal-900">
-              Score Analysis &amp; Deduction
+      <!-- RIGHT COLUMN: Instant Results Dashboard -->
+      <div class="lg:col-span-6 space-y-5">
+        <!-- NET SCORE Hero Card -->
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 shadow-xs transition-all">
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-xs font-bold uppercase tracking-wider text-slate-500">
+              NET SCORE
+            </span>
+            <span id={`${idPrefix}-score-pct-badge`} class="rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-xs font-bold text-teal-800">
+              40.0%
+            </span>
+          </div>
+
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id={`${idPrefix}-net-score-display`} class="font-mono text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+              80.00
+            </span>
+            <span id={`${idPrefix}-out-of-display`} class="font-mono text-sm font-semibold text-slate-500">
+              / 200
+            </span>
+          </div>
+
+          <!-- Score Visual Progress Bar -->
+          <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+            <div
+              id={`${idPrefix}-progress-bar`}
+              class="h-full rounded-full bg-teal-600 transition-all duration-300"
+              style="width: 40%;"
+              role="progressbar"
+              aria-valuenow="40"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Penalty Status Banner -->
+        <div id={`${idPrefix}-penalty-banner`} class="rounded-xl border border-teal-200 bg-teal-50/80 p-4 transition-all">
+          <div class="flex items-start gap-3">
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white text-xs font-bold">
+              ✓
+            </span>
+            <div>
+              <div id={`${idPrefix}-banner-title`} class="text-xs font-bold uppercase tracking-wider text-teal-900">
+                Score Analysis &amp; Deduction
+              </div>
+              <p id={`${idPrefix}-banner-text`} class="mt-1 text-xs leading-relaxed text-teal-800">
+                Negative marking deducted <strong id={`${idPrefix}-banner-lost-marks`}>6.60 marks</strong> from your gross score of 80.00. Accuracy: 80.0%.
+              </p>
             </div>
-            <p id={`${idPrefix}-banner-text`} class="mt-1 text-xs leading-relaxed text-teal-800">
-              Negative marking deducted <strong id={`${idPrefix}-banner-lost-marks`}>6.60 marks</strong> from your gross score of 80.00. Accuracy: 80.0%.
+          </div>
+        </div>
+
+        <!-- 6-Metric Stats Grid (3x2 on desktop for spacious breathing room) -->
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <!-- 1. Correct -->
+          <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Correct</div>
+            <div id={`${idPrefix}-stat-correct`} class="mt-1 font-mono text-2xl font-bold text-emerald-600">40</div>
+            <div id={`${idPrefix}-stat-gross`} class="text-[0.6875rem] text-slate-500 font-mono">+80.00 marks gross</div>
+          </div>
+
+          <!-- 2. Wrong -->
+          <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Wrong</div>
+            <div id={`${idPrefix}-stat-wrong`} class="mt-1 font-mono text-2xl font-bold text-rose-600">10</div>
+            <div id={`${idPrefix}-stat-deduction`} class="text-[0.6875rem] text-rose-600 font-mono">-6.60 marks penalty</div>
+          </div>
+
+          <!-- 3. Unattempted -->
+          <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Unattempted</div>
+            <div id={`${idPrefix}-stat-unattempted`} class="mt-1 font-mono text-2xl font-bold text-slate-700">50</div>
+            <div class="text-[0.6875rem] text-slate-500 font-mono">0 marks (No risk)</div>
+          </div>
+
+          <!-- 4. Accuracy -->
+          <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Accuracy</span>
+              <span id={`${idPrefix}-stat-accuracy-tag`} class="text-[0.625rem] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                Good
+              </span>
+            </div>
+            <div id={`${idPrefix}-stat-accuracy`} class="mt-1 font-mono text-2xl font-bold text-slate-900">80.0%</div>
+            <div class="text-[0.6875rem] text-slate-500 font-mono">Correct / Attempted</div>
+          </div>
+
+          <!-- 5. Break-Even Accuracy -->
+          <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Break-Even</span>
+              <span class="text-[0.625rem] font-mono text-slate-400" title="Accuracy needed for expected return > 0">ⓘ</span>
+            </div>
+            <div id={`${idPrefix}-stat-breakeven`} class="mt-1 font-mono text-2xl font-bold text-slate-900">25.0%</div>
+            <div class="text-[0.6875rem] text-slate-500 font-mono">Min guessing hurdle</div>
+          </div>
+
+          <!-- 6. Marks per Attempt -->
+          <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Marks / Att.</span>
+              <span class="text-[0.625rem] font-mono text-slate-400" title="Average net marks earned per question attempted">ⓘ</span>
+            </div>
+            <div id={`${idPrefix}-stat-mpa`} class="mt-1 font-mono text-2xl font-bold text-teal-700">1.60</div>
+            <div class="text-[0.6875rem] text-slate-500 font-mono">Efficiency metric</div>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Calculation Formula Card -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs">
+          <div class="font-bold text-slate-900 uppercase tracking-wider">
+            Step-by-Step Mathematical Calculation:
+          </div>
+          <div class="mt-2 space-y-1.5 font-mono text-[0.8125rem] text-slate-800">
+            <div class="flex items-center justify-between border-b border-slate-200/60 pb-1">
+              <span>Positive Marks (Gross):</span>
+              <span id={`${idPrefix}-step-gross`} class="font-bold text-emerald-700">40 × 2.00 = +80.00</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-200/60 pb-1">
+              <span>Negative Penalty Deducted:</span>
+              <span id={`${idPrefix}-step-penalty`} class="font-bold text-rose-700">10 × 0.66 = -6.60</span>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+              <span class="font-bold text-slate-900">Net Calculated Score:</span>
+              <span id={`${idPrefix}-step-net`} class="font-bold text-teal-800 text-sm">80.00 - 6.60 = 73.40</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save this result / History Section -->
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-900">Session Test History</span>
+              <span class="rounded-full bg-blue-600 px-1.5 py-0.2 text-[0.5625rem] font-bold text-white uppercase">New</span>
+            </div>
+            <button
+              type="button"
+              id={`${idPrefix}-save-result-btn`}
+              class="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-100 transition-colors cursor-pointer"
+            >
+              Save this result
+            </button>
+          </div>
+
+          <div id={`${idPrefix}-history-list`} class="mt-3 space-y-2 text-xs">
+            <p class="text-slate-400 italic text-[0.6875rem]">No saved attempts yet. Click "Save this result" to compare mock scores.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GEO & AEO Strategy Section: Authoritative Exam Rules Comparison Table -->
+    <section class="mt-12 border-t border-slate-200 pt-8" aria-labelledby={`${idPrefix}-comparison-heading`}>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span class="rounded bg-teal-100 px-2 py-0.5 font-mono text-[0.6875rem] font-bold text-teal-800 uppercase">
+            Official Reference Table
+          </span>
+          <h3 id={`${idPrefix}-comparison-heading`} class="mt-2 text-lg sm:text-xl font-bold text-slate-900">
+            Negative Marking Schemes Across Major Indian Competitive Exams
+          </h3>
+        </div>
+        <span class="text-xs text-slate-500">Updated for 2025–2026 Examination Cycles</span>
+      </div>
+      <p class="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl">
+        Every national and state examining body applies distinct marking ratios. Review the verified breakdown below to calibrate your mock test guessing strategy:
+      </p>
+
+      <div class="mt-5 overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+        <table class="w-full border-collapse text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/90 font-bold uppercase tracking-wider text-slate-700">
+              <th class="px-3.5 py-3">Examination Body &amp; Exam</th>
+              <th class="px-3 py-3 text-center">Questions</th>
+              <th class="px-3 py-3 text-center">Total Marks</th>
+              <th class="px-3 py-3 text-center">Marks / Correct</th>
+              <th class="px-3 py-3 text-center text-rose-700">Penalty / Wrong</th>
+              <th class="px-3 py-3 text-center">Penalty Ratio</th>
+              <th class="px-3.5 py-3 text-center text-teal-800">Break-Even Acc.</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 bg-white font-mono text-[0.75rem]">
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">UPSC Civil Services Prelims (GS 1)</td>
+              <td class="px-3 py-2.5 text-center">100</td>
+              <td class="px-3 py-2.5 text-center">200</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.00</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.66</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">UPSC CSAT (Prelims Paper 2)</td>
+              <td class="px-3 py-2.5 text-center">80</td>
+              <td class="px-3 py-2.5 text-center">200</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.50</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.83</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">NEET UG (NTA Medical Entrance)</td>
+              <td class="px-3 py-2.5 text-center">180 (of 200)</td>
+              <td class="px-3 py-2.5 text-center">720</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+4.00</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-1.00</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">JEE Main (NTA Engineering)</td>
+              <td class="px-3 py-2.5 text-center">75 (of 90)</td>
+              <td class="px-3 py-2.5 text-center">300</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+4.00</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-1.00</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">SSC CGL / CHSL (Tier 1)</td>
+              <td class="px-3 py-2.5 text-center">100</td>
+              <td class="px-3 py-2.5 text-center">200</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.00</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.50</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">Banking (IBPS PO / SBI PO Prelims)</td>
+              <td class="px-3 py-2.5 text-center">100</td>
+              <td class="px-3 py-2.5 text-center">100</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.00</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.25</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">Railway RRB NTPC / Group D</td>
+              <td class="px-3 py-2.5 text-center">100</td>
+              <td class="px-3 py-2.5 text-center">100</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.00</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.33</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">State PSC (UPPSC / BPSC Prelims)</td>
+              <td class="px-3 py-2.5 text-center">150</td>
+              <td class="px-3 py-2.5 text-center">200</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.33</td>
+              <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.44</td>
+              <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
+            </tr>
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">MHT CET &amp; KCET (State CETs)</td>
+              <td class="px-3 py-2.5 text-center">150–180</td>
+              <td class="px-3 py-2.5 text-center">180–200</td>
+              <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1 / +2</td>
+              <td class="px-3 py-2.5 text-center text-slate-400 font-bold">0.00</td>
+              <td class="px-3 py-2.5 text-center font-sans text-emerald-700 font-semibold">No Penalty</td>
+              <td class="px-3.5 py-2.5 text-center font-bold text-emerald-600">0.0%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- The Mathematics of Option Elimination Callout -->
+      <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4 sm:p-5">
+        <div class="flex items-start gap-3">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white font-mono text-xs font-bold">
+            Σ
+          </span>
+          <div class="text-xs text-slate-700 space-y-2 leading-relaxed">
+            <div class="font-bold text-slate-900 text-sm">The Mathematics of Option Elimination (Expected Value Strategy):</div>
+            <p>
+              In any 4-option multiple-choice question with 1/3 negative marking, blind guessing has a probability of p = 0.25 (25%) and an expected return of:
+              <code class="block font-mono text-[0.75rem] font-bold text-slate-800 my-1 bg-white p-2 rounded border border-blue-100">Expected Value = (0.25 × +M) - (0.75 × 0.333M) = 0.00 marks</code>
+            </p>
+            <p>
+              However, when you <strong>eliminate 2 incorrect options</strong>, your probability of picking the correct answer jumps to p = 0.50 (50%). With M = 2.00 marks and penalty P = 0.66 marks:
+              <code class="block font-mono text-[0.75rem] font-bold text-teal-800 my-1 bg-white p-2 rounded border border-blue-100">Expected Value = (0.50 × +2.00) - (0.50 × 0.66) = +1.00 - 0.33 = +0.67 marks per question</code>
+              Intelligent guessing on 10 two-option eliminated questions yields a statistically expected net gain of approximately <strong>+6.70 marks</strong>, which can decisively alter selection cutoffs.
             </p>
           </div>
         </div>
       </div>
-
-      <!-- 6-Metric Stats Grid -->
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-2">
-        <!-- 1. Correct -->
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-          <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Correct</div>
-          <div id={`${idPrefix}-stat-correct`} class="mt-1 font-mono text-2xl font-bold text-emerald-600">40</div>
-          <div id={`${idPrefix}-stat-gross`} class="text-[0.6875rem] text-slate-500 font-mono">+80.00 marks gross</div>
-        </div>
-
-        <!-- 2. Wrong -->
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-          <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Wrong</div>
-          <div id={`${idPrefix}-stat-wrong`} class="mt-1 font-mono text-2xl font-bold text-rose-600">10</div>
-          <div id={`${idPrefix}-stat-deduction`} class="text-[0.6875rem] text-rose-600 font-mono">-6.60 marks penalty</div>
-        </div>
-
-        <!-- 3. Unattempted -->
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-          <div class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Unattempted</div>
-          <div id={`${idPrefix}-stat-unattempted`} class="mt-1 font-mono text-2xl font-bold text-slate-700">50</div>
-          <div class="text-[0.6875rem] text-slate-500 font-mono">0 marks (No risk)</div>
-        </div>
-
-        <!-- 4. Accuracy -->
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Accuracy</span>
-            <span id={`${idPrefix}-stat-accuracy-tag`} class="text-[0.625rem] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-              Good
-            </span>
-          </div>
-          <div id={`${idPrefix}-stat-accuracy`} class="mt-1 font-mono text-2xl font-bold text-slate-900">80.0%</div>
-          <div class="text-[0.6875rem] text-slate-500 font-mono">Correct / Attempted</div>
-        </div>
-
-        <!-- 5. Break-Even Accuracy -->
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Break-Even Accuracy</span>
-            <span class="text-[0.625rem] font-mono text-slate-400" title="Accuracy needed for expected return > 0">ⓘ</span>
-          </div>
-          <div id={`${idPrefix}-stat-breakeven`} class="mt-1 font-mono text-2xl font-bold text-slate-900">25.0%</div>
-          <div class="text-[0.6875rem] text-slate-500 font-mono">Min guessing hurdle</div>
-        </div>
-
-        <!-- 6. Marks per Attempt -->
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500">Marks per Attempt</span>
-            <span class="text-[0.625rem] font-mono text-slate-400" title="Average net marks earned per question attempted">ⓘ</span>
-          </div>
-          <div id={`${idPrefix}-stat-mpa`} class="mt-1 font-mono text-2xl font-bold text-teal-700">1.60</div>
-          <div class="text-[0.6875rem] text-slate-500 font-mono">Efficiency metric</div>
-        </div>
-      </div>
-
-      <!-- Step-by-Step Calculation Formula Card -->
-      <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs">
-        <div class="font-bold text-slate-900 uppercase tracking-wider">
-          Step-by-Step Mathematical Calculation:
-        </div>
-        <div class="mt-2 space-y-1.5 font-mono text-[0.8125rem] text-slate-800">
-          <div class="flex items-center justify-between border-b border-slate-200/60 pb-1">
-            <span>Positive Marks (Gross):</span>
-            <span id={`${idPrefix}-step-gross`} class="font-bold text-emerald-700">40 × 2.00 = +80.00</span>
-          </div>
-          <div class="flex items-center justify-between border-b border-slate-200/60 pb-1">
-            <span>Negative Penalty Deducted:</span>
-            <span id={`${idPrefix}-step-penalty`} class="font-bold text-rose-700">10 × 0.66 = -6.60</span>
-          </div>
-          <div class="flex items-center justify-between pt-1">
-            <span class="font-bold text-slate-900">Net Calculated Score:</span>
-            <span id={`${idPrefix}-step-net`} class="font-bold text-teal-800 text-sm">80.00 - 6.60 = 73.40</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Save this result / History Section -->
-      <div class="rounded-xl border border-slate-200 bg-white p-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-slate-900">Session Test History</span>
-            <span class="rounded-full bg-blue-600 px-1.5 py-0.2 text-[0.5625rem] font-bold text-white uppercase">New</span>
-          </div>
-          <button
-            type="button"
-            id={`${idPrefix}-save-result-btn`}
-            class="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-100 transition-colors cursor-pointer"
-          >
-            Save this result
-          </button>
-        </div>
-
-        <div id={`${idPrefix}-history-list`} class="mt-3 space-y-2 text-xs">
-          <p class="text-slate-400 italic text-[0.6875rem]">No saved attempts yet. Click "Save this result" to compare mock scores.</p>
-        </div>
-      </div>
-    </div>
+    </section>
   </div>
 
-  <!-- GEO & AEO Strategy Section: Authoritative Exam Rules Comparison Table -->
-  <section class="mt-12 border-t border-slate-200 pt-8" aria-labelledby={`${idPrefix}-comparison-heading`}>
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <span class="rounded bg-teal-100 px-2 py-0.5 font-mono text-[0.6875rem] font-bold text-teal-800 uppercase">
-          Official Reference Table
-        </span>
-        <h3 id={`${idPrefix}-comparison-heading`} class="mt-2 text-lg sm:text-xl font-bold text-slate-900">
-          Negative Marking Schemes Across Major Indian Competitive Exams
-        </h3>
-      </div>
-      <span class="text-xs text-slate-500">Updated for 2025–2026 Examination Cycles</span>
-    </div>
-    <p class="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl">
-      Every national and state examining body applies distinct marking ratios. Review the verified breakdown below to calibrate your mock test guessing strategy:
-    </p>
-
-    <div class="mt-5 overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
-      <table class="w-full border-collapse text-left text-xs">
-        <thead>
-          <tr class="border-b border-slate-200 bg-slate-50/90 font-bold uppercase tracking-wider text-slate-700">
-            <th class="px-3.5 py-3">Examination Body &amp; Exam</th>
-            <th class="px-3 py-3 text-center">Questions</th>
-            <th class="px-3 py-3 text-center">Total Marks</th>
-            <th class="px-3 py-3 text-center">Marks / Correct</th>
-            <th class="px-3 py-3 text-center text-rose-700">Penalty / Wrong</th>
-            <th class="px-3 py-3 text-center">Penalty Ratio</th>
-            <th class="px-3.5 py-3 text-center text-teal-800">Break-Even Acc.</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 bg-white font-mono text-[0.75rem]">
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">UPSC Civil Services Prelims (GS 1)</td>
-            <td class="px-3 py-2.5 text-center">100</td>
-            <td class="px-3 py-2.5 text-center">200</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.00</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.66</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">UPSC CSAT (Prelims Paper 2)</td>
-            <td class="px-3 py-2.5 text-center">80</td>
-            <td class="px-3 py-2.5 text-center">200</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.50</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.83</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">NEET UG (NTA Medical Entrance)</td>
-            <td class="px-3 py-2.5 text-center">180 (of 200)</td>
-            <td class="px-3 py-2.5 text-center">720</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+4.00</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-1.00</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">JEE Main (NTA Engineering)</td>
-            <td class="px-3 py-2.5 text-center">75 (of 90)</td>
-            <td class="px-3 py-2.5 text-center">300</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+4.00</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-1.00</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">SSC CGL / CHSL (Tier 1)</td>
-            <td class="px-3 py-2.5 text-center">100</td>
-            <td class="px-3 py-2.5 text-center">200</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+2.00</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.50</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">Banking (IBPS PO / SBI PO Prelims)</td>
-            <td class="px-3 py-2.5 text-center">100</td>
-            <td class="px-3 py-2.5 text-center">100</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.00</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.25</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/4th</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">20.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">Railway RRB NTPC / Group D</td>
-            <td class="px-3 py-2.5 text-center">100</td>
-            <td class="px-3 py-2.5 text-center">100</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.00</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.33</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">State PSC (UPPSC / BPSC Prelims)</td>
-            <td class="px-3 py-2.5 text-center">150</td>
-            <td class="px-3 py-2.5 text-center">200</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1.33</td>
-            <td class="px-3 py-2.5 text-center text-rose-600 font-bold">-0.44</td>
-            <td class="px-3 py-2.5 text-center font-sans">1/3rd</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-teal-700">25.0%</td>
-          </tr>
-          <tr class="hover:bg-slate-50/60">
-            <td class="px-3.5 py-2.5 font-sans font-semibold text-slate-900">MHT CET &amp; KCET (State CETs)</td>
-            <td class="px-3 py-2.5 text-center">150–180</td>
-            <td class="px-3 py-2.5 text-center">180–200</td>
-            <td class="px-3 py-2.5 text-center text-emerald-600 font-bold">+1 / +2</td>
-            <td class="px-3 py-2.5 text-center text-slate-400 font-bold">0.00</td>
-            <td class="px-3 py-2.5 text-center font-sans text-emerald-700 font-semibold">No Penalty</td>
-            <td class="px-3.5 py-2.5 text-center font-bold text-emerald-600">0.0%</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- The Mathematics of Option Elimination Callout -->
-    <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4 sm:p-5">
-      <div class="flex items-start gap-3">
-        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white font-mono text-xs font-bold">
-          Σ
-        </span>
-        <div class="text-xs text-slate-700 space-y-2 leading-relaxed">
-          <div class="font-bold text-slate-900 text-sm">The Mathematics of Option Elimination (Expected Value Strategy):</div>
-          <p>
-            In any 4-option multiple-choice question with 1/3 negative marking, blind guessing has a probability of p = 0.25 (25%) and an expected return of:
-            <code class="block font-mono text-[0.75rem] font-bold text-slate-800 my-1 bg-white p-2 rounded border border-blue-100">Expected Value = (0.25 × +M) - (0.75 × 0.333M) = 0.00 marks</code>
-          </p>
-          <p>
-            However, when you <strong>eliminate 2 incorrect options</strong>, your probability of picking the correct answer jumps to p = 0.50 (50%). With M = 2.00 marks and penalty P = 0.66 marks:
-            <code class="block font-mono text-[0.75rem] font-bold text-teal-800 my-1 bg-white p-2 rounded border border-blue-100">Expected Value = (0.50 × +2.00) - (0.50 × 0.66) = +1.00 - 0.33 = +0.67 marks per question</code>
-            Intelligent guessing on 10 two-option eliminated questions yields a statistically expected net gain of approximately <strong>+6.70 marks</strong>, which can decisively alter selection cutoffs.
-          </p>
+  <!-- =========================================================================
+       DEDICATED PRINTABLE SCORECARD REPORT (Structured, Uncongested, A4 PDF Ready)
+       Hidden on Screen, Becomes the Sole Visible Content During Print / PDF Export
+       ========================================================================= -->
+  <div id={`${idPrefix}-print-report`} class="print-scorecard-root">
+    <!-- 1. Master Header: AllCutOff Branding & Verification Bar -->
+    <header class="pdf-header">
+      <div class="pdf-header-top">
+        <div class="pdf-brand">
+          <div class="pdf-brand-icon">AC</div>
+          <div>
+            <div class="pdf-brand-title">AllCutOff.com</div>
+            <div class="pdf-brand-sub">Academic Intelligence &amp; Examination Scoring Suite</div>
+          </div>
+        </div>
+        <div class="pdf-meta-right">
+          <span class="pdf-verified-badge">✓ VERIFIED SCORECARD</span>
+          <div class="pdf-meta-row" id={`${idPrefix}-print-datetime`}>Oct 31, 2026 • 08:45 PM</div>
+          <div class="pdf-meta-id" id={`${idPrefix}-print-report-id`}>Doc Ref: #NM-2026</div>
         </div>
       </div>
-    </div>
-  </section>
+
+      <div class="pdf-title-banner">
+        <div>
+          <h1 class="pdf-exam-name" id={`${idPrefix}-print-exam-name`}>
+            UPSC Civil Services Prelims (GS Paper 1)
+          </h1>
+          <p class="pdf-exam-subtext">
+            Candidate Negative Marking Audit &amp; Performance Scorecard Report
+          </p>
+        </div>
+        <div class="pdf-badge-tag">Academic Cycle 2025–26</div>
+      </div>
+    </header>
+
+    <!-- 2. Test Configuration & Marking Rules Strip -->
+    <section class="pdf-section">
+      <div class="pdf-section-label">1. EXAM SPECIFICATIONS &amp; MARKING SCHEME</div>
+      <div class="pdf-config-grid">
+        <div class="pdf-config-box">
+          <span class="pdf-cfg-lbl">Total Questions:</span>
+          <span class="pdf-cfg-val" id={`${idPrefix}-print-cfg-total`}>100 Questions</span>
+        </div>
+        <div class="pdf-config-box">
+          <span class="pdf-cfg-lbl">Maximum Marks:</span>
+          <span class="pdf-cfg-val" id={`${idPrefix}-print-cfg-max`}>200.00 Marks</span>
+        </div>
+        <div class="pdf-config-box">
+          <span class="pdf-cfg-lbl">Reward Per Correct (+M):</span>
+          <span class="pdf-cfg-val pdf-text-emerald" id={`${idPrefix}-print-cfg-mpq`}>+2.00 Marks</span>
+        </div>
+        <div class="pdf-config-box">
+          <span class="pdf-cfg-lbl">Penalty Per Incorrect (-P):</span>
+          <span class="pdf-cfg-val pdf-text-rose" id={`${idPrefix}-print-cfg-penalty`}>-0.66 Marks (1/3rd)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Candidate Attempt Summary (Spacious 4-Card Grid) -->
+    <section class="pdf-section">
+      <div class="pdf-section-label">2. CANDIDATE ATTEMPT &amp; ACCURACY SUMMARY</div>
+      <div class="pdf-attempt-grid">
+        <!-- Attempted -->
+        <div class="pdf-card pdf-card-slate">
+          <div class="pdf-card-title">QUESTIONS ATTEMPTED</div>
+          <div class="pdf-card-number" id={`${idPrefix}-print-att-count`}>50</div>
+          <div class="pdf-card-sub" id={`${idPrefix}-print-att-pct`}>50% of test paper</div>
+        </div>
+        <!-- Correct -->
+        <div class="pdf-card pdf-card-emerald">
+          <div class="pdf-card-title pdf-text-emerald">CORRECT ANSWERS</div>
+          <div class="pdf-card-number pdf-text-emerald" id={`${idPrefix}-print-correct-count`}>40</div>
+          <div class="pdf-card-sub pdf-text-emerald font-semibold" id={`${idPrefix}-print-correct-sub`}>+80.00 gross earned</div>
+        </div>
+        <!-- Wrong -->
+        <div class="pdf-card pdf-card-rose">
+          <div class="pdf-card-title pdf-text-rose">WRONG (MISTAKES)</div>
+          <div class="pdf-card-number pdf-text-rose" id={`${idPrefix}-print-wrong-count`}>10</div>
+          <div class="pdf-card-sub pdf-text-rose font-semibold" id={`${idPrefix}-print-wrong-sub`}>-6.60 penalty loss</div>
+        </div>
+        <!-- Unattempted -->
+        <div class="pdf-card pdf-card-slate">
+          <div class="pdf-card-title">UNATTEMPTED (SKIPPED)</div>
+          <div class="pdf-card-number" id={`${idPrefix}-print-unatt-count`}>50</div>
+          <div class="pdf-card-sub" id={`${idPrefix}-print-unatt-sub`}>50% skipped (0 risk)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Hero Net Score & Performance Outcome -->
+    <section class="pdf-section">
+      <div class="pdf-hero-card">
+        <div class="pdf-hero-grid">
+          <!-- Left: Big Score & Progress -->
+          <div class="pdf-hero-main">
+            <div class="pdf-hero-tag">FINAL NET CALCULATED SCORE</div>
+            <div class="pdf-score-row">
+              <span class="pdf-score-num" id={`${idPrefix}-print-net-score`}>73.40</span>
+              <span class="pdf-score-den" id={`${idPrefix}-print-net-max`}>/ 200.00</span>
+              <span class="pdf-score-pct-badge" id={`${idPrefix}-print-net-pct`}>36.7%</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="pdf-progress-track">
+              <div class="pdf-progress-bar" id={`${idPrefix}-print-progress-bar`} style="width: 36.7%;"></div>
+            </div>
+          </div>
+          <!-- Right: Key Numbers Breakdown -->
+          <div class="pdf-hero-side">
+            <div class="pdf-summary-line">
+              <span>Gross Positive Score:</span>
+              <strong class="pdf-text-emerald" id={`${idPrefix}-print-hero-gross`}>+80.00 Marks</strong>
+            </div>
+            <div class="pdf-summary-line">
+              <span>Negative Penalty Lost:</span>
+              <strong class="pdf-text-rose" id={`${idPrefix}-print-hero-loss`}>-6.60 Marks</strong>
+            </div>
+            <div class="pdf-summary-line">
+              <span>Score Erosion Ratio:</span>
+              <strong id={`${idPrefix}-print-hero-ratio`}>8.25% of gross</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outcome Assessment Banner -->
+        <div class="pdf-banner" id={`${idPrefix}-print-banner`}>
+          <span class="pdf-banner-icon" id={`${idPrefix}-print-banner-icon`}>✓</span>
+          <div class="pdf-banner-text" id={`${idPrefix}-print-banner-text`}>
+            <strong>POSITIVE GUESSING RETURN:</strong> Your accuracy (80.0%) safely exceeded the 25.0% break-even hurdle. Negative marking deducted 6.60 marks from your gross score of 80.00.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Advanced Performance & Strategic Efficiency Metrics -->
+    <section class="pdf-section">
+      <div class="pdf-section-label">3. ACCURACY &amp; STRATEGIC PERFORMANCE ANALYTICS</div>
+      <div class="pdf-metrics-grid">
+        <div class="pdf-metric-card">
+          <div class="pdf-metric-header">
+            <span class="pdf-metric-title">ACCURACY RATE</span>
+            <span class="pdf-tag" id={`${idPrefix}-print-acc-tag`}>High</span>
+          </div>
+          <div class="pdf-metric-value" id={`${idPrefix}-print-acc-val`}>80.0%</div>
+          <div class="pdf-metric-sub">Correct (40) ÷ Attempted (50)</div>
+        </div>
+        <div class="pdf-metric-card">
+          <div class="pdf-metric-header">
+            <span class="pdf-metric-title">BREAK-EVEN HURDLE</span>
+            <span class="pdf-tag pdf-tag-slate">Zero-EV</span>
+          </div>
+          <div class="pdf-metric-value" id={`${idPrefix}-print-be-val`}>25.0%</div>
+          <div class="pdf-metric-sub">Minimum accuracy for gain &gt; 0</div>
+        </div>
+        <div class="pdf-metric-card">
+          <div class="pdf-metric-header">
+            <span class="pdf-metric-title">MARKS PER ATTEMPT</span>
+            <span class="pdf-tag pdf-tag-teal">Efficiency</span>
+          </div>
+          <div class="pdf-metric-value pdf-text-teal" id={`${idPrefix}-print-mpa-val`}>1.47 marks/Q</div>
+          <div class="pdf-metric-sub">Net points earned per question</div>
+        </div>
+        <div class="pdf-metric-card">
+          <div class="pdf-metric-header">
+            <span class="pdf-metric-title">PENALTY DAMAGE RATIO</span>
+            <span class="pdf-tag pdf-tag-rose">Erosion</span>
+          </div>
+          <div class="pdf-metric-value pdf-text-rose" id={`${idPrefix}-print-erosion-val`}>8.2%</div>
+          <div class="pdf-metric-sub">% of gross score eaten by errors</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Step-by-Step Mathematical Proof & Question Breakdown Table (Side-by-Side) -->
+    <section class="pdf-section">
+      <div class="pdf-side-by-side">
+        <!-- Step-by-Step Mathematical Proof -->
+        <div class="pdf-half-box">
+          <div class="pdf-section-label">4. STEP-BY-STEP MATHEMATICAL PROOF</div>
+          <div class="pdf-proof-card">
+            <div class="pdf-proof-row">
+              <span class="pdf-proof-lbl">1. Positive Gross Marks:</span>
+              <span class="pdf-proof-val pdf-text-emerald" id={`${idPrefix}-print-step-gross`}>40 × 2.00 = +80.00 marks</span>
+            </div>
+            <div class="pdf-proof-row">
+              <span class="pdf-proof-lbl">2. Penalty Deducted:</span>
+              <span class="pdf-proof-val pdf-text-rose" id={`${idPrefix}-print-step-loss`}>10 × 0.66 = -6.60 marks</span>
+            </div>
+            <div class="pdf-proof-row pdf-proof-highlight">
+              <span class="pdf-proof-lbl">3. Net Calculated Score:</span>
+              <span class="pdf-proof-val pdf-text-teal font-bold" id={`${idPrefix}-print-step-net`}>80.00 - 6.60 = 73.40 marks</span>
+            </div>
+            <div class="pdf-proof-row">
+              <span class="pdf-proof-lbl">4. Final Percentage:</span>
+              <span class="pdf-proof-val font-semibold" id={`${idPrefix}-print-step-pct`}>(73.40 ÷ 200) × 100 = 36.70%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question Distribution Table -->
+        <div class="pdf-half-box">
+          <div class="pdf-section-label">5. QUESTION ATTEMPT BREAKDOWN</div>
+          <table class="pdf-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="text-center">Count</th>
+                <th class="text-center">Share</th>
+                <th class="text-right">Marks Effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong class="pdf-text-emerald">Correct Answers</strong></td>
+                <td class="text-center" id={`${idPrefix}-print-tbl-c-cnt`}>40</td>
+                <td class="text-center" id={`${idPrefix}-print-tbl-c-pct`}>40%</td>
+                <td class="text-right pdf-text-emerald font-bold" id={`${idPrefix}-print-tbl-c-mrk`}>+80.00</td>
+              </tr>
+              <tr>
+                <td><strong class="pdf-text-rose">Incorrect (Mistakes)</strong></td>
+                <td class="text-center" id={`${idPrefix}-print-tbl-w-cnt`}>10</td>
+                <td class="text-center" id={`${idPrefix}-print-tbl-w-pct`}>10%</td>
+                <td class="text-right pdf-text-rose font-bold" id={`${idPrefix}-print-tbl-w-mrk`}>-6.60</td>
+              </tr>
+              <tr>
+                <td><strong>Unattempted (Skipped)</strong></td>
+                <td class="text-center" id={`${idPrefix}-print-tbl-u-cnt`}>50</td>
+                <td class="text-center" id={`${idPrefix}-print-tbl-u-pct`}>50%</td>
+                <td class="text-right">0.00</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th>Total Test Paper</th>
+                <th class="text-center" id={`${idPrefix}-print-tbl-tot-cnt`}>100</th>
+                <th class="text-center">100%</th>
+                <th class="text-right font-bold pdf-text-teal" id={`${idPrefix}-print-tbl-tot-net`}>73.40 Net</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Strategic Recommendations & Key Takeaways -->
+    <section class="pdf-section">
+      <div class="pdf-section-label">6. STRATEGIC EXAM RECOMMENDATIONS &amp; ACTION ITEMS</div>
+      <div class="pdf-recom-card">
+        <ul class="pdf-recom-list" id={`${idPrefix}-print-recom-list`}>
+          <li><strong>Accuracy Discipline:</strong> Excellent accuracy (80.0%). Under exam conditions, keep this strong threshold and resist speculative guessing near the final minutes.</li>
+          <li><strong>Option Elimination Rule:</strong> On 4-option questions with 1/3 negative marking, eliminate at least 2 options before attempting. Guessing with 2 options eliminated has an expected gain of +0.67 marks per question.</li>
+          <li><strong>Unattempted Question Audit:</strong> 50 questions (50% of paper) were skipped. Practice timed mock rounds to verify whether time deficit or question selection was the bottleneck.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 8. Master Footer: Security & Authority Stamp -->
+    <footer class="pdf-footer">
+      <div class="pdf-footer-left">
+        <div>Official Mock Test Scorecard • Generated by AllCutOff Examination Engine • Private &amp; Confidential</div>
+        <div class="pdf-footer-url">Verify or recalculate at: <strong>https://allcutoff.com/calculator/negative-marking-calculator</strong></div>
+      </div>
+      <div class="pdf-footer-right">
+        <span>Page 1 of 1</span>
+      </div>
+    </footer>
+  </div>
 </div>
 
-<!-- Reactive Client-Side Calculator Engine -->
+<!-- =========================================================================
+     CLIENT-SIDE REACTIVE COMPUTATION ENGINE
+     ========================================================================= -->
 <script define:vars={{ idPrefix, presets: NEGATIVE_MARKING_PRESETS }}>
   (function initNegativeMarkingWidget() {
     const totalQInput = document.getElementById(`${idPrefix}-total-questions`);
@@ -642,7 +916,7 @@ const { idPrefix = 'neg-calc' } = Astro.props;
     const correctPreview = document.getElementById(`${idPrefix}-correct-preview`);
     const penaltyPerWrong = document.getElementById(`${idPrefix}-penalty-per-wrong`);
 
-    // Output elements
+    // Screen Output Elements
     const netScoreDisplay = document.getElementById(`${idPrefix}-net-score-display`);
     const outOfDisplay = document.getElementById(`${idPrefix}-out-of-display`);
     const scorePctBadge = document.getElementById(`${idPrefix}-score-pct-badge`);
@@ -675,6 +949,207 @@ const { idPrefix = 'neg-calc' } = Astro.props;
 
     let currentPreset = presets[0];
 
+    // Helper: Determine human-friendly ratio label
+    function getRatioLabel(ratioVal) {
+      if (ratioVal === '0.3333333333333333') return '1/3rd';
+      if (ratioVal === '0.25') return '1/4th';
+      if (ratioVal === '0.2') return '1/5th';
+      if (ratioVal === '0.5') return '1/2';
+      if (ratioVal === '0') return 'No Penalty';
+      return 'Custom Rate';
+    }
+
+    // Helper: Update the Dedicated Printable Scorecard DOM
+    function updatePrintReport(data) {
+      const { totalQ, maxMarks, mpq, penalty, ratioLabel, attempted, wrong, correct, unattempted, gross, deduction, net, scorePct, accuracy, breakeven, mpa } = data;
+
+      const printExamName = document.getElementById(`${idPrefix}-print-exam-name`);
+      if (printExamName) printExamName.textContent = currentPreset ? currentPreset.name : 'Competitive Exam';
+
+      const printDateTime = document.getElementById(`${idPrefix}-print-datetime`);
+      if (printDateTime) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        printDateTime.textContent = `${dateStr} • ${timeStr}`;
+      }
+
+      const printCfgTotal = document.getElementById(`${idPrefix}-print-cfg-total`);
+      if (printCfgTotal) printCfgTotal.textContent = `${totalQ} Questions`;
+
+      const printCfgMax = document.getElementById(`${idPrefix}-print-cfg-max`);
+      if (printCfgMax) printCfgMax.textContent = `${maxMarks.toFixed(2)} Marks`;
+
+      const printCfgMpq = document.getElementById(`${idPrefix}-print-cfg-mpq`);
+      if (printCfgMpq) printCfgMpq.textContent = `+${mpq.toFixed(2)} Marks`;
+
+      const printCfgPenalty = document.getElementById(`${idPrefix}-print-cfg-penalty`);
+      if (printCfgPenalty) {
+        printCfgPenalty.textContent = penalty > 0 ? `-${penalty.toFixed(2)} Marks (${ratioLabel})` : '0.00 (No Penalty)';
+      }
+
+      const printAttCount = document.getElementById(`${idPrefix}-print-att-count`);
+      if (printAttCount) printAttCount.textContent = String(attempted);
+
+      const printAttPct = document.getElementById(`${idPrefix}-print-att-pct`);
+      if (printAttPct) printAttPct.textContent = `${Math.round((attempted / totalQ) * 100)}% of test paper`;
+
+      const printCorrectCount = document.getElementById(`${idPrefix}-print-correct-count`);
+      if (printCorrectCount) printCorrectCount.textContent = String(correct);
+
+      const printCorrectSub = document.getElementById(`${idPrefix}-print-correct-sub`);
+      if (printCorrectSub) printCorrectSub.textContent = `+${gross.toFixed(2)} gross earned`;
+
+      const printWrongCount = document.getElementById(`${idPrefix}-print-wrong-count`);
+      if (printWrongCount) printWrongCount.textContent = String(wrong);
+
+      const printWrongSub = document.getElementById(`${idPrefix}-print-wrong-sub`);
+      if (printWrongSub) printWrongSub.textContent = `-${deduction.toFixed(2)} penalty lost`;
+
+      const printUnattCount = document.getElementById(`${idPrefix}-print-unatt-count`);
+      if (printUnattCount) printUnattCount.textContent = String(unattempted);
+
+      const printUnattSub = document.getElementById(`${idPrefix}-print-unatt-sub`);
+      if (printUnattSub) printUnattSub.textContent = `${Math.round((unattempted / totalQ) * 100)}% skipped (0 risk)`;
+
+      const printNetScore = document.getElementById(`${idPrefix}-print-net-score`);
+      if (printNetScore) printNetScore.textContent = net.toFixed(2);
+
+      const printNetMax = document.getElementById(`${idPrefix}-print-net-max`);
+      if (printNetMax) printNetMax.textContent = `/ ${maxMarks.toFixed(2)}`;
+
+      const printNetPct = document.getElementById(`${idPrefix}-print-net-pct`);
+      if (printNetPct) printNetPct.textContent = `${scorePct.toFixed(1)}%`;
+
+      const printProgressBar = document.getElementById(`${idPrefix}-print-progress-bar`);
+      if (printProgressBar) {
+        const clampedPct = Math.max(0, Math.min(100, scorePct));
+        printProgressBar.style.width = `${clampedPct}%`;
+      }
+
+      const printHeroGross = document.getElementById(`${idPrefix}-print-hero-gross`);
+      if (printHeroGross) printHeroGross.textContent = `+${gross.toFixed(2)} Marks`;
+
+      const printHeroLoss = document.getElementById(`${idPrefix}-print-hero-loss`);
+      if (printHeroLoss) printHeroLoss.textContent = `-${deduction.toFixed(2)} Marks`;
+
+      const printHeroRatio = document.getElementById(`${idPrefix}-print-hero-ratio`);
+      if (printHeroRatio) {
+        printHeroRatio.textContent = gross > 0 ? `${((deduction / gross) * 100).toFixed(1)}% of gross` : '0.0% of gross';
+      }
+
+      const printBanner = document.getElementById(`${idPrefix}-print-banner`);
+      const printBannerText = document.getElementById(`${idPrefix}-print-banner-text`);
+      const printBannerIcon = document.getElementById(`${idPrefix}-print-banner-icon`);
+      if (printBanner && printBannerText && printBannerIcon) {
+        if (penalty === 0) {
+          printBanner.className = 'pdf-banner pdf-banner-emerald';
+          printBannerIcon.textContent = '✓';
+          printBannerText.innerHTML = `<strong>NO PENALTY SCHEME:</strong> Every correct response yields full marks with zero deduction risk for mistakes. Attempted ${attempted} of ${totalQ} questions with ${accuracy.toFixed(1)}% accuracy.`;
+        } else if (attempted === 0) {
+          printBanner.className = 'pdf-banner pdf-banner-slate';
+          printBannerIcon.textContent = 'ℹ';
+          printBannerText.textContent = `No questions attempted yet. Enter questions attempted and mistakes in the test calculator to view negative marking penalty analysis.`;
+        } else if (accuracy >= breakeven) {
+          printBanner.className = 'pdf-banner pdf-banner-teal';
+          printBannerIcon.textContent = '✓';
+          const lossShare = gross > 0 ? Math.round((deduction / gross) * 100) : 0;
+          printBannerText.innerHTML = `<strong>POSITIVE GUESSING RETURN:</strong> Your accuracy (${accuracy.toFixed(1)}%) safely exceeded the ${breakeven.toFixed(1)}% break-even hurdle. Mistakes deducted <strong>${deduction.toFixed(2)} marks</strong> (${lossShare}% of gross score).`;
+        } else {
+          printBanner.className = 'pdf-banner pdf-banner-rose';
+          printBannerIcon.textContent = '⚠';
+          printBannerText.innerHTML = `<strong>CRITICAL PENALTY EROSION:</strong> Mistakes severely damaged your score, deducting <strong>${deduction.toFixed(2)} marks</strong>. Your accuracy (${accuracy.toFixed(1)}%) fell below the ${breakeven.toFixed(1)}% break-even hurdle.`;
+        }
+      }
+
+      const printAccVal = document.getElementById(`${idPrefix}-print-acc-val`);
+      if (printAccVal) printAccVal.textContent = `${accuracy.toFixed(1)}%`;
+
+      const printAccTag = document.getElementById(`${idPrefix}-print-acc-tag`);
+      if (printAccTag) {
+        if (accuracy >= 80) {
+          printAccTag.textContent = 'High';
+          printAccTag.className = 'pdf-tag pdf-tag-emerald';
+        } else if (accuracy >= breakeven) {
+          printAccTag.textContent = 'Solid';
+          printAccTag.className = 'pdf-tag pdf-tag-teal';
+        } else {
+          printAccTag.textContent = 'Risk';
+          printAccTag.className = 'pdf-tag pdf-tag-rose';
+        }
+      }
+
+      const printBeVal = document.getElementById(`${idPrefix}-print-be-val`);
+      if (printBeVal) printBeVal.textContent = `${breakeven.toFixed(1)}%`;
+
+      const printMpaVal = document.getElementById(`${idPrefix}-print-mpa-val`);
+      if (printMpaVal) printMpaVal.textContent = `${mpa.toFixed(2)} marks/Q`;
+
+      const printErosionVal = document.getElementById(`${idPrefix}-print-erosion-val`);
+      if (printErosionVal) {
+        printErosionVal.textContent = gross > 0 ? `${((deduction / gross) * 100).toFixed(1)}%` : '0.0%';
+      }
+
+      const printStepGross = document.getElementById(`${idPrefix}-print-step-gross`);
+      if (printStepGross) printStepGross.textContent = `${correct} Correct × ${mpq.toFixed(2)} = +${gross.toFixed(2)} marks`;
+
+      const printStepLoss = document.getElementById(`${idPrefix}-print-step-loss`);
+      if (printStepLoss) printStepLoss.textContent = `${wrong} Mistakes × ${penalty.toFixed(2)} = -${deduction.toFixed(2)} marks`;
+
+      const printStepNet = document.getElementById(`${idPrefix}-print-step-net`);
+      if (printStepNet) printStepNet.textContent = `${gross.toFixed(2)} - ${deduction.toFixed(2)} = ${net.toFixed(2)} marks`;
+
+      const printStepPct = document.getElementById(`${idPrefix}-print-step-pct`);
+      if (printStepPct) printStepPct.textContent = `(${net.toFixed(2)} ÷ ${maxMarks.toFixed(2)}) × 100 = ${scorePct.toFixed(2)}%`;
+
+      const printTblCCnt = document.getElementById(`${idPrefix}-print-tbl-c-cnt`);
+      if (printTblCCnt) printTblCCnt.textContent = String(correct);
+      const printTblCPct = document.getElementById(`${idPrefix}-print-tbl-c-pct`);
+      if (printTblCPct) printTblCPct.textContent = `${Math.round((correct / totalQ) * 100)}%`;
+      const printTblCMrk = document.getElementById(`${idPrefix}-print-tbl-c-mrk`);
+      if (printTblCMrk) printTblCMrk.textContent = `+${gross.toFixed(2)}`;
+
+      const printTblWCnt = document.getElementById(`${idPrefix}-print-tbl-w-cnt`);
+      if (printTblWCnt) printTblWCnt.textContent = String(wrong);
+      const printTblWPct = document.getElementById(`${idPrefix}-print-tbl-w-pct`);
+      if (printTblWPct) printTblWPct.textContent = `${Math.round((wrong / totalQ) * 100)}%`;
+      const printTblWMrk = document.getElementById(`${idPrefix}-print-tbl-w-mrk`);
+      if (printTblWMrk) printTblWMrk.textContent = `-${deduction.toFixed(2)}`;
+
+      const printTblUCnt = document.getElementById(`${idPrefix}-print-tbl-u-cnt`);
+      if (printTblUCnt) printTblUCnt.textContent = String(unattempted);
+      const printTblUPct = document.getElementById(`${idPrefix}-print-tbl-u-pct`);
+      if (printTblUPct) printTblUPct.textContent = `${Math.round((unattempted / totalQ) * 100)}%`;
+
+      const printTblTotCnt = document.getElementById(`${idPrefix}-print-tbl-tot-cnt`);
+      if (printTblTotCnt) printTblTotCnt.textContent = String(totalQ);
+      const printTblTotNet = document.getElementById(`${idPrefix}-print-tbl-tot-net`);
+      if (printTblTotNet) printTblTotNet.textContent = `${net.toFixed(2)} Net`;
+
+      const printRecomList = document.getElementById(`${idPrefix}-print-recom-list`);
+      if (printRecomList) {
+        let rec1 = '';
+        if (accuracy >= 80) {
+          rec1 = `<strong>Accuracy Discipline:</strong> Excellent accuracy (${accuracy.toFixed(1)}%). Under real exam pressure, maintain this strong threshold and resist speculative guessing near the final minutes.`;
+        } else if (accuracy >= breakeven) {
+          rec1 = `<strong>Error Minimization:</strong> Solid accuracy (${accuracy.toFixed(1)}%), safely exceeding the ${breakeven.toFixed(1)}% hurdle. Eliminating just 3 to 5 unforced errors will recover +${(deduction * 0.4).toFixed(2)} marks into your net score.`;
+        } else {
+          rec1 = `<strong>Penalty Warning:</strong> Accuracy (${accuracy.toFixed(1)}%) is below the ${breakeven.toFixed(1)}% break-even hurdle. Blind guessing is actively reducing your score. Attempt only questions where at least two options are definitively eliminated.`;
+        }
+
+        let rec2 = `<strong>Option Elimination Rule:</strong> On 4-option questions with ${ratioLabel} penalty, blind guessing yields 0.00 expected value. Eliminating 2 incorrect options raises expected value to positive territory (+0.67 marks per question in 2-mark tests).`;
+
+        let rec3 = '';
+        if (unattempted > 0) {
+          rec3 = `<strong>Unattempted Question Audit:</strong> ${unattempted} questions (${Math.round((unattempted / totalQ) * 100)}% of paper) were skipped. Practice timed mock rounds to verify whether time deficit or question selection was the bottleneck.`;
+        } else {
+          rec3 = `<strong>Attempt Discipline:</strong> You attempted 100% of the paper. Confirm that low-conviction guesses in difficult sections did not result in negative score erosion.`;
+        }
+
+        printRecomList.innerHTML = `<li>${rec1}</li><li>${rec2}</li><li>${rec3}</li>`;
+      }
+    }
+
     function calculate() {
       const totalQ = Math.max(1, parseInt(totalQInput.value, 10) || 100);
       const maxMarks = Math.max(1, parseFloat(maxMarksInput.value) || 100);
@@ -706,6 +1181,7 @@ const { idPrefix = 'neg-calc' } = Astro.props;
       const accuracy = attempted > 0 ? Math.round((correct / attempted) * 10000) / 100 : 0;
       const breakeven = (mpq + penalty) > 0 ? Math.round((penalty / (mpq + penalty)) * 10000) / 100 : 0;
       const mpa = attempted > 0 ? Math.round((net / attempted) * 100) / 100 : 0;
+      const ratioLabel = getRatioLabel(ratioSelect.value);
 
       // Update previews in input labels
       if (mpqPreview) mpqPreview.textContent = `${mpq.toFixed(2)} marks / Q`;
@@ -713,7 +1189,7 @@ const { idPrefix = 'neg-calc' } = Astro.props;
       if (correctPreview) correctPreview.textContent = `${correct} Correct`;
       if (penaltyPerWrong) penaltyPerWrong.textContent = penalty > 0 ? `-${penalty.toFixed(2)} marks/wrong` : 'No deduction';
 
-      // Update Net Score Hero
+      // Update Net Score Hero on Screen
       if (netScoreDisplay) netScoreDisplay.textContent = net.toFixed(2);
       if (outOfDisplay) outOfDisplay.textContent = `/ ${maxMarks}`;
       if (scorePctBadge) {
@@ -740,7 +1216,7 @@ const { idPrefix = 'neg-calc' } = Astro.props;
         }
       }
 
-      // Update banner
+      // Update Screen Penalty Banner
       if (banner && bannerText && bannerTitle) {
         if (penalty === 0) {
           banner.className = 'rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 transition-all';
@@ -769,7 +1245,7 @@ const { idPrefix = 'neg-calc' } = Astro.props;
         }
       }
 
-      // Stats grid
+      // Screen Stats Grid
       if (statCorrect) statCorrect.textContent = String(correct);
       if (statGross) statGross.textContent = `+${gross.toFixed(2)} marks gross`;
       if (statWrong) statWrong.textContent = String(wrong);
@@ -791,12 +1267,17 @@ const { idPrefix = 'neg-calc' } = Astro.props;
       if (statBreakeven) statBreakeven.textContent = `${breakeven.toFixed(1)}%`;
       if (statMpa) statMpa.textContent = mpa.toFixed(2);
 
-      // Formula breakdown
+      // Formula breakdown on screen
       if (stepGross) stepGross.textContent = `${correct} × ${mpq.toFixed(2)} = +${gross.toFixed(2)}`;
       if (stepPenalty) stepPenalty.textContent = `${wrong} × ${penalty.toFixed(2)} = -${deduction.toFixed(2)}`;
       if (stepNet) stepNet.textContent = `${gross.toFixed(2)} - ${deduction.toFixed(2)} = ${net.toFixed(2)}`;
 
-      return { totalQ, maxMarks, attempted, wrong, correct, unattempted, net, scorePct, accuracy, deduction };
+      const res = { totalQ, maxMarks, mpq, penalty, ratioLabel, attempted, wrong, correct, unattempted, gross, deduction, net, scorePct, accuracy, breakeven, mpa };
+
+      // Simultaneously update the Dedicated Printable Scorecard DOM
+      updatePrintReport(res);
+
+      return res;
     }
 
     // Step button handlers (+ / -)
@@ -863,7 +1344,6 @@ const { idPrefix = 'neg-calc' } = Astro.props;
         if (presetTag) presetTag.textContent = found.name;
 
         if (found.customPenalty !== undefined) {
-          // Check if ratio matches standard options or custom
           const matchOpt = Array.from(ratioSelect.options).find(
             (opt) => Math.abs(parseFloat(opt.value) - found.penaltyRatio) < 0.001
           );
@@ -919,12 +1399,21 @@ const { idPrefix = 'neg-calc' } = Astro.props;
       });
     }
 
+    // Download PDF / Print button
     if (printBtn) {
       printBtn.addEventListener('click', () => {
+        calculate();
+        const prevTitle = document.title;
+        const safeExam = (currentPreset?.shortName || 'Scorecard').replace(/[^a-zA-Z0-9_-]/g, '_');
+        document.title = `Negative_Marking_Scorecard_${safeExam}_AllCutOff`;
         window.print();
+        setTimeout(() => {
+          document.title = prevTitle;
+        }, 1500);
       });
     }
 
+    // WhatsApp Share button
     if (whatsappBtn) {
       whatsappBtn.addEventListener('click', () => {
         const res = calculate();
@@ -993,16 +1482,607 @@ const { idPrefix = 'neg-calc' } = Astro.props;
   })();
 </script>
 
+<!-- =========================================================================
+     STYLES: SCREEN & DEDICATED PRINT SCORECARD ARCHITECTURE
+     ========================================================================= -->
 <style>
+  /* Screen styles: Printable report is hidden on screen */
+  .print-scorecard-root {
+    display: none;
+  }
+
+  /* =========================================================================
+     PRINT ENGINE: Pure Structured A4 PDF Scorecard
+     ========================================================================= */
   @media print {
-    .step-btn,
-    .preset-chip,
-    #neg-calc-calc-btn,
-    #neg-calc-clear-btn,
-    #neg-calc-print-btn,
-    #neg-calc-whatsapp-btn,
-    #neg-calc-save-result-btn {
+    @page {
+      size: A4 portrait;
+      margin: 8mm 10mm;
+    }
+
+    /* Container resets for clean full-width print canvas */
+    #neg-calc-container {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      background: transparent !important;
+    }
+
+    /* Hide the entire screen interactive dashboard view */
+    #neg-calc-screen-view {
       display: none !important;
     }
+
+    /* Display the dedicated print report as the sole printable entity */
+    .print-scorecard-root {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-size: 9pt !important;
+      line-height: 1.35 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .print-scorecard-root * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Section Wrapper: Avoid awkward page breaks */
+    .pdf-section {
+      margin-bottom: 9px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .pdf-section-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 7.5pt !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.06em !important;
+      color: #475569 !important;
+      margin-bottom: 4px !important;
+    }
+
+    /* Header Bar */
+    .pdf-header {
+      border-bottom: 2px solid #0d9488 !important;
+      padding-bottom: 7px !important;
+      margin-bottom: 9px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .pdf-header-top {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+    }
+
+    .pdf-brand {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+
+    .pdf-brand-icon {
+      height: 32px !important;
+      width: 32px !important;
+      border-radius: 7px !important;
+      background-color: #0f766e !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      font-size: 13pt !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      letter-spacing: -0.05em !important;
+    }
+
+    .pdf-brand-title {
+      font-size: 14pt !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      line-height: 1.15 !important;
+    }
+
+    .pdf-brand-sub {
+      font-size: 7pt !important;
+      color: #64748b !important;
+      font-weight: 600 !important;
+    }
+
+    .pdf-meta-right {
+      text-align: right !important;
+    }
+
+    .pdf-verified-badge {
+      display: inline-block !important;
+      border-radius: 9999px !important;
+      background-color: #ecfdf5 !important;
+      border: 1px solid #a7f3d0 !important;
+      padding: 2px 7px !important;
+      font-size: 6.5pt !important;
+      font-weight: 800 !important;
+      color: #065f46 !important;
+      letter-spacing: 0.04em !important;
+    }
+
+    .pdf-meta-row {
+      font-size: 7.5pt !important;
+      color: #475569 !important;
+      font-weight: 600 !important;
+      margin-top: 2px !important;
+    }
+
+    .pdf-meta-id {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 6.5pt !important;
+      color: #94a3b8 !important;
+    }
+
+    .pdf-title-banner {
+      margin-top: 6px !important;
+      border-radius: 7px !important;
+      background-color: #f0fdfa !important;
+      border: 1px solid #ccfbf1 !important;
+      padding: 6px 10px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+    }
+
+    .pdf-exam-name {
+      font-size: 12pt !important;
+      font-weight: 800 !important;
+      color: #115e59 !important;
+      line-height: 1.2 !important;
+      margin: 0 !important;
+    }
+
+    .pdf-exam-subtext {
+      font-size: 7.5pt !important;
+      color: #0f766e !important;
+      margin: 2px 0 0 0 !important;
+    }
+
+    .pdf-badge-tag {
+      border-radius: 4px !important;
+      background-color: #ffffff !important;
+      border: 1px solid #99f6e4 !important;
+      padding: 2px 6px !important;
+      font-size: 7pt !important;
+      font-weight: 700 !important;
+      color: #0f766e !important;
+      white-space: nowrap !important;
+    }
+
+    /* 2. Configuration 4-Column Bar */
+    .pdf-config-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 7px !important;
+    }
+
+    .pdf-config-box {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background-color: #f8fafc !important;
+      padding: 5px 8px !important;
+    }
+
+    .pdf-cfg-lbl {
+      display: block !important;
+      font-size: 6.5pt !important;
+      text-transform: uppercase !important;
+      color: #64748b !important;
+      font-weight: 700 !important;
+    }
+
+    .pdf-cfg-val {
+      display: block !important;
+      font-size: 9pt !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      margin-top: 1px !important;
+    }
+
+    /* 3. Candidate Attempt 4-Card Row */
+    .pdf-attempt-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 7px !important;
+    }
+
+    .pdf-card {
+      border-radius: 7px !important;
+      border: 1px solid #cbd5e1 !important;
+      background-color: #f8fafc !important;
+      padding: 7px 9px !important;
+      text-align: left !important;
+    }
+
+    .pdf-card-slate {
+      background-color: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    .pdf-card-emerald {
+      background-color: #f0fdf4 !important;
+      border-color: #bbf7d0 !important;
+    }
+
+    .pdf-card-rose {
+      background-color: #fff1f2 !important;
+      border-color: #fecdd3 !important;
+    }
+
+    .pdf-card-title {
+      font-size: 6.5pt !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.04em !important;
+      color: #475569 !important;
+    }
+
+    .pdf-card-number {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 17pt !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      line-height: 1.15 !important;
+      margin-top: 2px !important;
+    }
+
+    .pdf-card-sub {
+      font-size: 6.5pt !important;
+      color: #64748b !important;
+      margin-top: 2px !important;
+    }
+
+    /* 4. Hero Net Score Card */
+    .pdf-hero-card {
+      border-radius: 8px !important;
+      border: 1.5px solid #0d9488 !important;
+      background-color: #f0fdfa !important;
+      padding: 9px 12px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .pdf-hero-grid {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      gap: 14px !important;
+    }
+
+    .pdf-hero-main {
+      flex: 1 1 58% !important;
+    }
+
+    .pdf-hero-tag {
+      font-size: 7pt !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.07em !important;
+      color: #0f766e !important;
+    }
+
+    .pdf-score-row {
+      display: flex !important;
+      align-items: baseline !important;
+      gap: 5px !important;
+      margin-top: 2px !important;
+    }
+
+    .pdf-score-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 26pt !important;
+      font-weight: 900 !important;
+      color: #0f172a !important;
+      line-height: 1 !important;
+    }
+
+    .pdf-score-den {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 11pt !important;
+      font-weight: 700 !important;
+      color: #475569 !important;
+    }
+
+    .pdf-score-pct-badge {
+      border-radius: 9999px !important;
+      background-color: #ccfbf1 !important;
+      border: 1px solid #99f6e4 !important;
+      padding: 1.5px 7px !important;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 8pt !important;
+      font-weight: 800 !important;
+      color: #0f766e !important;
+      margin-left: 5px !important;
+    }
+
+    .pdf-progress-track {
+      height: 5px !important;
+      width: 100% !important;
+      border-radius: 9999px !important;
+      background-color: #cbd5e1 !important;
+      margin-top: 5px !important;
+      overflow: hidden !important;
+    }
+
+    .pdf-progress-bar {
+      height: 100% !important;
+      border-radius: 9999px !important;
+      background-color: #0d9488 !important;
+    }
+
+    .pdf-hero-side {
+      flex: 1 1 42% !important;
+      background-color: #ffffff !important;
+      border: 1px solid #99f6e4 !important;
+      border-radius: 6px !important;
+      padding: 6px 10px !important;
+    }
+
+    .pdf-summary-line {
+      display: flex !important;
+      justify-content: space-between !important;
+      font-size: 7.5pt !important;
+      color: #334155 !important;
+      padding: 1.5px 0 !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    .pdf-summary-line:last-child {
+      border-bottom: none !important;
+    }
+
+    /* Outcome Assessment Banner */
+    .pdf-banner {
+      margin-top: 7px !important;
+      border-radius: 6px !important;
+      padding: 5px 9px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      font-size: 7.5pt !important;
+      line-height: 1.3 !important;
+    }
+
+    .pdf-banner-emerald {
+      background-color: #f0fdf4 !important;
+      border: 1px solid #bbf7d0 !important;
+      color: #14532d !important;
+    }
+
+    .pdf-banner-teal {
+      background-color: #ffffff !important;
+      border: 1px solid #99f6e4 !important;
+      color: #0f766e !important;
+    }
+
+    .pdf-banner-rose {
+      background-color: #fff1f2 !important;
+      border: 1px solid #fecdd3 !important;
+      color: #881337 !important;
+    }
+
+    .pdf-banner-slate {
+      background-color: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #334155 !important;
+    }
+
+    .pdf-banner-icon {
+      font-weight: 800 !important;
+      font-size: 9pt !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* 5. Performance Analytics 4-Card Row */
+    .pdf-metrics-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 7px !important;
+    }
+
+    .pdf-metric-card {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background-color: #ffffff !important;
+      padding: 6px 8px !important;
+    }
+
+    .pdf-metric-header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+    }
+
+    .pdf-metric-title {
+      font-size: 6.5pt !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      color: #475569 !important;
+    }
+
+    .pdf-tag {
+      font-size: 5.5pt !important;
+      font-weight: 800 !important;
+      border-radius: 3px !important;
+      padding: 1px 4px !important;
+    }
+
+    .pdf-tag-emerald { background-color: #d1fae5 !important; color: #065f46 !important; }
+    .pdf-tag-teal { background-color: #ccfbf1 !important; color: #0f766e !important; }
+    .pdf-tag-rose { background-color: #ffe4e6 !important; color: #9f1239 !important; }
+    .pdf-tag-slate { background-color: #e2e8f0 !important; color: #334155 !important; }
+
+    .pdf-metric-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 13pt !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      margin-top: 1px !important;
+      line-height: 1.15 !important;
+    }
+
+    .pdf-metric-sub {
+      font-size: 6pt !important;
+      color: #64748b !important;
+      margin-top: 1px !important;
+    }
+
+    /* 6. Side-by-Side: Proof & Table */
+    .pdf-side-by-side {
+      display: flex !important;
+      gap: 9px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .pdf-half-box {
+      flex: 1 1 50% !important;
+      width: 50% !important;
+    }
+
+    .pdf-proof-card {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background-color: #f8fafc !important;
+      padding: 6px 9px !important;
+    }
+
+    .pdf-proof-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      font-size: 7.5pt !important;
+      padding: 2.5px 0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    .pdf-proof-row:last-child {
+      border-bottom: none !important;
+    }
+
+    .pdf-proof-lbl {
+      color: #334155 !important;
+      font-weight: 600 !important;
+    }
+
+    .pdf-proof-val {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-weight: 700 !important;
+    }
+
+    .pdf-proof-highlight {
+      background-color: #f0fdfa !important;
+      border-radius: 4px !important;
+      padding: 2.5px 4px !important;
+      margin: 1.5px -4px !important;
+      border-bottom: none !important;
+    }
+
+    /* Clean Question Table */
+    .pdf-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      border-radius: 6px !important;
+      overflow: hidden !important;
+      border: 1px solid #cbd5e1 !important;
+      font-size: 7.5pt !important;
+      background-color: #ffffff !important;
+    }
+
+    .pdf-table th {
+      background-color: #f1f5f9 !important;
+      color: #334155 !important;
+      font-weight: 700 !important;
+      padding: 4px 7px !important;
+      text-transform: uppercase !important;
+      font-size: 6.5pt !important;
+      border-bottom: 1px solid #cbd5e1 !important;
+    }
+
+    .pdf-table td {
+      padding: 3.5px 7px !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    .pdf-table tfoot th {
+      background-color: #f8fafc !important;
+      border-top: 1px solid #cbd5e1 !important;
+      border-bottom: none !important;
+      font-weight: 800 !important;
+      padding: 4px 7px !important;
+    }
+
+    /* 7. Strategic Recommendations */
+    .pdf-recom-card {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background-color: #f8fafc !important;
+      padding: 6px 10px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .pdf-recom-list {
+      margin: 0 !important;
+      padding-left: 14px !important;
+      font-size: 7pt !important;
+      color: #334155 !important;
+      line-height: 1.35 !important;
+    }
+
+    .pdf-recom-list li {
+      margin-bottom: 2px !important;
+    }
+
+    .pdf-recom-list li:last-child {
+      margin-bottom: 0 !important;
+    }
+
+    /* 8. Master Footer */
+    .pdf-footer {
+      border-top: 1px solid #cbd5e1 !important;
+      padding-top: 5px !important;
+      margin-top: 7px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-end !important;
+      font-size: 6.5pt !important;
+      color: #64748b !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .pdf-footer-url {
+      color: #0f766e !important;
+      margin-top: 1px !important;
+    }
+
+    /* Global Color Overrides with High Specificity to defeat generic black print styles */
+    #neg-calc-print-report .pdf-text-emerald { color: #047857 !important; }
+    #neg-calc-print-report .pdf-text-rose { color: #be123c !important; }
+    #neg-calc-print-report .pdf-text-teal { color: #0f766e !important; }
+    #neg-calc-print-report .text-center { text-align: center !important; }
+    #neg-calc-print-report .text-right { text-align: right !important; }
+    #neg-calc-print-report .font-bold { font-weight: 700 !important; }
+    #neg-calc-print-report .font-semibold { font-weight: 600 !important; }
   }
 </style>

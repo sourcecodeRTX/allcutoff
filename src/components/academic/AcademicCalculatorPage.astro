@@ -103,7 +103,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
   extraSchema={extraSchema}
 >
   <!-- Breadcrumb Navigation -->
-  <nav aria-label="Breadcrumb" class="border-b border-slate-200 bg-white py-3">
+  <nav aria-label="Breadcrumb" class="no-print border-b border-slate-200 bg-white py-3">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
         <li><a href="/" class="rounded transition-colors hover:text-blue-600">Home</a></li>
@@ -117,7 +117,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
 
   <article class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
     <!-- Header Block -->
-    <div>
+    <div class="no-print">
       <div class="flex flex-wrap items-center gap-2">
         <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
           {calculator.badge}
@@ -193,7 +193,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
 
     <!-- How to Use Section -->
     {calculator.howToUse && calculator.howToUse.length > 0 && (
-      <section id="how-to-use" class="mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
+      <section id="how-to-use" class="no-print mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
         <h2 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           How to Use the {calculator.shortName}
         </h2>
@@ -218,7 +218,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
     )}
 
     <!-- Formula & Mathematics Section -->
-    <section id="formula-breakdown" class="mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
+    <section id="formula-breakdown" class="no-print mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
       <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 sm:p-8">
         <div class="flex items-center gap-2">
           <span class="rounded bg-blue-100 px-2.5 py-0.5 font-mono text-xs font-bold text-blue-800">MATHEMATICAL RULE</span>
@@ -247,7 +247,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
 
     <!-- Frequently Asked Questions -->
     {calculator.faqs && calculator.faqs.length > 0 && (
-      <section id="faq" class="mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
+      <section id="faq" class="no-print mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
         <h2 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Frequently Asked Questions
         </h2>
@@ -278,7 +278,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
 
     <!-- Related Academic Tools -->
     {relatedTools.length > 0 && (
-      <section id="related-tools" class="mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
+      <section id="related-tools" class="no-print mt-14 scroll-mt-24 border-t border-slate-200 pt-10">
         <h2 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Related Academic &amp; Entrance Calculators
         </h2>
@@ -313,7 +313,7 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
     )}
 
     <!-- Verification / Disclaimer -->
-    <section class="mt-14 border-t border-slate-200 pt-10">
+    <section class="no-print mt-14 border-t border-slate-200 pt-10">
       <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6 text-xs text-slate-700 leading-relaxed">
         <h3 class="text-sm font-bold text-slate-900">Official Disclaimer &amp; Notice</h3>
         <p class="mt-1.5">
