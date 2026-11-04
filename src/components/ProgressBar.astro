@@ -1,7 +1,7 @@
 ---
 /**
  * Global Top Navigation Progress Bar
- * Fast, solid blue, uninterrupted navigation progress indicator.
+ * Runs synchronously in parallel with page navigation and rendering with zero delay.
  */
 ---
 <div id="page-progress-bar" class="progress-bar-container" aria-hidden="true">
@@ -20,7 +20,7 @@
     pointer-events: none;
     user-select: none;
     opacity: 0;
-    transition: opacity 150ms ease;
+    transition: opacity 120ms ease;
   }
 
   .progress-bar-container.is-active {
@@ -45,117 +45,123 @@
   }
 </style>
 
-<script>
+<script is:inline>
   (function () {
     'use strict';
 
     var container = document.getElementById('page-progress-bar');
     if (!container) return;
-    var fill = container.querySelector('.progress-bar-fill') as HTMLElement | null;
+    var fill = container.querySelector('.progress-bar-fill');
     if (!fill) return;
 
-    var hideTimer: number | null = null;
-    var resetTimer: number | null = null;
-
-    function clearTimers() {
-      if (hideTimer) {
-        window.clearTimeout(hideTimer);
-        hideTimer = null;
-      }
-      if (resetTimer) {
-        window.clearTimeout(resetTimer);
-        resetTimer = null;
-      }
-    }
-
-    // Moves fast and continuously from 0 to 100% without stopping
-    function runFastSweep(durationMs: number) {
-      clearTimers();
-      if (!container || !fill) return;
-
-      container.classList.add('is-active');
-      fill.style.transition = 'none';
-      fill.style.transform = 'scaleX(0)';
-      void fill.offsetWidth; // Force layout reflow so transition starts cleanly from 0
-
-      fill.style.transition = 'transform ' + durationMs + 'ms cubic-bezier(0.2, 0.8, 0.4, 1)';
-      fill.style.transform = 'scaleX(1)';
-
-      hideTimer = window.setTimeout(function () {
-        if (!container) return;
-        container.classList.remove('is-active');
-
-        resetTimer = window.setTimeout(function () {
-          if (!fill) return;
-          fill.style.transition = 'none';
-          fill.style.transform = 'scaleX(0)';
-        }, 150);
-      }, durationMs + 20);
-    }
+    var NAV_KEY = '_allcutoff_nav';
+    var hideTimeout = null;
 
     function reset() {
-      clearTimers();
-      if (!container || !fill) return;
+      if (hideTimeout) clearTimeout(hideTimeout);
       container.classList.remove('is-active');
       fill.style.transition = 'none';
       fill.style.transform = 'scaleX(0)';
     }
 
-    // 1. On page load / refresh: fast, smooth sweep across the top
-    runFastSweep(220);
+    // Check if this page load came from an internal click navigation
+    var wasNavigating = false;
+    try {
+      if (sessionStorage.getItem(NAV_KEY) === '1') {
+        wasNavigating = true;
+        sessionStorage.removeItem(NAV_KEY);
+      }
+    } catch (e) {}
 
-    // 2. On clicking any internal navigation link: fast continuous sweep to the end
+    // Run in parallel with initial render
+    if (wasNavigating) {
+      // Pick up from the click navigation at 75% and zip to 100% instantly
+      container.classList.add('is-active');
+      fill.style.transition = 'none';
+      fill.style.transform = 'scaleX(0.75)';
+      void fill.offsetWidth; // Force instant layout sync
+
+      fill.style.transition = 'transform 120ms cubic-bezier(0.1, 0.8, 0.2, 1)';
+      fill.style.transform = 'scaleX(1)';
+
+      hideTimeout = setTimeout(function () {
+        container.classList.remove('is-active');
+        setTimeout(function () {
+          fill.style.transition = 'none';
+          fill.style.transform = 'scaleX(0)';
+        }, 120);
+      }, 140);
+    } else {
+      // Normal refresh / direct page entry: fast parallel sweep across top (160ms)
+      container.classList.add('is-active');
+      fill.style.transition = 'none';
+      fill.style.transform = 'scaleX(0)';
+      void fill.offsetWidth;
+
+      fill.style.transition = 'transform 160ms cubic-bezier(0.1, 0.8, 0.2, 1)';
+      fill.style.transform = 'scaleX(1)';
+
+      hideTimeout = setTimeout(function () {
+        container.classList.remove('is-active');
+        setTimeout(function () {
+          fill.style.transition = 'none';
+          fill.style.transform = 'scaleX(0)';
+        }, 120);
+      }, 180);
+    }
+
+    // Intercept clicks to start progress bar instantly on click (0ms delay)
     document.addEventListener(
       'click',
-      function (event: MouseEvent) {
-        if (event.defaultPrevented) return;
-        if (event.button !== 0) return; // Only left clicks
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; // Allow new tab/window
+      function (e) {
+        if (e.defaultPrevented || e.button !== 0) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
-        var target = event.target as Element | null;
-        var link = target ? (target.closest('a') as HTMLAnchorElement | null) : null;
+        var target = e.target;
+        var link = target ? target.closest('a') : null;
         if (!link) return;
 
         if (link.hasAttribute('data-no-progress') || link.closest('[data-no-progress]')) return;
 
         var href = link.getAttribute('href');
-        if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-
+        if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#')) return;
         if (link.hasAttribute('download')) return;
+
         var targetAttr = link.getAttribute('target');
         if (targetAttr && targetAttr !== '_self') return;
 
         try {
           var url = new URL(link.href, window.location.href);
-
-          // Only same origin internal routes
           if (url.origin !== window.location.origin) return;
+          if (url.pathname === window.location.pathname && url.search === window.location.search) return;
 
-          // Ignore in-page hash links (e.g. #faq or #inputs)
-          if (url.pathname === window.location.pathname && url.search === window.location.search) {
-            if (url.hash) return;
-            if (url.href === window.location.href) return;
-          }
+          // Mark navigation flag for next page
+          try {
+            sessionStorage.setItem(NAV_KEY, '1');
+          } catch (err) {}
 
-          // Trigger fast uninterrupted sweep
-          runFastSweep(280);
-        } catch (e) {
-          // Ignored
-        }
+          // Start bar instantly on this page before unload
+          container.classList.add('is-active');
+          fill.style.transition = 'none';
+          fill.style.transform = 'scaleX(0)';
+          void fill.offsetWidth;
+
+          fill.style.transition = 'transform 160ms cubic-bezier(0.1, 0.8, 0.2, 1)';
+          fill.style.transform = 'scaleX(0.75)';
+
+          // Safety timeout in case navigation is cancelled
+          setTimeout(function () {
+            try { sessionStorage.removeItem(NAV_KEY); } catch (err) {}
+            reset();
+          }, 1500);
+        } catch (err) {}
       },
       { capture: true, passive: true }
     );
 
-    // 3. Browser Refresh / Page Unload
-    window.addEventListener('beforeunload', function () {
-      runFastSweep(260);
-    });
-
-    // 4. Back/Forward Cache (bfcache) restore
-    window.addEventListener('pageshow', function (event: PageTransitionEvent) {
-      if (event.persisted) {
-        reset();
-      }
+    // Bfcache restore
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) reset();
     });
   })();
 </script>
