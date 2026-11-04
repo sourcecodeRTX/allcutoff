@@ -1,0 +1,161 @@
+---
+/**
+ * Global Top Navigation Progress Bar
+ * Fast, solid blue, uninterrupted navigation progress indicator.
+ */
+---
+<div id="page-progress-bar" class="progress-bar-container" aria-hidden="true">
+  <div class="progress-bar-fill"></div>
+</div>
+
+<style>
+  .progress-bar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 3px;
+    z-index: 100000;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .progress-bar-container.is-active {
+    opacity: 1;
+  }
+
+  .progress-bar-fill {
+    width: 100%;
+    height: 100%;
+    background-color: #2563eb;
+    box-shadow: none;
+    transform-origin: 0% 50%;
+    transform: scaleX(0);
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress-bar-container,
+    .progress-bar-fill {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    'use strict';
+
+    var container = document.getElementById('page-progress-bar');
+    if (!container) return;
+    var fill = container.querySelector('.progress-bar-fill') as HTMLElement | null;
+    if (!fill) return;
+
+    var hideTimer: number | null = null;
+    var resetTimer: number | null = null;
+
+    function clearTimers() {
+      if (hideTimer) {
+        window.clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+      if (resetTimer) {
+        window.clearTimeout(resetTimer);
+        resetTimer = null;
+      }
+    }
+
+    // Moves fast and continuously from 0 to 100% without stopping
+    function runFastSweep(durationMs: number) {
+      clearTimers();
+      if (!container || !fill) return;
+
+      container.classList.add('is-active');
+      fill.style.transition = 'none';
+      fill.style.transform = 'scaleX(0)';
+      void fill.offsetWidth; // Force layout reflow so transition starts cleanly from 0
+
+      fill.style.transition = 'transform ' + durationMs + 'ms cubic-bezier(0.2, 0.8, 0.4, 1)';
+      fill.style.transform = 'scaleX(1)';
+
+      hideTimer = window.setTimeout(function () {
+        if (!container) return;
+        container.classList.remove('is-active');
+
+        resetTimer = window.setTimeout(function () {
+          if (!fill) return;
+          fill.style.transition = 'none';
+          fill.style.transform = 'scaleX(0)';
+        }, 150);
+      }, durationMs + 20);
+    }
+
+    function reset() {
+      clearTimers();
+      if (!container || !fill) return;
+      container.classList.remove('is-active');
+      fill.style.transition = 'none';
+      fill.style.transform = 'scaleX(0)';
+    }
+
+    // 1. On page load / refresh: fast, smooth sweep across the top
+    runFastSweep(220);
+
+    // 2. On clicking any internal navigation link: fast continuous sweep to the end
+    document.addEventListener(
+      'click',
+      function (event: MouseEvent) {
+        if (event.defaultPrevented) return;
+        if (event.button !== 0) return; // Only left clicks
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; // Allow new tab/window
+
+        var target = event.target as Element | null;
+        var link = target ? (target.closest('a') as HTMLAnchorElement | null) : null;
+        if (!link) return;
+
+        if (link.hasAttribute('data-no-progress') || link.closest('[data-no-progress]')) return;
+
+        var href = link.getAttribute('href');
+        if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+        if (link.hasAttribute('download')) return;
+        var targetAttr = link.getAttribute('target');
+        if (targetAttr && targetAttr !== '_self') return;
+
+        try {
+          var url = new URL(link.href, window.location.href);
+
+          // Only same origin internal routes
+          if (url.origin !== window.location.origin) return;
+
+          // Ignore in-page hash links (e.g. #faq or #inputs)
+          if (url.pathname === window.location.pathname && url.search === window.location.search) {
+            if (url.hash) return;
+            if (url.href === window.location.href) return;
+          }
+
+          // Trigger fast uninterrupted sweep
+          runFastSweep(280);
+        } catch (e) {
+          // Ignored
+        }
+      },
+      { capture: true, passive: true }
+    );
+
+    // 3. Browser Refresh / Page Unload
+    window.addEventListener('beforeunload', function () {
+      runFastSweep(260);
+    });
+
+    // 4. Back/Forward Cache (bfcache) restore
+    window.addEventListener('pageshow', function (event: PageTransitionEvent) {
+      if (event.persisted) {
+        reset();
+      }
+    });
+  })();
+</script>

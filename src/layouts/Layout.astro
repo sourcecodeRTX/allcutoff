@@ -4,6 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import SearchModal from '../components/SearchModal.astro';
 import BackToTop from '../components/BackToTop.astro';
+import ProgressBar from '../components/ProgressBar.astro';
 
 /* ==========================================================================
    Exported primitives.
@@ -345,6 +346,7 @@ const jsonLd = {
        winning; gating `dvh` behind `@supports` is what actually makes the
        fallback work (same pattern SearchModal uses for its own dvh cap). -->
   <body class="flex min-h-screen supports-[height:100dvh]:min-h-dvh flex-col bg-slate-50 text-slate-700 antialiased">
+    <ProgressBar />
     <Header />
     <main class="flex-1">
       <slot />
