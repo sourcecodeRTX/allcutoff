@@ -234,13 +234,35 @@ const extraSchema = [breadcrumbSchema, webPageSchema, webAppSchema, faqSchema].f
         </div>
 
         <div class="mt-4 space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
-          <p>
-            This calculator implements the official academic formula prescribed by the governing university board or conducting body.
-            Calculations adhere to standard UGC/AICTE CBCS guidelines and university academic ordinances without subjective approximations.
-          </p>
-          <p>
-            No data entered into this calculator is ever collected or transmitted. All weighted multiplications and credit summations run entirely in your local browser sandbox.
-          </p>
+          {calculator.toolType === 'negative-marking' ? (
+            <>
+              <p>
+                This calculator implements the official negative marking rules prescribed by national and state examining bodies including the <strong>Union Public Service Commission (UPSC)</strong>, <strong>National Testing Agency (NTA for NEET &amp; JEE Main)</strong>, <strong>Staff Selection Commission (SSC)</strong>, <strong>Institute of Banking Personnel Selection (IBPS)</strong>, and <strong>Railway Recruitment Boards (RRB)</strong>.
+              </p>
+              <p>
+                <strong>1. Standard Scoring Formula:</strong> Net Final Score = (Number of Correct Answers × Marks Per Question) − (Number of Incorrect Answers × Penalty Deduction Per Question). Unattempted questions carry zero marks and zero penalty.
+              </p>
+              <p>
+                <strong>2. Proportional Deduction Rule:</strong> In standard 4-option objective tests with 1/3rd negative marking (such as UPSC Prelims Paper 1 with 2 marks per question), every incorrect answer deducts exactly 1/3rd of the question's full mark value (0.667 marks, or 2/3). Thus, <strong>three incorrect answers cancel out one correct answer</strong>. Under 1/4th negative marking (such as SSC CGL and Bank PO), four incorrect answers cancel out one correct answer.
+              </p>
+              <p>
+                <strong>3. Break-Even Accuracy Hurdle:</strong> The mathematical threshold where guessing yields an expected score change of zero is defined by <code>Break-Even Accuracy = Penalty ÷ (Marks per Question + Penalty)</code>. For 1/3rd negative marking, this threshold is exactly <strong>25.0%</strong>. For 1/4th negative marking, it is exactly <strong>20.0%</strong>.
+              </p>
+              <p>
+                <strong>4. OMR / CBT Multi-Response Penalty:</strong> Under official UPSC and central examination guidelines, darkening or selecting more than one option for an objective question is automatically scored as an incorrect response with full negative deduction, even if one of the marked options is correct.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                This calculator implements the official academic formula prescribed by the governing university board or conducting body.
+                Calculations adhere to standard UGC/AICTE CBCS guidelines and university academic ordinances without subjective approximations.
+              </p>
+              <p>
+                No data entered into this calculator is ever collected or transmitted. All weighted multiplications and credit summations run entirely in your local browser sandbox.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </section>

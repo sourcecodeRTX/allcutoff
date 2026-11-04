@@ -1042,10 +1042,10 @@ export const NEGATIVE_MARKING_PRESETS: NegativeMarkingPreset[] = [
     totalQuestions: 100,
     maximumMarks: 200,
     penaltyRatio: 1 / 3,
-    ratioLabel: '1/3 (-0.66 marks)',
-    defaultAttempted: 85,
-    defaultWrong: 18,
-    description: '100 Questions, 200 Marks. Each correct answer earns 2 marks; each incorrect answer deducts 1/3rd (0.66 marks).'
+    ratioLabel: '1/3 (-0.67 marks)',
+    defaultAttempted: 50,
+    defaultWrong: 10,
+    description: '100 Questions, 200 Marks. Each correct answer earns 2 marks; each incorrect answer deducts 1/3rd (0.67 marks).'
   },
   {
     id: 'rrb',
@@ -1055,8 +1055,8 @@ export const NEGATIVE_MARKING_PRESETS: NegativeMarkingPreset[] = [
     maximumMarks: 100,
     penaltyRatio: 1 / 3,
     ratioLabel: '1/3 (-0.33 marks)',
-    defaultAttempted: 80,
-    defaultWrong: 15,
+    defaultAttempted: 50,
+    defaultWrong: 10,
     description: '100 Questions, 100 Marks. Each question carries 1 mark with 1/3rd (0.33 marks) deduction for wrong answers.'
   },
   {
@@ -1121,7 +1121,7 @@ export const NEGATIVE_MARKING_PRESETS: NegativeMarkingPreset[] = [
     ratioLabel: '1/4 (-1.00 mark)',
     defaultAttempted: 55,
     defaultWrong: 10,
-    description: '75 attempted out of 90 questions, 300 Marks. +4 for correct, -1 for wrong response across MCQs and numerical questions.'
+    description: '75 questions, 300 Marks. +4 for correct, -1 for wrong response across MCQs and numerical questions.'
   },
   {
     id: 'custom',
@@ -1131,8 +1131,8 @@ export const NEGATIVE_MARKING_PRESETS: NegativeMarkingPreset[] = [
     maximumMarks: 100,
     penaltyRatio: 1 / 4,
     ratioLabel: 'Customizable',
-    defaultAttempted: 70,
-    defaultWrong: 15,
+    defaultAttempted: 50,
+    defaultWrong: 10,
     description: 'Fully customizable configuration for any competitive or entrance examination.'
   }
 ];
@@ -1769,7 +1769,7 @@ export const ACADEMIC_CALCULATORS: AcademicCalculatorMeta[] = [
       },
       {
         question: 'What does 1/3 negative marking mean in UPSC?',
-        answer: 'In UPSC Civil Services Prelims GS Paper 1, each question carries 2 marks. If you mark an incorrect answer, 1/3rd of 2 marks (0.66 marks) is deducted. For CSAT (Paper 2), each question carries 2.5 marks, so a wrong answer deducts 0.83 marks.'
+        answer: 'In UPSC Civil Services Prelims GS Paper 1, each question carries 2 marks. If you mark an incorrect answer, 1/3rd of 2 marks (0.667 marks, or 2/3) is deducted. This means exactly 3 wrong answers cancel out 1 correct answer. For CSAT (Paper 2), each question carries 2.5 marks, so a wrong answer deducts 0.83 marks.'
       },
       {
         question: 'How does 1/4 negative marking work in NEET UG and SSC CGL?',
